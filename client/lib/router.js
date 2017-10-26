@@ -3,3 +3,9 @@ FlowRouter.route('/', {
       BlazeLayout.render('splash', {} );
   }
 });
+
+FlowRouter.route('/map', {
+  action: function(params, queryParams) {
+      BlazeLayout.render('map', {} );
+  }
+});

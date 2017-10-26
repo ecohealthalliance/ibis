@@ -3,7 +3,6 @@ import {
   Flights,
   Airports
 } from './FlightDB';
-//import Restivus from 'nimble/restivus';
 
 let api = new Restivus({
   useDefaultAuth: true,
@@ -37,5 +36,70 @@ api.addRoute('locations/:locationId/inboundFlights', {
         }
       ]
     }).fetch();
+  }
+});
+
+/*
+@api {get} locations/:locationId/inboundTrafficByCountry Get inbound traffic stats by country
+@apiName inboundTrafficByCountry
+@apiGroup locations
+@apiParam {ISODateString} arrivesAfter
+@apiParam {ISODateString} arrivesBefore
+*/
+api.addRoute('locations/:locationId/inboundTrafficByCountry', {
+  get: function() {
+    const location = Locations.findOne(this.urlParams.locationId);
+    const arrivesBefore = new Date(this.queryParams.arrivesBefore || new Date());
+    const results = Flights.aggregate([
+      {
+        $match: {
+          'arrivalAirport': {
+            $in: location.airportIds
+          },
+          $and: [
+            {
+              arrivalDateTime: {
+                $lte: arrivesBefore
+              }
+            }, {
+              arrivalDateTime: {
+                $gte: new Date(this.queryParams.arrivesAfter || new Date(arrivesBefore - 1000000000))
+              }
+            }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: "$departureAirport",
+          numFlights: {
+            $sum: 1
+          },
+          numSeats: {
+            $sum: "$totalSeats"
+          }
+        }
+      }
+    ]);
+    const foreignAirports = Airports.find({
+      _id: {$in: _.uniq(_.pluck(results, '_id'))}
+    }).fetch();
+    const airportToCountry = _.chain(foreignAirports)
+      .groupBy('_id')
+      .map((x, id)=>[id, x[0].countryName])
+      .object()
+      .value();
+    let statsByCountry = {};
+    results.forEach((airportStats)=>{
+      const country = airportToCountry[airportStats._id];
+      const sofar = statsByCountry[country] || {
+        numFlights: 0,
+        numSeats: 0
+      };
+      sofar.numFlights += airportStats.numFlights;
+      sofar.numSeats += airportStats.numSeats;
+      statsByCountry[country] = sofar;
+    });
+    return statsByCountry;
   }
 });

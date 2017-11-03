@@ -1,5 +1,6 @@
-$header-height = 90px
-
+$header-height = 50px
+$primary-color = #2a5974
+$primary-color-light = #4f7387
 bg($path, $w, $h)
   background-image url($path)
   background-repeat no-repeat
@@ -9,10 +10,3 @@ bg($path, $w, $h)
   text-indent -9999px
   @media (-webkit-min-device-pixel-ratio: 2), (-moz-min-device-pixel-ratio: 2)
     background-image url($path)
-
-full-width()
-  position absolute
-  left 0
-  right 0
-  top $header-height
-  bottom 0

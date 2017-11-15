@@ -1,2 +1,8 @@
 template(name='map')
+  input.form-control.typeahead(name='locations', 
+          type='text', 
+          placeholder='Airport Search', 
+          autocomplete='off', 
+          spellcheck='off', 
+          data-source='locations')
   div#map

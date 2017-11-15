@@ -26,7 +26,8 @@ export default ()=>{
     }
     Locations.upsert("airport:" + airport._id, {
       type: "Airport",
-      airportIds: [airport._id]
+      airportIds: [airport._id],
+      coordinates: [airport.loc.coordinates]
     });
   });
 };

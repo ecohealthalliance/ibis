@@ -7,7 +7,7 @@ Template.bioeventItem.onRendered(function () {
     zoomControl:false,
     attributionControl: false
   });
-  L.tileLayer.provider('Stamen.Watercolor').addTo(map);
+  L.tileLayer.provider('Stamen.Terrain').addTo(map);
   map.setView([40.077946, -95.989253], 2);
 });
  

@@ -1,6 +1,6 @@
 template(name='map')
-  nav.subheader
-    h4 Location Name
-  .fluid-container
-    .map-wrapper
-      #map
+  .map-page-container
+    nav.subheader
+      h5 Location Name
+    #map
+    +bioeventPanel bioevents=bioevents

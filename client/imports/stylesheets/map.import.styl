@@ -1,4 +1,50 @@
 @import 'variables.import.styl'
 
+$subheader-height = 44px
+
+.side-panel
+  position absolute
+  background-color white
+  top 0
+  bottom 0
+  right 0
+  width 400px
+  z-index 1000
+  .header
+    background-color $primary-color
+    height $subheader-height
+    color white
+    padding 10px
+
+.bioevent-panel
+  border-left 1px solid white
+
+.map-page-container
+  position absolute
+  top $header-height
+  right 0
+  left 0
+  bottom 0
+
 #map
-  full-width()
+  position absolute
+  left 0
+  right 0
+  top $subheader-height
+  bottom 0
+
+.bioevent-item
+  background-color $primary-color
+  color white
+  line-height 0
+  h6
+    padding 10px
+    margin-bottom 0
+  margin-top 10px
+  .timeline
+  .minimap
+    margin 0
+    display inline-block
+    background $primary-color-light
+    height 100px
+    width 50%

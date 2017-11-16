@@ -9,3 +9,11 @@ FlowRouter.route('/map', {
     BlazeLayout.render('layout', {main: 'map'});
   }
 });
+
+FlowRouter.route('/map/:airportId', {
+  action: function(params, queryParams) {
+    console.log("Aiport ID:", params.airportId);
+    BlazeLayout.render('layout', {main: 'map', airportId: params.airportId});
+  }
+});
+

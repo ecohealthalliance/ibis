@@ -33,7 +33,7 @@ Template.map.onRendered(function () {
 
   this.autorun(() => {
 
-    if(this.data.airportId()) {
+    if(!_.isUndefined(this.data) && !_.isUndefined(this.data.airportId) )  {
       // When we search on a state or anything other than a single airport code, (more than one airport), will have to update this.
       const airports = Locations.find({ type: 'Airport', airportIds: this.data.airportId() }).fetch();
       _.each(airports, airport => {

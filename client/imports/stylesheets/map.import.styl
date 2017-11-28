@@ -8,7 +8,7 @@ $subheader-height = 44px
   top 0
   bottom 0
   right 0
-  width 400px
+  width 500px
   z-index 1000
   .header
     background-color $primary-color
@@ -37,14 +37,25 @@ $subheader-height = 44px
   background-color $primary-color
   color white
   line-height 0
+  margin-top 5px
   h6
     padding 10px
     margin-bottom 0
-  margin-top 10px
   .timeline
   .minimap
     margin 0
     display inline-block
     background $primary-color-light
-    height 100px
+    height 150px
     width 50%
+
+.bioevent-item:first-of-type
+  margin-top 1px
+
+.bioevent-items
+  width 100%
+  position absolute
+  top $subheader-height
+  bottom 0
+  overflow-y scroll
+  margin-bottom 0

@@ -38,8 +38,37 @@ Template.bioeventItem.onRendered(function () {
   map.doubleClickZoom.disable();
   map.scrollWheelZoom.disable();
   map.touchZoom.disable();
+
+  const chart = c3.generate({
+    bindto: this.$('.timeline')[0],
+    data: {
+      json: this.data.timeseries.map((x) => {
+        x.date = x.date.split('T')[0];
+        return x;
+      }),
+      keys: {
+        x: 'date', // it's possible to specify 'x' when category axis
+        value: ['value'],
+      },
+      type: 'area',
+      color: () => '#ffffff'
+    },
+    axis: {
+      x: {
+        // TODO: Set according to current date
+        min: '2016-11-01',
+        max: '2017-06-01',
+        type: 'timeseries',
+        show: true
+      },
+      y: { show: false }
+    },
+    legend: {
+      show: false
+    }
+  });
 });
 
 Template.bioeventItem.helpers({
-  
+
 });

@@ -1,7 +1,6 @@
 import WorldGeoJSON from '/imports/world.geo.json';
 
 const RAMP = chroma.scale(["#a10000", "#f07381"]).colors(10)
-
 const getColor = (val) =>{
   //return a color from the ramp based on a 0 to 1 value.
   //If the value exceeds one the last stop is used.
@@ -24,7 +23,6 @@ Template.bioeventItem.onRendered(function () {
   const geoJsonLayer = L.geoJson(WorldGeoJSON, {
     style: (feature) =>{
       const value = locationMap[feature.properties.iso_a2];
-      console.log(maxValue);
       return {
         fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
         weight: value ? 1 : 0,
@@ -34,11 +32,13 @@ Template.bioeventItem.onRendered(function () {
     }
   }).addTo(map);
   map.setView([30, 10], 0.25);
-  map.dragging.disable();
-  map.doubleClickZoom.disable();
-  map.scrollWheelZoom.disable();
-  map.touchZoom.disable();
-
+  // map.dragging.disable();
+  // map.doubleClickZoom.disable();
+  // map.scrollWheelZoom.disable();
+  // map.touchZoom.disable();
+  const endDate = new Date();
+  const startDateStr = new Date(endDate - 600 * 60 * 60 * 24 * 1000).toISOString().split('T')[0];
+  const endDateStr = endDate.toISOString().split('T')[0];
   const chart = c3.generate({
     bindto: this.$('.timeline')[0],
     data: {
@@ -55,9 +55,12 @@ Template.bioeventItem.onRendered(function () {
     },
     axis: {
       x: {
-        // TODO: Set according to current date
-        min: '2016-11-01',
-        max: '2017-06-01',
+        min: startDateStr,
+        max: endDateStr,
+        tick: {
+            // this also works for non timeseries data
+            values: [startDateStr, endDateStr]
+        },
         type: 'timeseries',
         show: true
       },

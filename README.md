@@ -11,5 +11,5 @@ The database's mongo URL should be specified via the FLIGHT_MONGO_URL environmen
 variable like so:
 
 ```
-FLIGHT_MONGO_URL=mongodb://localhost:27019 meteor
+FLIGHT_MONGO_URL=mongodb://localhost:27019/flirt meteor
 ```

@@ -84,6 +84,7 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
     const foreignAirports = Airports.find({
       _id: {$in: _.uniq(_.pluck(results, '_id'))}
     }).fetch();
+    console.log(foreignAirports[0])
     const airportToCountry = _.chain(foreignAirports)
       .groupBy('_id')
       .map((x, id)=>[id, x[0].countryName])
@@ -101,5 +102,22 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
       statsByCountry[country] = sofar;
     });
     return statsByCountry;
+  }
+});
+
+/*
+@api {get} locations/:locationId/bioevents Get a list of bioevents ranked by their relevance to the given location.
+*/
+api.addRoute('locations/:locationId/bioevents', {
+  get: function() {
+    return {
+      ids:[
+        // TODO: Populate with ranked list of bioevents
+        'Hozt7LY7mJhcYxGQw',
+        'YqpQ8B6QkTysGeR4Q',
+        'vndMKRLPYS9pyc2ev',
+        'gfnPs88SBb3aaBeeA'
+      ]
+    };
   }
 });

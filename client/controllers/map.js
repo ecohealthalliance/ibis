@@ -1,8 +1,10 @@
+/* global L, _, chroma */
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/world.geo.json';
 
-const RAMP = chroma.scale(["#a10000", "#f07381"]).colors(10)
+const MILLIS_PER_DAY = 60 * 60 * 24 * 1000;
+const RAMP = chroma.scale(["#a10000", "#f07381"]).colors(10);
 const getColor = (val) =>{
   //return a color from the ramp based on a 0 to 1 value.
   //If the value exceeds one the last stop is used.
@@ -10,10 +12,16 @@ const getColor = (val) =>{
 };
 
 Template.map.onCreated(function () {
+  const endDate = new Date();
+  const dateRange = this.dateRange = {
+    start: new Date(endDate - 600 * MILLIS_PER_DAY),
+    end: endDate
+  };
   const bioevents = this.bioevents = new ReactiveVar([]);
   const bioeventIds = this.bioeventIds = new ReactiveVar([]);
   const bioeventIdsForPage = this.bioeventIdsForPage = new ReactiveVar([]);
   HTTP.get('/api/locations/airport:SEA/bioevents', {}, (err, resp)=> {
+    if(err) return console.error(err);
     bioeventIds.set(resp.data.ids);
   });
   this.autorun(()=> {
@@ -25,9 +33,12 @@ Template.map.onCreated(function () {
     if(bioeventIdsToGet.length > 0) {
       HTTP.get('https://eidr-connect.eha.io/api/events-with-resolved-data', {
         params: {
-          ids: bioeventIdsToGet
+          ids: bioeventIdsToGet,
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString()
         },
       }, (err, resp)=> {
+        if(err) return console.error(err);
         bioevents.set(JSON.parse(resp.content));
       });
     }
@@ -42,6 +53,7 @@ Template.map.onRendered(function () {
     //   arrivesBefore: "2017-10-10"
     // }
   }, (err, resp)=> {
+    if(err) return console.error(err);
     const map = L.map('map');
     const maxValue = _.max(_.values(resp.data));
     const geoJsonLayer = L.geoJson(WorldGeoJSON, {
@@ -62,7 +74,6 @@ Template.map.onRendered(function () {
 });
  
 Template.map.helpers({
-  bioevents: ()=>{
-    return Template.instance().bioevents.get();
-  }
+  bioevents: ()=> Template.instance().bioevents.get(),
+  dateRange: ()=> Template.instance().dateRange
 });

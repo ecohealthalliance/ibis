@@ -36,18 +36,24 @@ Template.bioeventItem.onRendered(function () {
   // map.doubleClickZoom.disable();
   // map.scrollWheelZoom.disable();
   // map.touchZoom.disable();
-  const endDate = new Date();
-  const startDateStr = new Date(endDate - 600 * 60 * 60 * 24 * 1000).toISOString().split('T')[0];
-  const endDateStr = endDate.toISOString().split('T')[0];
+  const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
+  const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
+  const globalMax = 500000;
   const chart = c3.generate({
     bindto: this.$('.timeline')[0],
+    padding: {
+      right: 10
+    },
+    title: {
+      text: 'Cases per day'
+    },
     data: {
       json: this.data.timeseries.map((x) => {
         x.date = x.date.split('T')[0];
         return x;
       }),
       keys: {
-        x: 'date', // it's possible to specify 'x' when category axis
+        x: 'date',
         value: ['value'],
       },
       type: 'area',
@@ -64,7 +70,15 @@ Template.bioeventItem.onRendered(function () {
         type: 'timeseries',
         show: true
       },
-      y: { show: false }
+      y: {
+        min: 0,
+        max: globalMax,
+        tick: {
+            values: [0, globalMax],
+            format: (x) => x.toPrecision(1)
+        },
+        show: true
+      }
     },
     legend: {
       show: false

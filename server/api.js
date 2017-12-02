@@ -84,7 +84,6 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
     const foreignAirports = Airports.find({
       _id: {$in: _.uniq(_.pluck(results, '_id'))}
     }).fetch();
-    console.log(foreignAirports[0])
     const airportToCountry = _.chain(foreignAirports)
       .groupBy('_id')
       .map((x, id)=>[id, x[0].countryName])

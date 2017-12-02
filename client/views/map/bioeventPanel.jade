@@ -4,4 +4,4 @@ template(name='bioeventPanel')
       h5 Connected Events
     ul.list-unstyled.bioevent-items
       each bioevents
-        +bioeventItem
+        +bioeventItem locations=locations timeseries=timeseries eventName=eventName dateRange=../dateRange

@@ -103,3 +103,20 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
     return statsByCountry;
   }
 });
+
+/*
+@api {get} locations/:locationId/bioevents Get a list of bioevents ranked by their relevance to the given location.
+*/
+api.addRoute('locations/:locationId/bioevents', {
+  get: function() {
+    return {
+      ids:[
+        // TODO: Populate with ranked list of bioevents
+        'Hozt7LY7mJhcYxGQw',
+        'YqpQ8B6QkTysGeR4Q',
+        'vndMKRLPYS9pyc2ev',
+        'gfnPs88SBb3aaBeeA'
+      ]
+    };
+  }
+});

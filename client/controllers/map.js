@@ -39,7 +39,7 @@ Template.map.onCreated(function () {
         },
       }, (err, resp)=> {
         if(err) return console.error(err);
-        bioevents.set(JSON.parse(resp.content));
+        bioevents.set(resp.data.events);
       });
     }
   });

@@ -56,7 +56,9 @@ Template.map.onRendered(function () {
     if(geoJsonLayer){
       map.removeLayer(geoJsonLayer);
     }
-    geoJsonLayer = L.geoJson(WorldGeoJSON, {
+    let marker = null;
+    let markerForLayer = null;
+    geoJsonLayer = L.layerGroup([L.geoJson(WorldGeoJSON, {
       style: (feature) =>{
         let value = mapData[feature.properties.iso_a2];
         return {
@@ -65,8 +67,28 @@ Template.map.onRendered(function () {
           color: '#DDDDDD',
           fillOpacity: 1
         };
+      },
+      onEachFeature: (feature, layer) =>{
+        layer.on('mouseover', (event)=>{
+          if(marker){
+            if(layer !== markerForLayer){
+              geoJsonLayer.removeLayer(marker);
+            } else {
+              return;
+            }
+          }
+          markerForLayer = layer;
+          let value = mapData[feature.properties.iso_a2] || 0;
+          marker = L.marker(event.latlng, {
+            icon: L.divIcon({
+              className: "country-name",
+              html: feature.properties.name_long + ": " + value.toFixed(0)
+            })
+          });
+          geoJsonLayer.addLayer(marker);
+        });
       }
-    }).addTo(map);
+    })]).addTo(map);
   };
   renderGeoJSON({});
   const mapType = this.mapType;

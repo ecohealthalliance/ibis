@@ -12,6 +12,7 @@ const getColor = (val) =>{
 };
 
 Template.map.onCreated(function () {
+  this.mapType = new ReactiveVar("passengerFlow");
   const endDate = new Date();
   const dateRange = this.dateRange = {
     start: new Date(endDate - 600 * MILLIS_PER_DAY),
@@ -47,20 +48,17 @@ Template.map.onCreated(function () {
  
 Template.map.onRendered(function () {
   L.Icon.Default.imagePath = '/packages/bevanhunt_leaflet/images/';
-  let location = "airport:SEA";
-  HTTP.get(`/api/locations/${location}/inboundTrafficByCountry`, {
-    // params: {
-    //   arrivesBefore: "2017-10-10"
-    // }
-  }, (err, resp)=> {
-    if(err) return console.error(err);
-    const map = L.map('map');
-    const maxValue = _.max(_.values(resp.data));
-    const geoJsonLayer = L.geoJson(WorldGeoJSON, {
+  const map = L.map('map');
+  map.setView([40.077946, -95.989253], 4);
+  let geoJsonLayer = null;
+  const renderGeoJSON = (mapData)=>{
+    const maxValue = _.max(_.values(_.omit(mapData, "US")));
+    if(geoJsonLayer){
+      map.removeLayer(geoJsonLayer);
+    }
+    geoJsonLayer = L.geoJson(WorldGeoJSON, {
       style: (feature) =>{
-        // TODO: Use ISO2 codes for inboundTrafficByCountry resp. keys.
-        const data = resp.data[feature.properties.name_long];
-        const value = data ? data.numSeats : null;
+        let value = mapData[feature.properties.iso_a2];
         return {
           fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
           weight: 1,
@@ -69,11 +67,53 @@ Template.map.onRendered(function () {
         };
       }
     }).addTo(map);
-    map.setView([40.077946, -95.989253], 4);
+  };
+  renderGeoJSON({});
+  const mapType = this.mapType;
+  this.autorun(()=>{
+    let location = "airport:JFK";
+    let route, valueProp;
+    const mapTypeValue = mapType.get();
+    if(mapTypeValue === "passengerFlow"){
+      route = "passengerFlowsByCountry";
+      valueProp = "estimatedPassengers";
+    } else {
+      route = "inboundTrafficByCountry";
+      valueProp = "numSeats";
+    }
+    HTTP.get(`/api/locations/${location}/${route}`, {
+      // params: {
+      //   arrivesBefore: "2017-10-10"
+      // }
+    }, (err, resp)=> {
+      if(err) return console.error(err);
+      let result = {};
+      for(let id in resp.data) {
+        result[id] = resp.data[id][valueProp];
+      }
+      renderGeoJSON(result);
+    });
   });
 });
  
 Template.map.helpers({
   bioevents: ()=> Template.instance().bioevents.get(),
-  dateRange: ()=> Template.instance().dateRange
+  dateRange: ()=> Template.instance().dateRange,
+  mapTypes: ()=>{
+    const selectedType = Template.instance().mapType.get();
+    return [
+      {name:"directSeats", label:"Direct Seats"},
+      {name:"passengerFlow", label:"Estimated Passenger Flow"},
+    ].map((type)=>{
+      type.selected = type.name == selectedType;
+      return type;
+    });
+  }
+});
+
+Template.map.events({
+  'change #map-type': (event, instance)=>{
+    console.log(event);
+    instance.mapType.set(event.target.value);
+  }
 });

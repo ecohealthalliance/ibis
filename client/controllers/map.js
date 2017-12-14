@@ -51,7 +51,7 @@ Template.map.onRendered(function () {
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
   let geoJsonLayer = null;
-  const renderGeoJSON = (mapData)=>{
+  const renderGeoJSON = (mapData, units="")=>{
     const maxValue = _.max(_.values(_.omit(mapData, "US")));
     if(geoJsonLayer){
       map.removeLayer(geoJsonLayer);
@@ -82,7 +82,7 @@ Template.map.onRendered(function () {
           marker = L.marker(event.latlng, {
             icon: L.divIcon({
               className: "country-name",
-              html: feature.properties.name_long + ": " + value.toFixed(0)
+              html: `${feature.properties.name_long}: ${Math.floor(value).toLocaleString()} ${units}`
             })
           });
           geoJsonLayer.addLayer(marker);
@@ -94,14 +94,16 @@ Template.map.onRendered(function () {
   const mapType = this.mapType;
   this.autorun(()=>{
     let location = "airport:JFK";
-    let route, valueProp;
+    let route, valueProp, units;
     const mapTypeValue = mapType.get();
     if(mapTypeValue === "passengerFlow"){
       route = "passengerFlowsByCountry";
       valueProp = "estimatedPassengers";
+      units = "passengers per day";
     } else {
       route = "inboundTrafficByCountry";
       valueProp = "numSeats";
+      units = "seats per day";
     }
     HTTP.get(`/api/locations/${location}/${route}`, {
       // params: {
@@ -113,7 +115,7 @@ Template.map.onRendered(function () {
       for(let id in resp.data) {
         result[id] = resp.data[id][valueProp];
       }
-      renderGeoJSON(result);
+      renderGeoJSON(result, units);
     });
   });
 });

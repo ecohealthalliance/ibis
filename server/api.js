@@ -101,6 +101,9 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
   get: function() {
     const location = Locations.findOne(this.urlParams.locationId);
     const arrivesBefore = new Date(this.queryParams.arrivesBefore || new Date());
+    const arrivesAfter = new Date(this.queryParams.arrivesAfter || new Date(arrivesBefore - 1000000000));
+    const MILLIS_PER_DAY = 1000 * 60 * 60  * 24;
+    const periodDays = (Number(arrivesBefore) - Number(arrivesAfter)) / MILLIS_PER_DAY;
     const results = Flights.aggregate([
       {
         $match: {
@@ -114,7 +117,7 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
               }
             }, {
               arrivalDateTime: {
-                $gte: new Date(this.queryParams.arrivesAfter || new Date(arrivesBefore - 1000000000))
+                $gte: arrivesAfter
               }
             }
           ]
@@ -139,8 +142,8 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
         numFlights: 0,
         numSeats: 0
       };
-      sofar.numFlights += airportStats.numFlights;
-      sofar.numSeats += airportStats.numSeats;
+      sofar.numFlights += airportStats.numFlights / periodDays;
+      sofar.numSeats += airportStats.numSeats / periodDays;
       statsByCountry[country] = sofar;
     });
     return statsByCountry;
@@ -156,7 +159,9 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
 api.addRoute('locations/:locationId/passengerFlowsByCountry', {
   get: function() {
     const location = Locations.findOne(this.urlParams.locationId);
+    const periodDays = 14;
     const results = PassengerFlows.find({
+      //periodDays: periodDays,
       arrivalAirport: {
         $in: location.airportIds
       }
@@ -167,7 +172,7 @@ api.addRoute('locations/:locationId/passengerFlowsByCountry', {
       const sofar = statsByCountry[country] || {
         estimatedPassengers: 0
       };
-      sofar.estimatedPassengers += result.estimatedPassengers;
+      sofar.estimatedPassengers += result.estimatedPassengers / periodDays;
       statsByCountry[country] = sofar;
     });
     return statsByCountry;

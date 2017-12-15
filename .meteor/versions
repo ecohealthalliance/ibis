@@ -68,14 +68,17 @@ npm-bcrypt@0.9.3
 npm-mongo@2.2.33
 observe-sequence@1.0.16
 ordered-dict@1.0.9
+perak:c3@1.0.7
 promise@0.9.0
 random@1.0.10
 rate-limit@1.0.8
+rcy:chromajs@1.1.1
 reactive-dict@1.1.9
 reactive-var@1.0.11
 reload@1.1.11
 retry@1.0.9
 routepolicy@1.0.12
+sergeyt:d3@3.4.1
 service-configuration@1.0.11
 sha@1.0.9
 shell-server@0.2.4

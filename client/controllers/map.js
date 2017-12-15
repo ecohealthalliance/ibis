@@ -3,10 +3,18 @@ import { ReactiveVar } from 'meteor/reactive-var';
 import Locations from '/imports/collections/Locations';
 
 Template.map.onCreated(function () {
-  this.subscribe('locations');
-  
-  const bioevents = this.bioevents = new ReactiveVar([]);
-  const selectedAirport = this.selectedAirport = new ReactiveVar();
+
+  const instanceData  = this.data
+  const loaded        = new ReactiveVar(false)
+  const bioevents     = this.bioevents = new ReactiveVar([]);
+  const selectedLocation = this.selectedLocation = new ReactiveVar();
+
+  this.autorun(() => {
+    const airportId     = FlowRouter.getParam('airportId');
+    if( !_.isUndefined(airportId) ) {
+      this.subscribe('locations', airportId)
+    }
+  });
 
   HTTP.get("https://eidr-connect.eha.io/api/events-with-resolved-data", {
     data: {
@@ -32,17 +40,17 @@ Template.map.onRendered(function () {
   map.setView([40.077946, -95.989253], 4);
 
   this.autorun(() => {
-
-    if(!_.isUndefined(this.data) && !_.isUndefined(this.data.airportId) )  {
-      // When we search on a state or anything other than a single airport code, (more than one airport), will have to update this.
-      const airports = Locations.find({ type: 'Airport', airportIds: this.data.airportId() }).fetch();
-      _.each(airports, airport => {
-        const coords = airport.coordinates[0];
-        L.marker([coords[1], coords[0]]).addTo(map);
-        this.selectedAirport.set( airport._id );
+    const airportId   = FlowRouter.getParam('airportId');
+    const locations   = Locations.find({ _id: airportId }).fetch();
+    _.each(locations, location => {
+      _.each(location.displayGeoJSON, feature => {
+        if(feature.type == "Point") {
+          const coords = feature.coordinates[0];
+          L.marker([coords[1], coords[0]]).addTo(map);
+          this.selectedLocation.set( location._id );
+        }
       });
-
-    }  
+    });
   });
 });
  
@@ -50,8 +58,8 @@ Template.map.helpers({
   bioevents: ()=>{
     return ["gfnPs88SBb3aaBeeA"];
   },
-  selectedAirport: () => {
-    return Template.instance().selectedAirport.get();
+  selectedLocation: () => {
+    return Template.instance().selectedLocation.get();
   },
   locations: () =>{
     return Locations.find().fetch().map( it => it.airportIds[0] );

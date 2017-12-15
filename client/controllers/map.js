@@ -1,6 +1,7 @@
-/* global L, _, chroma */
+/* global L, _, chroma, FlowRouter */
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
+import Locations from '/imports/collections/Locations';
 import WorldGeoJSON from '/imports/world.geo.json';
 
 const MILLIS_PER_DAY = 60 * 60 * 24 * 1000;
@@ -21,6 +22,16 @@ Template.map.onCreated(function () {
   const bioevents = this.bioevents = new ReactiveVar([]);
   const bioeventIds = this.bioeventIds = new ReactiveVar([]);
   const bioeventIdsForPage = this.bioeventIdsForPage = new ReactiveVar([]);
+  const selectedLocation = this.selectedLocation = new ReactiveVar();
+
+  this.autorun(() => {
+    const airportId     = FlowRouter.getParam('airportId');
+    if( !_.isUndefined(airportId) ) {
+      this.subscribe('locations', airportId);
+    }
+  });
+
+
   HTTP.get('/api/locations/airport:SEA/bioevents', {}, (err, resp)=> {
     if(err) return console.error(err);
     bioeventIds.set(resp.data.ids);
@@ -47,6 +58,7 @@ Template.map.onCreated(function () {
 });
  
 Template.map.onRendered(function () {
+  
   L.Icon.Default.imagePath = '/packages/bevanhunt_leaflet/images/';
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
@@ -93,7 +105,17 @@ Template.map.onRendered(function () {
   renderGeoJSON({});
   const mapType = this.mapType;
   this.autorun(()=>{
-    let location = "airport:JFK";
+    const locationId  = FlowRouter.getParam('airportId');
+    const location    = Locations.findOne( { _id: locationId } );
+    if( location ) {
+      _.each(location.displayGeoJSON, feature => {
+        if(feature.type == "Point") {
+          const coords = feature.coordinates[0];
+          L.marker([coords[1], coords[0]]).addTo(map);
+          this.selectedLocation.set( location._id );
+        }
+      });
+    }
     let route, valueProp, units;
     const mapTypeValue = mapType.get();
     if(mapTypeValue === "passengerFlow"){
@@ -105,7 +127,7 @@ Template.map.onRendered(function () {
       valueProp = "numSeats";
       units = "seats per day";
     }
-    HTTP.get(`/api/locations/${location}/${route}`, {
+    HTTP.get(`/api/locations/${locationId}/${route}`, {
       // params: {
       //   arrivesBefore: "2017-10-10"
       // }
@@ -118,6 +140,8 @@ Template.map.onRendered(function () {
       renderGeoJSON(result, units);
     });
   });
+
+
 });
  
 Template.map.helpers({
@@ -132,6 +156,9 @@ Template.map.helpers({
       type.selected = type.name == selectedType;
       return type;
     });
+  },
+  selectedLocation: () => {
+    return Template.instance().selectedLocation.get();
   }
 });
 

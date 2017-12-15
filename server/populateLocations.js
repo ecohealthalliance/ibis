@@ -26,7 +26,13 @@ export default ()=>{
     }
     Locations.upsert("airport:" + airport._id, {
       type: "Airport",
-      airportIds: [airport._id]
+      airportIds: [airport._id],
+      displayGeoJSON: [
+        {
+          "type": "Point", 
+          "coordinates": [airport.loc.coordinates]
+        }
+      ] 
     });
   });
 };

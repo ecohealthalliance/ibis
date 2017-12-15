@@ -9,3 +9,10 @@ FlowRouter.route('/map', {
     BlazeLayout.render('layout', {main: 'map'});
   }
 });
+
+FlowRouter.route('/map/:airportId', {
+  action: function(params, queryParams) {
+    BlazeLayout.render('layout', {main: 'map'});
+  }
+});
+

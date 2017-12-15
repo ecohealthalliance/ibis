@@ -1,6 +1,6 @@
 import WorldGeoJSON from '/imports/world.geo.json';
 
-const RAMP = chroma.scale(["#a10000", "#f07381"]).colors(10)
+const RAMP = chroma.scale(["#ffffff", "#a10000"]).colors(10);
 const getColor = (val) =>{
   //return a color from the ramp based on a 0 to 1 value.
   //If the value exceeds one the last stop is used.

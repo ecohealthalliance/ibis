@@ -1,6 +1,10 @@
 template(name='map')
   .map-page-container
     nav.subheader
-      h5 Location Name {{selectedLocation}}
+      h5.title {{selectedLocation}} Inbound
+      .map-controls
+        select#map-type
+          each mapTypes
+            option(value=name selected=selected)=label
     #map
     +bioeventPanel bioevents=bioevents dateRange=dateRange

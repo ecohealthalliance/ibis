@@ -30,7 +30,7 @@ export default ()=>{
       displayGeoJSON: [
         {
           "type": "Point", 
-          "coordinates": [airport.loc.coordinates]
+          "coordinates": airport.loc.coordinates
         }
       ] 
     });

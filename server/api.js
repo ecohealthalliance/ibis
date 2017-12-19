@@ -60,6 +60,26 @@ let api = new Restivus({
   prettyJson: true
 });
 
+
+/*
+@api {get} topLocations
+@apiName topLocations
+@apiGroup locations
+*/
+api.addRoute('topLocations', {
+  get: function() {
+    // Only return locations with incoming passengers
+    let arrivalAirports = PassengerFlows.aggregate([{
+      $group: {
+        _id: "$arrivalAirport"
+      }
+    }]).map((x)=> "airport:" + x._id);
+    return {
+      locations: Locations.find({_id: {$in: arrivalAirports}}).fetch()
+    };
+  }
+});
+
 /*
 @api {get} locations/:locationId/inboundFlights Get inbound flights for the given location
 @apiName inboundFlights

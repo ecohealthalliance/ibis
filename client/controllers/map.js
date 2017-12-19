@@ -3,9 +3,9 @@ import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Locations from '/imports/collections/Locations';
 import WorldGeoJSON from '/imports/world.geo.json';
+import Constants from '/imports/constants';
 
-const MILLIS_PER_DAY = 60 * 60 * 24 * 1000;
-const RAMP = chroma.scale(["#ffffff", "#a10000"]).colors(10);
+const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
 const getColor = (val) =>{
   //return a color from the ramp based on a 0 to 1 value.
   //If the value exceeds one the last stop is used.
@@ -16,7 +16,7 @@ Template.map.onCreated(function () {
   this.mapType = new ReactiveVar("passengerFlow");
   const endDate = new Date();
   const dateRange = this.dateRange = {
-    start: new Date(endDate - 600 * MILLIS_PER_DAY),
+    start: new Date(endDate - 600 * Constants.MILLIS_PER_DAY),
     end: endDate
   };
   const selectedLocation = this.selectedLocation = new ReactiveVar();
@@ -78,7 +78,7 @@ Template.map.onRendered(function () {
     if (location) {
       _.each(location.displayGeoJSON, feature => {
         if(feature.type == "Point") {
-          const coords = feature.coordinates[0];
+          const coords = feature.coordinates;
           L.marker([coords[1], coords[0]]).addTo(map);
           this.selectedLocation.set( location._id );
         }

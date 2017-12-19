@@ -4,9 +4,9 @@ import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Locations from '/imports/collections/Locations';
 import WorldGeoJSON from '/imports/world.geo.json';
+import Constants from '/imports/constants';
 
-const MILLIS_PER_DAY = 60 * 60 * 24 * 1000;
-const RAMP = chroma.scale(["#ffffff", "#a10000"]).colors(10);
+const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
 const getColor = (val) =>{
   //return a color from the ramp based on a 0 to 1 value.
   //If the value exceeds one the last stop is used.
@@ -14,9 +14,14 @@ const getColor = (val) =>{
 };
 
 Template.splash.onCreated(function() {
+  this.locations = new ReactiveVar([]);
+  HTTP.get('/api/topLocations', {}, (err, resp)=> {
+    if(err) return console.error(err);
+    this.locations.set(resp.data.locations);
+  });
   const endDate = new Date();
   const dateRange = this.dateRange = {
-    start: new Date(endDate - 600 * MILLIS_PER_DAY),
+    start: new Date(endDate - 600 * Constants.MILLIS_PER_DAY),
     end: endDate
   };
 });
@@ -66,6 +71,42 @@ Template.splash.onRendered(function() {
     })]).addTo(map);
   };
   renderGeoJSON({});
+  this.autorun(()=> {
+    this.locations.get().forEach((location)=>{
+      if(!location.displayGeoJSON) return;
+      var geojsonMarkerOptions = {
+          radius: 2,
+          color: Constants.PRIMARY_COLOR,
+          fillColor: Constants.PRIMARY_COLOR,
+          weight: 0,
+          opacity: 1,
+          fillOpacity: 0.5
+      };
+      const marker = L.geoJson({features: location.displayGeoJSON}, {
+        pointToLayer: function (feature, latlng) {
+          return L.circleMarker(latlng, geojsonMarkerOptions);
+        },
+        onEachFeature: (feature, layer)=>{
+          layer.on({
+            click: (event)=>{
+              console.log(location._id);
+              FlowRouter.go('/locations/:locationId', {locationId: location._id});
+            },
+            mouseover: (event)=>{
+              layer.setStyle({
+                weight: 2,
+                color: Constants.PRIMARY_COLOR,
+                fillOpacity: 0.0
+              });
+              window.setTimeout(()=>{
+                marker.resetStyle(layer);
+              }, 300);
+            }
+          });
+        }
+      }).addTo(map);
+    });
+  });
 });
  
 Template.splash.helpers({

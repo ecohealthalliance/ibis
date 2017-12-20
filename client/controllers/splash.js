@@ -3,7 +3,7 @@ import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Locations from '/imports/collections/Locations';
-import WorldGeoJSON from '/imports/world.geo.json';
+import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import Constants from '/imports/constants';
 
 const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
@@ -27,7 +27,6 @@ Template.splash.onCreated(function() {
 });
  
 Template.splash.onRendered(function() {
-  L.Icon.Default.imagePath = '/packages/bevanhunt_leaflet/images/';
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
   let geoJsonLayer = null;
@@ -45,7 +44,8 @@ Template.splash.onRendered(function() {
           fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
           weight: 1,
           color: '#DDDDDD',
-          fillOpacity: 1
+          // Hide the US since it will be shown in the states layer.
+          fillOpacity: feature.properties.iso_a2 == 'US' ? 0.0 : 1.0
         };
       },
       onEachFeature: (feature, layer) =>{
@@ -61,7 +61,7 @@ Template.splash.onRendered(function() {
           let value = mapData[feature.properties.iso_a2] || 0;
           marker = L.marker(event.latlng, {
             icon: L.divIcon({
-              className: "country-name",
+              className: "hover-marker",
               html: `${feature.properties.name_long}: ${Math.floor(value).toLocaleString()} ${units}`
             })
           });
@@ -71,20 +71,35 @@ Template.splash.onRendered(function() {
     })]).addTo(map);
   };
   renderGeoJSON({});
+  let hoverMarker = null;
   this.autorun(()=> {
-    this.locations.get().forEach((location)=>{
+    let locations = this.locations.get();
+    let airportMax = 0;
+    let stateMax = 0;
+    locations.map((x)=>{
+      if(x.type === 'state' && x.totalPassengers > stateMax) stateMax = x.totalPassengers;
+      if(x.type === 'airport' && x.totalPassengers > airportMax) airportMax = x.totalPassengers;
+    });
+    locations.forEach((location)=>{
       if(!location.displayGeoJSON) return;
       var geojsonMarkerOptions = {
-          radius: 2,
-          color: Constants.PRIMARY_COLOR,
-          fillColor: Constants.PRIMARY_COLOR,
+          radius: 1 + 12 * location.totalPassengers / airportMax,
           weight: 0,
-          opacity: 1,
-          fillOpacity: 0.5
+          opacity: 1
       };
       const marker = L.geoJson({features: location.displayGeoJSON}, {
         pointToLayer: function (feature, latlng) {
           return L.circleMarker(latlng, geojsonMarkerOptions);
+        },
+        style: (feature) =>{
+          let value = location.totalPassengers;
+          let maxValue = location.type === 'airport' ? airportMax : stateMax;
+          return {
+            fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
+            weight: 1,
+            color: '#DDDDDD',
+            fillOpacity: 1.0
+          };
         },
         onEachFeature: (feature, layer)=>{
           layer.on({
@@ -93,10 +108,18 @@ Template.splash.onRendered(function() {
               FlowRouter.go('/locations/:locationId', {locationId: location._id});
             },
             mouseover: (event)=>{
+              if(hoverMarker) {
+                map.removeLayer(hoverMarker);
+              }
+              hoverMarker = L.marker(event.latlng, {
+                icon: L.divIcon({
+                  className: "hover-marker",
+                  html: `${location.displayName}: ${Math.floor(location.totalPassengers).toLocaleString()} passengers per day`
+                })
+              }).addTo(map);
               layer.setStyle({
                 weight: 2,
-                color: Constants.PRIMARY_COLOR,
-                fillOpacity: 0.0
+                color: Constants.PRIMARY_COLOR
               });
               window.setTimeout(()=>{
                 marker.resetStyle(layer);

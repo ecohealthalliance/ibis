@@ -2,7 +2,7 @@
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Locations from '/imports/collections/Locations';
-import WorldGeoJSON from '/imports/world.geo.json';
+import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import Constants from '/imports/constants';
 
 const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
@@ -21,24 +21,19 @@ Template.map.onCreated(function () {
   };
   const selectedLocation = this.selectedLocation = new ReactiveVar();
   this.autorun(() => {
-    const airportId     = FlowRouter.getParam('locationId');
-    this.subscribe('locations', airportId);
+    this.subscribe('locations', FlowRouter.getParam('locationId'));
   });
 });
  
 Template.map.onRendered(function () {
-  L.Icon.Default.imagePath = '/packages/bevanhunt_leaflet/images/';
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
-  let geoJsonLayer = null;
+  let geoJsonLayer = L.layerGroup([]).addTo(map);
   const renderGeoJSON = (mapData, units="")=>{
     const maxValue = _.max(_.values(_.omit(mapData, "US")));
-    if(geoJsonLayer){
-      map.removeLayer(geoJsonLayer);
-    }
+    geoJsonLayer.clearLayers();
     let marker = null;
-    let markerForLayer = null;
-    geoJsonLayer = L.layerGroup([L.geoJson(WorldGeoJSON, {
+    geoJsonLayer.addLayer(L.geoJson(WorldGeoJSON, {
       style: (feature) =>{
         let value = mapData[feature.properties.iso_a2];
         return {
@@ -51,41 +46,29 @@ Template.map.onRendered(function () {
       onEachFeature: (feature, layer) =>{
         layer.on('mouseover', (event)=>{
           if(marker){
-            if(layer !== markerForLayer){
-              geoJsonLayer.removeLayer(marker);
-            } else {
-              return;
-            }
+            geoJsonLayer.removeLayer(marker);
           }
-          markerForLayer = layer;
           let value = mapData[feature.properties.iso_a2] || 0;
           marker = L.marker(event.latlng, {
             icon: L.divIcon({
-              className: "country-name",
+              className: "hover-marker",
               html: `${feature.properties.name_long}: ${Math.floor(value).toLocaleString()} ${units}`
             })
           });
           geoJsonLayer.addLayer(marker);
         });
       }
-    })]).addTo(map);
+    }));
   };
   renderGeoJSON({});
   const mapType = this.mapType;
   this.autorun(()=>{
     const locationId = FlowRouter.getParam('locationId');
     const location = Locations.findOne({ _id: locationId });
-    if (location) {
-      _.each(location.displayGeoJSON, feature => {
-        if(feature.type == "Point") {
-          const coords = feature.coordinates;
-          L.marker([coords[1], coords[0]]).addTo(map);
-          this.selectedLocation.set( location._id );
-        }
-      });
-    }
+    this.selectedLocation.set(location);
     let route, valueProp, units;
     const mapTypeValue = mapType.get();
+    if(!location) return;
     if(mapTypeValue === "passengerFlow"){
       route = "passengerFlowsByCountry";
       valueProp = "estimatedPassengers";
@@ -106,6 +89,7 @@ Template.map.onRendered(function () {
         result[id] = resp.data[id][valueProp];
       }
       renderGeoJSON(result, units);
+      L.geoJson({features: location.displayGeoJSON }).addTo(map);
     });
   });
 });
@@ -122,8 +106,11 @@ Template.map.helpers({
       return type;
     });
   },
-  selectedLocation: () => {
-    return Template.instance().selectedLocation.get();
+  selectedLocationName: () => {
+    const selectedLocation = Template.instance().selectedLocation.get();
+    if(selectedLocation) {
+      return selectedLocation.displayName + (selectedLocation.type === "airport" ? " Airport" : "");
+    }
   }
 });
 

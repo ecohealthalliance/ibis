@@ -4,7 +4,7 @@ import {
   Airports,
   PassengerFlows
 } from './FlightDB';
-import WorldGeoJSON from '/imports/world.geo.json';
+import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 
 // Initialize with names used by airport data set that are not present in the
 // world geojson file.
@@ -68,14 +68,28 @@ let api = new Restivus({
 */
 api.addRoute('topLocations', {
   get: function() {
+    const periodDays = 14;
     // Only return locations with incoming passengers
-    let arrivalAirports = PassengerFlows.aggregate([{
-      $group: {
-        _id: "$arrivalAirport"
+    let arrivalAirportToPassengers = _.object(PassengerFlows.aggregate([{
+      $match: {
+        periodDays: periodDays
       }
-    }]).map((x)=> "airport:" + x._id);
+    }, {
+      $group: {
+        _id: "$arrivalAirport",
+        totalPassengers: { $sum: "$estimatedPassengers" }
+      }
+    }]).map((x)=> [x._id, x.totalPassengers]));
     return {
-      locations: Locations.find({_id: {$in: arrivalAirports}}).fetch()
+      locations: Locations.find({
+        airportIds: {$in: Object.keys(arrivalAirportToPassengers)}
+      }).map((location)=>{
+        location.totalPassengers = 0;
+        location.airportIds.forEach((airportId)=>{
+          location.totalPassengers += arrivalAirportToPassengers[airportId] / periodDays || 0;
+        });
+        return location;
+      })
     };
   }
 });
@@ -181,7 +195,7 @@ api.addRoute('locations/:locationId/passengerFlowsByCountry', {
     const location = Locations.findOne(this.urlParams.locationId);
     const periodDays = 14;
     const results = PassengerFlows.find({
-      //periodDays: periodDays,
+      periodDays: periodDays,
       arrivalAirport: {
         $in: location.airportIds
       }

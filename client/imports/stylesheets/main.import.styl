@@ -11,3 +11,20 @@
 
 .navbar-brand
   bg('/images/ibis-logo-sm.png', 102px, 30px)
+
+.tooltip 
+  z-index 1001
+  pointer-events none
+  transition opacity .1s ease-out
+  opacity 0
+  background white
+  border 1px solid gray
+  border-radius 2px
+  padding 5px
+  width 200px
+
+.tooltip.hide
+  opacity 0
+
+.tooltip.show
+  opacity 1

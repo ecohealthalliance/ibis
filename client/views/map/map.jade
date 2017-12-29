@@ -6,7 +6,7 @@ template(name='map')
         select#map-type
           each mapTypes
             option(value=name selected=selected)=label
-        a(data-tooltip-top="-200" data-tooltip="Estimated passenger flow shows the number of people from each country of origin that arrive at the target location as their terminal destination. Direct seat flow shows the number of seats available on direct flights arriving at the target location.")
+        a.tooltip-btn(data-tooltip-top="-200" data-tooltip="Estimated passenger flow shows the number of people from each country of origin that arrive at the target location as their terminal destination. Direct seat flow shows the number of seats available on direct flights arriving at the target location.")
           i.fa.fa-question-circle
     #map
     +bioeventPanel dateRange=dateRange

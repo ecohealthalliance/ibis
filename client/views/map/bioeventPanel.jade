@@ -2,6 +2,8 @@ template(name='bioeventPanel')
   .bioevent-panel.side-panel
     .header
       h5 Connected Events
+        a.tooltip-btn(data-tooltip-top="-200" data-tooltip="This is a ranked list of disease events that currently threaten the focused location via the flight network.")
+          i.fa.fa-question-circle
     ul.list-unstyled.bioevent-items
       each bioevents
         +bioeventItem locations=locations timeseries=timeseries eventName=eventName dateRange=../dateRange

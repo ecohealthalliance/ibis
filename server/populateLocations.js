@@ -5,7 +5,7 @@ import {
 } from './FlightDB';
 import StateGeoJSON from '/imports/geoJSON/ch_2016_us_state_500k.geo.json';
 
-let stateGeoJSONIndex = {}
+let stateGeoJSONIndex = {};
 StateGeoJSON.features.forEach((stateF)=>{
   stateGeoJSONIndex[stateF['properties']['STUSPS']] = [stateF];
 });

@@ -2,7 +2,6 @@
 import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
-import Locations from '/imports/collections/Locations';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import Constants from '/imports/constants';
 
@@ -30,13 +29,12 @@ Template.splash.onRendered(function() {
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
   let geoJsonLayer = null;
+  let hoverMarker = null;
   const renderGeoJSON = (mapData, units="")=>{
     const maxValue = _.max(_.values(_.omit(mapData, "US")));
     if(geoJsonLayer){
       map.removeLayer(geoJsonLayer);
     }
-    let marker = null;
-    let markerForLayer = null;
     geoJsonLayer = L.layerGroup([L.geoJson(WorldGeoJSON, {
       style: (feature) =>{
         let value = mapData[feature.properties.iso_a2];
@@ -50,28 +48,21 @@ Template.splash.onRendered(function() {
       },
       onEachFeature: (feature, layer) =>{
         layer.on('mouseover', (event)=>{
-          if(marker){
-            if(layer !== markerForLayer){
-              geoJsonLayer.removeLayer(marker);
-            } else {
-              return;
-            }
+          if(hoverMarker) {
+            map.removeLayer(hoverMarker);
           }
-          markerForLayer = layer;
           let value = mapData[feature.properties.iso_a2] || 0;
-          marker = L.marker(event.latlng, {
+          hoverMarker = L.marker(event.latlng, {
             icon: L.divIcon({
               className: "hover-marker",
               html: `${feature.properties.name_long}: ${Math.floor(value).toLocaleString()} ${units}`
             })
-          });
-          geoJsonLayer.addLayer(marker);
+          }).addTo(map);
         });
       }
     })]).addTo(map);
   };
   renderGeoJSON({});
-  let hoverMarker = null;
   this.autorun(()=> {
     let locations = this.locations.get();
     let airportMax = 0;

@@ -1,4 +1,4 @@
-import WorldGeoJSON from '/imports/world.geo.json';
+import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 
 const RAMP = chroma.scale(["#ffffff", "#a10000"]).colors(10);
 const getColor = (val) =>{
@@ -11,7 +11,6 @@ Template.bioeventItem.onCreated(function () {
 });
  
 Template.bioeventItem.onRendered(function () {
-  L.Icon.Default.imagePath = '/packages/bevanhunt_leaflet/images/';
   const map = L.map(this.$('.minimap')[0], {
     zoomControl:false,
     attributionControl: false

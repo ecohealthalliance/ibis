@@ -2,10 +2,10 @@
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Locations from '/imports/collections/Locations';
-import WorldGeoJSON from '/imports/world.geo.json';
+import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
+import Constants from '/imports/constants';
 
-const MILLIS_PER_DAY = 60 * 60 * 24 * 1000;
-const RAMP = chroma.scale(["#ffffff", "#a10000"]).colors(10);
+const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
 const getColor = (val) =>{
   //return a color from the ramp based on a 0 to 1 value.
   //If the value exceeds one the last stop is used.
@@ -16,61 +16,24 @@ Template.map.onCreated(function () {
   this.mapType = new ReactiveVar("passengerFlow");
   const endDate = new Date();
   const dateRange = this.dateRange = {
-    start: new Date(endDate - 600 * MILLIS_PER_DAY),
+    start: new Date(endDate - 600 * Constants.MILLIS_PER_DAY),
     end: endDate
   };
-  const bioevents = this.bioevents = new ReactiveVar([]);
-  const bioeventIds = this.bioeventIds = new ReactiveVar([]);
-  const bioeventIdsForPage = this.bioeventIdsForPage = new ReactiveVar([]);
   const selectedLocation = this.selectedLocation = new ReactiveVar();
-
   this.autorun(() => {
-    const airportId     = FlowRouter.getParam('airportId');
-    if( !_.isUndefined(airportId) ) {
-      this.subscribe('locations', airportId);
-    }
-  });
-
-
-  HTTP.get('/api/locations/airport:SEA/bioevents', {}, (err, resp)=> {
-    if(err) return console.error(err);
-    bioeventIds.set(resp.data.ids);
-  });
-  this.autorun(()=> {
-    // TODO: Add pagination
-    bioeventIdsForPage.set(bioeventIds.get());
-  });
-  this.autorun(()=> {
-    let bioeventIdsToGet = bioeventIdsForPage.get();
-    if(bioeventIdsToGet.length > 0) {
-      HTTP.get('https://eidr-connect.eha.io/api/events-with-resolved-data', {
-        params: {
-          ids: bioeventIdsToGet,
-          startDate: dateRange.start.toISOString(),
-          endDate: dateRange.end.toISOString()
-        },
-      }, (err, resp)=> {
-        if(err) return console.error(err);
-        bioevents.set(resp.data.events);
-      });
-    }
+    this.subscribe('locations', FlowRouter.getParam('locationId'));
   });
 });
  
 Template.map.onRendered(function () {
-  
-  L.Icon.Default.imagePath = '/packages/bevanhunt_leaflet/images/';
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
-  let geoJsonLayer = null;
+  let geoJsonLayer = L.layerGroup([]).addTo(map);
   const renderGeoJSON = (mapData, units="")=>{
     const maxValue = _.max(_.values(_.omit(mapData, "US")));
-    if(geoJsonLayer){
-      map.removeLayer(geoJsonLayer);
-    }
+    geoJsonLayer.clearLayers();
     let marker = null;
-    let markerForLayer = null;
-    geoJsonLayer = L.layerGroup([L.geoJson(WorldGeoJSON, {
+    geoJsonLayer.addLayer(L.geoJson(WorldGeoJSON, {
       style: (feature) =>{
         let value = mapData[feature.properties.iso_a2];
         return {
@@ -83,41 +46,29 @@ Template.map.onRendered(function () {
       onEachFeature: (feature, layer) =>{
         layer.on('mouseover', (event)=>{
           if(marker){
-            if(layer !== markerForLayer){
-              geoJsonLayer.removeLayer(marker);
-            } else {
-              return;
-            }
+            geoJsonLayer.removeLayer(marker);
           }
-          markerForLayer = layer;
           let value = mapData[feature.properties.iso_a2] || 0;
           marker = L.marker(event.latlng, {
             icon: L.divIcon({
-              className: "country-name",
+              className: "hover-marker",
               html: `${feature.properties.name_long}: ${Math.floor(value).toLocaleString()} ${units}`
             })
           });
           geoJsonLayer.addLayer(marker);
         });
       }
-    })]).addTo(map);
+    }));
   };
   renderGeoJSON({});
   const mapType = this.mapType;
   this.autorun(()=>{
-    const locationId  = FlowRouter.getParam('airportId');
-    const location    = Locations.findOne( { _id: locationId } );
-    if( location ) {
-      _.each(location.displayGeoJSON, feature => {
-        if(feature.type == "Point") {
-          const coords = feature.coordinates[0];
-          L.marker([coords[1], coords[0]]).addTo(map);
-          this.selectedLocation.set( location._id );
-        }
-      });
-    }
+    const locationId = FlowRouter.getParam('locationId');
+    const location = Locations.findOne({ _id: locationId });
+    this.selectedLocation.set(location);
     let route, valueProp, units;
     const mapTypeValue = mapType.get();
+    if(!location) return;
     if(mapTypeValue === "passengerFlow"){
       route = "passengerFlowsByCountry";
       valueProp = "estimatedPassengers";
@@ -138,14 +89,12 @@ Template.map.onRendered(function () {
         result[id] = resp.data[id][valueProp];
       }
       renderGeoJSON(result, units);
+      L.geoJson({features: location.displayGeoJSON }).addTo(map);
     });
   });
-
-
 });
  
 Template.map.helpers({
-  bioevents: ()=> Template.instance().bioevents.get(),
   dateRange: ()=> Template.instance().dateRange,
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
@@ -157,8 +106,11 @@ Template.map.helpers({
       return type;
     });
   },
-  selectedLocation: () => {
-    return Template.instance().selectedLocation.get();
+  selectedLocationName: () => {
+    const selectedLocation = Template.instance().selectedLocation.get();
+    if(selectedLocation) {
+      return selectedLocation.displayName + (selectedLocation.type === "airport" ? " Airport" : "");
+    }
   }
 });
 

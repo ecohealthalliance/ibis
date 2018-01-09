@@ -4,15 +4,14 @@ FlowRouter.route('/', {
   }
 });
 
-FlowRouter.route('/map', {
+FlowRouter.route('/locations/:locationId', {
   action: function(params, queryParams) {
     BlazeLayout.render('layout', {main: 'map'});
   }
 });
 
-FlowRouter.route('/map/:airportId', {
+FlowRouter.route('/about', {
   action: function(params, queryParams) {
-    BlazeLayout.render('layout', {main: 'map'});
+    BlazeLayout.render('layout', {main: 'about'});
   }
 });
-

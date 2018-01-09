@@ -25,6 +25,8 @@ $subheader-height = 44px
   right 0
   left 0
   bottom 0
+  .leaflet-container
+    background lightblue
 
 #map
   position absolute
@@ -33,11 +35,13 @@ $subheader-height = 44px
   top $subheader-height
   bottom 0
 
-  .country-name
+  .hover-marker
     color white
     text-shadow 1px 1px 1px rgba(0,0,0,.5)
     top -1em
+    left 3em
     width 10em !important
+    pointer-events none
 
 .map-controls
   display inline-block

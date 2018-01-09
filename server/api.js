@@ -72,7 +72,7 @@ api.addRoute('topLocations', {
     // Only return locations with incoming passengers
     let arrivalAirportToPassengers = _.object(PassengerFlows.aggregate([{
       $match: {
-        periodDays: periodDays
+        simGroup: 'ibis14day'
       }
     }, {
       $group: {
@@ -195,7 +195,7 @@ api.addRoute('locations/:locationId/passengerFlowsByCountry', {
     const location = Locations.findOne(this.urlParams.locationId);
     const periodDays = 14;
     const results = PassengerFlows.find({
-      periodDays: periodDays,
+      simGroup: 'ibis14day',
       arrivalAirport: {
         $in: location.airportIds
       }

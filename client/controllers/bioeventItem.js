@@ -15,9 +15,9 @@ Template.bioeventItem.onRendered(function () {
     zoomControl:false,
     attributionControl: false
   });
-  const locationMap = this.data.locations;
+  const locationMap = this.data.event.locations;
   const maxValue = _.max(WorldGeoJSON.features.map(
-    (feature)=>locationMap[feature.properties.iso_a2]
+    (feature)=> locationMap[feature.properties.iso_a2]
   ));
   const geoJsonLayer = L.geoJson(WorldGeoJSON, {
     style: (feature) =>{
@@ -37,7 +37,7 @@ Template.bioeventItem.onRendered(function () {
   // map.touchZoom.disable();
   const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
   const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
-  const globalMax = 500000;
+  const timelineMax = _.max(_.pluck(this.data.event.timeseries, 'value'));
   const chart = c3.generate({
     bindto: this.$('.timeline')[0],
     padding: {
@@ -47,7 +47,7 @@ Template.bioeventItem.onRendered(function () {
       text: 'Cases per day'
     },
     data: {
-      json: this.data.timeseries.map((x) => {
+      json: this.data.event.timeseries.map((x) => {
         x.date = x.date.split('T')[0];
         return x;
       }),
@@ -71,9 +71,9 @@ Template.bioeventItem.onRendered(function () {
       },
       y: {
         min: 0,
-        max: globalMax,
+        max: timelineMax,
         tick: {
-            values: [0, globalMax],
+            values: [0, timelineMax],
             format: (x) => x.toPrecision(1)
         },
         show: true

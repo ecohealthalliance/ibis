@@ -1,59 +1,12 @@
+import { _ } from 'meteor/underscore';
 import Locations from '/imports/collections/Locations';
 import {
   Flights,
-  Airports,
-  PassengerFlows
+  PassengerFlows,
+  EventAirportRanks
 } from './FlightDB';
-import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
+import { airportToCountryCode } from '/imports/geoJSON/indecies';
 
-// Initialize with names used by airport data set that are not present in the
-// world geojson file.
-const nameToISOs = {
-  'North Korea': 'KP',
-  'South Korea': 'KR',
-  'United States Minor Outlying Islands': 'US',
-  'Macau': 'MO',
-  'Reunion': 'RE',
-  'Christmas Island': 'CX',
-  'Guadeloupe': 'GP',
-  'Ivory Coast (Cote d\'Ivoire)': 'CI',
-  'French Guiana': 'GF',
-  'Western Samoa': 'WS',
-  'Saint Vincent and Grenadines': 'VC',
-  'Guinea Bissau': 'GW',
-  'Cocos (Keeling) Islands': 'CC',
-  'Grenada and South Grenadines': 'GD',
-  'Mayotte': 'YT',
-  'Martinique': 'MQ',
-  'Tuvalu': 'TV',
-  'Gibraltar': 'GI'
-};
-const nameProps = [
-  'name',
-  'name_long',
-  'formal_en',
-  'name_alt',
-  'name_sort',
-  'formal_en',
-  'brk_name'
-];
-WorldGeoJSON.features.forEach(({ properties }) => {
-  nameProps.forEach((prop) => {
-    const value = properties[prop];
-    if (value) {
-      nameToISOs[value] = properties.iso_a2;
-    }
-  });
-});
-
-const airportToCountry = _.chain(Airports.find({}).fetch())
-  .groupBy('_id')
-  .map((x, id) => {
-    const countryName = x[0].countryName;
-    return [id, nameToISOs[countryName]];
-  })
-  .object()
-  .value();
 
 let api = new Restivus({
   useDefaultAuth: true,
@@ -68,29 +21,51 @@ let api = new Restivus({
 */
 api.addRoute('topLocations', {
   get: function() {
-    const periodDays = 14;
-    // Only return locations with incoming passengers
-    let arrivalAirportToPassengers = _.object(PassengerFlows.aggregate([{
-      $match: {
-        simGroup: 'ibis14day'
-      }
-    }, {
-      $group: {
-        _id: "$arrivalAirport",
-        totalPassengers: { $sum: "$estimatedPassengers" }
-      }
-    }]).map((x)=> [x._id, x.totalPassengers]));
-    return {
-      locations: Locations.find({
-        airportIds: {$in: Object.keys(arrivalAirportToPassengers)}
-      }).map((location)=>{
-        location.totalPassengers = 0;
-        location.airportIds.forEach((airportId)=>{
-          location.totalPassengers += arrivalAirportToPassengers[airportId] / periodDays || 0;
-        });
-        return location;
-      })
-    };
+    if(this.queryParams.metric === "threatLevel") {
+      let arrivalAirportToRankScore = _.object(EventAirportRanks.aggregate([{
+        $group: {
+          _id: "$airportId",
+          rank: {
+            $sum: "$rank"
+          }
+        }
+      }]).map((x)=> [x._id, x.rank]));
+      return {
+        locations: Locations.find({
+          airportIds: {$in: Object.keys(arrivalAirportToRankScore)}
+        }).map((location)=>{
+          location.rank = 0;
+          location.airportIds.forEach((airportId)=>{
+            location.rank += arrivalAirportToRankScore[airportId] || 0;
+          });
+          return location;
+        })
+      };
+    } else {
+      const periodDays = 14;
+      // Only return locations with incoming passengers
+      let arrivalAirportToPassengers = _.object(PassengerFlows.aggregate([{
+        $match: {
+          simGroup: 'ibis14day'
+        }
+      }, {
+        $group: {
+          _id: "$arrivalAirport",
+          totalPassengers: { $sum: "$estimatedPassengers" }
+        }
+      }]).map((x)=> [x._id, x.totalPassengers]));
+      return {
+        locations: Locations.find({
+          airportIds: {$in: Object.keys(arrivalAirportToPassengers)}
+        }).map((location)=>{
+          location.totalPassengers = 0;
+          location.airportIds.forEach((airportId)=>{
+            location.totalPassengers += arrivalAirportToPassengers[airportId] / periodDays || 0;
+          });
+          return location;
+        })
+      };
+    }
   }
 });
 
@@ -171,7 +146,7 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
     ]);
     let statsByCountry = {};
     results.forEach((airportStats)=>{
-      const country = airportToCountry[airportStats._id];
+      const country = airportToCountryCode[airportStats._id];
       const sofar = statsByCountry[country] || {
         numFlights: 0,
         numSeats: 0
@@ -195,14 +170,14 @@ api.addRoute('locations/:locationId/passengerFlowsByCountry', {
     const location = Locations.findOne(this.urlParams.locationId);
     const periodDays = 14;
     const results = PassengerFlows.find({
-      simGroup: 'ibis14day',
+      periodDays: periodDays,
       arrivalAirport: {
         $in: location.airportIds
       }
     }).fetch();
     let statsByCountry = {};
     results.forEach((result)=> {
-      const country = airportToCountry[result.departureAirport];
+      const country = airportToCountryCode[result.departureAirport];
       const sofar = statsByCountry[country] || {
         estimatedPassengers: 0
       };
@@ -218,14 +193,58 @@ api.addRoute('locations/:locationId/passengerFlowsByCountry', {
 */
 api.addRoute('locations/:locationId/bioevents', {
   get: function() {
+    var location = Locations.findOne(this.urlParams.locationId);
     return {
-      ids:[
-        // TODO: Populate with ranked list of bioevents
-        'Hozt7LY7mJhcYxGQw',
-        'YqpQ8B6QkTysGeR4Q',
-        'vndMKRLPYS9pyc2ev',
-        'gfnPs88SBb3aaBeeA'
-      ]
+      results: EventAirportRanks.aggregate([{
+        $match: {
+          airportId: {
+            $in: location.airportIds
+          }
+        }
+      }, {
+        $group: {
+          _id: "$event._id",
+          rank: {
+            $sum: "$rank"
+          },
+          event: {
+            $first: "$event"
+          }
+        }
+      }, {
+        $sort: {
+          rank: -1
+        }
+      }, {
+        $limit: 10
+      }])
+    };
+  }
+});
+
+/*
+@api {get} bioevents Get a ranked list of bioevents
+*/
+api.addRoute('bioevents', {
+  get: function() {
+    return {
+      results: EventAirportRanks.aggregate([{
+        $group: {
+          _id: "$event._id",
+          rank: {
+            $sum: "$rank"
+          },
+          event: {
+            $first: "$event"
+          }
+        }
+      }, {
+        $sort: {
+          rank: -1
+        }
+      }, {
+        $limit: 10
+      }])
     };
   }
 });

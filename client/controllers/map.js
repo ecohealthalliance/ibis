@@ -16,7 +16,7 @@ Template.map.onCreated(function () {
   this.mapType = new ReactiveVar("passengerFlow");
   const endDate = new Date();
   const dateRange = this.dateRange = {
-    start: new Date(endDate - 600 * Constants.MILLIS_PER_DAY),
+    start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
     end: endDate
   };
   const selectedLocation = this.selectedLocation = new ReactiveVar();
@@ -34,7 +34,7 @@ Template.map.onRendered(function () {
     geoJsonLayer.clearLayers();
     let marker = null;
     geoJsonLayer.addLayer(L.geoJson(WorldGeoJSON, {
-      style: (feature) =>{
+      style: (feature)=>{
         let value = mapData[feature.properties.iso_a2];
         return {
           fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
@@ -43,7 +43,7 @@ Template.map.onRendered(function () {
           fillOpacity: 1
         };
       },
-      onEachFeature: (feature, layer) =>{
+      onEachFeature: (feature, layer)=>{
         layer.on('mouseover', (event)=>{
           if(marker){
             geoJsonLayer.removeLayer(marker);
@@ -116,7 +116,6 @@ Template.map.helpers({
 
 Template.map.events({
   'change #map-type': (event, instance)=>{
-    console.log(event);
     instance.mapType.set(event.target.value);
   }
 });

@@ -15,7 +15,11 @@
 .map-controls .tooltip-btn
   margin-left 8px
 
-.tooltip 
+.tooltip-btn:link
+.tooltip-btn:visited
+  color white
+
+.tooltip
   z-index 1001
   pointer-events none
   transition opacity .1s ease-out
@@ -35,6 +39,14 @@
 .about-content
   background lightblue
   padding 1em
+  max-width 800px
+  margin 10px
+  h1
+    font-size 1.6em
+    color $primary-color
+  h2
+    font-size 1.3em
+    color $primary-color
 
 footer
   border-top 2px solid $secondary

@@ -1,6 +1,7 @@
 var Flights = null;
 var Airports = null;
 var PassengerFlows = null;
+var EventAirportRanks = null;
 
 try {
   let db = new MongoInternals.RemoteCollectionDriver(process.env.FLIGHT_MONGO_URL);
@@ -11,6 +12,9 @@ try {
     _driver: db
   });
   PassengerFlows = new Meteor.Collection('passengerFlows', {
+    _driver: db
+  });
+  EventAirportRanks = new Meteor.Collection('eventAirportRanks', {
     _driver: db
   });
   Flights.rawCollection().createIndex({
@@ -30,5 +34,6 @@ try {
 module.exports = {
   Flights: Flights,
   Airports: Airports,
-  PassengerFlows: PassengerFlows
+  PassengerFlows: PassengerFlows,
+  EventAirportRanks: EventAirportRanks
 };

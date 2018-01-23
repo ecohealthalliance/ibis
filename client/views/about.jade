@@ -1,11 +1,30 @@
 template(name="about")
   .about-content
-    | IBIS is a system for monitoring infectious disease bio-events that threaten
-    | the international flight network.
-    | The system runs simulations based on current and future flight schedules to estimate
-    | flows of passengers between airports.
-    | This is combined with a system that extracts the dates and locations of
-    | disease cases from mentions on ProMED-mail to identify locations
-    | in the US that diseases are more likely to reach through the flight network.
-    b IBIS is currently under development. The information that is currently
-      | displayed may be mock data.
+    +markdown
+      IBIS is a system for monitoring infectious disease bio-events that threaten
+      the international flight network.
+      The system runs simulations based on current and future flight schedules to estimate
+      flows of passengers between airports.
+      This is combined with a system that extracts the dates and locations of
+      disease cases from mentions on ProMED-mail to identify locations
+      in the US that diseases are more likely to reach through the flight network.
+
+      __IBIS is currently under development. The information that is currently
+      displayed may be mock data__
+
+  .about-content
+    +markdown
+      # Rank metrics
+      
+      ## Threat Level
+
+      The threat level is based on a rough approximation of the number of incoming infected passengers.
+      It is computed as follows:
+      
+      __ThreatLevel__(event, inboundAirport) =  *sumOverAirports*[ __EstimatedPassengerFlow__(airport, inboundAirport) * __ProbabilityPassengerInfected__(event, airport) ]
+      
+      __ProbabilityPassengerInfected__(event, departureAirport) = __CurrentNumberInfectedInAirportCatchment__(event, departureAirport) / __CatchmentPopulation__(departureAirport)
+      
+      __CatchmentPopulation__(airport) = Population of airport's country
+
+      __CurrentNumberInfectedInAirportCatchment__(event, airport) = Cumulative cases in airport's country over last two weeks

@@ -13,14 +13,21 @@ const getColor = (val) =>{
 };
 
 Template.splash.onCreated(function() {
+  this.mapType = new ReactiveVar("threatLevel");
   this.locations = new ReactiveVar([]);
-  HTTP.get('/api/topLocations', {}, (err, resp)=> {
-    if(err) return console.error(err);
-    this.locations.set(resp.data.locations);
+  this.autorun(()=>{
+    HTTP.get('/api/topLocations', {
+      params: {
+        metric: this.mapType.get()
+      }
+    }, (err, resp)=> {
+      if(err) return console.error(err);
+      this.locations.set(resp.data.locations);
+    });
   });
   const endDate = new Date();
   const dateRange = this.dateRange = {
-    start: new Date(endDate - 600 * Constants.MILLIS_PER_DAY),
+    start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
     end: endDate
   };
 });
@@ -36,7 +43,7 @@ Template.splash.onRendered(function() {
       map.removeLayer(geoJsonLayer);
     }
     geoJsonLayer = L.layerGroup([L.geoJson(WorldGeoJSON, {
-      style: (feature) =>{
+      style: (feature)=>{
         let value = mapData[feature.properties.iso_a2];
         return {
           fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
@@ -46,7 +53,7 @@ Template.splash.onRendered(function() {
           fillOpacity: feature.properties.iso_a2 == 'US' ? 0.0 : 1.0
         };
       },
-      onEachFeature: (feature, layer) =>{
+      onEachFeature: (feature, layer)=>{
         layer.on('mouseover', (event)=>{
           if(hoverMarker) {
             map.removeLayer(hoverMarker);
@@ -63,18 +70,22 @@ Template.splash.onRendered(function() {
     })]).addTo(map);
   };
   renderGeoJSON({});
+  let locationLayer = null;
   this.autorun(()=> {
+    let layers = [];
     let locations = this.locations.get();
     let airportMax = 0;
     let stateMax = 0;
     locations.map((x)=>{
-      if(x.type === 'state' && x.totalPassengers > stateMax) stateMax = x.totalPassengers;
-      if(x.type === 'airport' && x.totalPassengers > airportMax) airportMax = x.totalPassengers;
+      let value = this.mapType.get() === "passengerFlow" ? x.totalPassengers : x.rank;
+      if(x.type === 'state' && value > stateMax) stateMax = value;
+      if(x.type === 'airport' && value > airportMax) airportMax = value;
     });
     locations.forEach((location)=>{
       if(!location.displayGeoJSON) return;
+      let value = this.mapType.get() === "passengerFlow" ? location.totalPassengers : location.rank;
       var geojsonMarkerOptions = {
-          radius: 1 + 12 * location.totalPassengers / airportMax,
+          radius: 1 + 12 * value / airportMax,
           weight: 0,
           opacity: 1
       };
@@ -83,7 +94,6 @@ Template.splash.onRendered(function() {
           return L.circleMarker(latlng, geojsonMarkerOptions);
         },
         style: (feature) =>{
-          let value = location.totalPassengers;
           let maxValue = location.type === 'airport' ? airportMax : stateMax;
           return {
             fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
@@ -95,7 +105,6 @@ Template.splash.onRendered(function() {
         onEachFeature: (feature, layer)=>{
           layer.on({
             click: (event)=>{
-              console.log(location._id);
               FlowRouter.go('/locations/:locationId', {locationId: location._id});
             },
             mouseover: (event)=>{
@@ -105,7 +114,9 @@ Template.splash.onRendered(function() {
               hoverMarker = L.marker(event.latlng, {
                 icon: L.divIcon({
                   className: "hover-marker",
-                  html: `${location.displayName}: ${Math.floor(location.totalPassengers).toLocaleString()} passengers per day`
+                  html: location.displayName + ": " + (this.mapType.get() === "passengerFlow" ?
+                    Math.floor(location.totalPassengers).toLocaleString() + " passengers per day" :
+                    location.rank.toFixed(2))
                 })
               }).addTo(map);
               layer.setStyle({
@@ -118,15 +129,32 @@ Template.splash.onRendered(function() {
             }
           });
         }
-      }).addTo(map);
+      });
+      layers.push(marker);
     });
+    if(locationLayer) {
+      map.removeLayer(locationLayer);
+    }
+    locationLayer = new L.layerGroup(layers).addTo(map);
   });
 });
  
 Template.splash.helpers({
   dateRange: ()=> Template.instance().dateRange,
+  mapTypes: ()=>{
+    const selectedType = Template.instance().mapType.get();
+    return [
+      {name:"threatLevel", label:"Threat Level"},
+      {name:"passengerFlow", label:"Estimated Passenger Flow"},
+    ].map((type)=>{
+      type.selected = type.name == selectedType;
+      return type;
+    });
+  }
 });
 
 Template.splash.events({
-
+  'change #map-type': (event, instance)=>{
+    instance.mapType.set(event.target.value);
+  }
 });

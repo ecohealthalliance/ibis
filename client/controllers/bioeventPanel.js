@@ -3,43 +3,52 @@ import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 
-Template.bioeventPanel.onCreated(function () {
+Template.bioeventPanel.onCreated(function() {
   const dateRange = this.dateRange = this.data.dateRange;
   const bioevents = this.bioevents = new ReactiveVar([]);
-  const bioeventIds = this.bioeventIds = new ReactiveVar([]);
-  const bioeventIdsForPage = this.bioeventIdsForPage = new ReactiveVar([]);
+  const rankMetric = this.rankMetric = new ReactiveVar("threatLevel");
 
   this.autorun(()=> {
     const locationId = FlowRouter.getParam('locationId');
     this.subscribe('locations', locationId);
-
-    HTTP.get(`/api/locations/${locationId}/bioevents`, {}, (err, resp)=> {
-      if(err) return console.error(err);
-      bioeventIds.set(resp.data.ids);
-    });
-  });
-  this.autorun(()=> {
-    // TODO: Add pagination
-    bioeventIdsForPage.set(bioeventIds.get());
-  });
-  this.autorun(()=> {
-    let bioeventIdsToGet = bioeventIdsForPage.get();
-    if(bioeventIdsToGet.length > 0) {
-      HTTP.get('https://eidr-connect.eha.io/api/events-with-resolved-data', {
-        params: {
-          ids: bioeventIdsToGet,
-          startDate: dateRange.start.toISOString(),
-          endDate: dateRange.end.toISOString()
-        },
-      }, (err, resp)=> {
+    const requestParams = {
+      params: {
+        metric: rankMetric.get()
+      }
+    };
+    if(locationId) {
+      HTTP.get(`/api/locations/${locationId}/bioevents`, requestParams, (err, resp)=> {
         if(err) return console.error(err);
-        bioevents.set(resp.data.events);
+        bioevents.set(EJSON.parse(resp.content).results);
+      });
+    } else {
+      HTTP.get("/api/bioevents", requestParams, (err, resp)=> {
+        if(err) return console.error(err);
+        bioevents.set(EJSON.parse(resp.content).results);
       });
     }
   });
 });
 
 Template.bioeventPanel.helpers({
-  bioevents: ()=> Template.instance().bioevents.get(),
+  bioevents: ()=> Template.instance().bioevents.get().map((x)=> {
+    x.rank = x.rank.toFixed(2);
+    return x;
+  }),
   dateRange: ()=> Template.instance().dateRange,
+  rankMetrics: ()=> {
+    const selectedType = Template.instance().rankMetric.get();
+    return [
+      {name:"rankMetric", label:"Ranked by Threat Level"}
+    ].map((type)=> {
+      type.selected = type.name == selectedType;
+      return type;
+    });
+  }
+});
+
+Template.bioeventPanel.events({
+  'change #rank-metric': (event, instance)=> {
+    instance.rankMetric.set(event.target.value);
+  }
 });

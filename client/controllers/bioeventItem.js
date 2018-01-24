@@ -1,26 +1,27 @@
+/* global L, chroma */
+import { _ } from 'meteor/underscore';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 
 const RAMP = chroma.scale(["#ffffff", "#a10000"]).colors(10);
-const getColor = (val) =>{
+const getColor = (val) => {
   //return a color from the ramp based on a 0 to 1 value.
   //If the value exceeds one the last stop is used.
   return RAMP[Math.floor(RAMP.length * Math.max(0, Math.min(val, 0.99)))];
 };
 
-Template.bioeventItem.onCreated(function () {
-});
- 
-Template.bioeventItem.onRendered(function () {
+Template.bioeventItem.onCreated(function() {});
+
+Template.bioeventItem.onRendered(function() {
   const map = L.map(this.$('.minimap')[0], {
-    zoomControl:false,
+    zoomControl: false,
     attributionControl: false
   });
   const locationMap = this.data.event.locations;
   const maxValue = _.max(WorldGeoJSON.features.map(
-    (feature)=> locationMap[feature.properties.iso_a2]
+    (feature) => locationMap[feature.properties.iso_a2]
   ));
   const geoJsonLayer = L.geoJson(WorldGeoJSON, {
-    style: (feature) =>{
+    style: (feature) => {
       const value = locationMap[feature.properties.iso_a2];
       return {
         fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
@@ -38,19 +39,31 @@ Template.bioeventItem.onRendered(function () {
   const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
   const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
   const timelineMax = _.max(_.pluck(this.data.event.timeseries, 'value'));
+  let formattedTimeseries = [];
+  let prev = null;
+  this.data.event.timeseries.forEach((x) => {
+    if (prev) {
+      formattedTimeseries.push({
+        date: prev.date,
+        value: x.value
+      });
+    }
+    x.date = x.date.split('T')[0];
+    formattedTimeseries.push(x);
+    prev = x;
+  });
   const chart = c3.generate({
     bindto: this.$('.timeline')[0],
     padding: {
-      right: 10
+      right: 20,
+      left: 40,
+      top: 10
     },
     title: {
       text: 'Cases per day'
     },
     data: {
-      json: this.data.event.timeseries.map((x) => {
-        x.date = x.date.split('T')[0];
-        return x;
-      }),
+      json: formattedTimeseries,
       keys: {
         x: 'date',
         value: ['value'],
@@ -63,8 +76,8 @@ Template.bioeventItem.onRendered(function () {
         min: startDateStr,
         max: endDateStr,
         tick: {
-            // this also works for non timeseries data
-            values: [startDateStr, endDateStr]
+          // this also works for non timeseries data
+          values: [startDateStr, endDateStr]
         },
         type: 'timeseries',
         show: true
@@ -73,8 +86,8 @@ Template.bioeventItem.onRendered(function () {
         min: 0,
         max: timelineMax,
         tick: {
-            values: [0, timelineMax],
-            format: (x) => x.toPrecision(1)
+          values: [0, timelineMax],
+          format: (x) => x.toPrecision(1)
         },
         show: true
       }

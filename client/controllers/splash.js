@@ -144,8 +144,8 @@ Template.splash.helpers({
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
     return [
-      {name:"threatLevel", label:"Threat Level"},
-      {name:"passengerFlow", label:"Estimated Passenger Flow"},
+      {name:"threatLevel", label:"Threat Level Exposure Map"},
+      {name:"passengerFlow", label:"Estimated Inbound Passenger Flow Map"},
     ].map((type)=>{
       type.selected = type.name == selectedType;
       return type;

@@ -6,7 +6,7 @@ import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import Constants from '/imports/constants';
 
 const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
-const getColor = (val) =>{
+const getColor = (val)=> {
   //return a color from the ramp based on a 0 to 1 value.
   //If the value exceeds one the last stop is used.
   return RAMP[Math.floor(RAMP.length * Math.max(0, Math.min(val, 0.99)))];
@@ -25,16 +25,16 @@ Template.map.onCreated(function () {
   });
 });
  
-Template.map.onRendered(function () {
+Template.map.onRendered(function() {
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
   let geoJsonLayer = L.layerGroup([]).addTo(map);
-  const renderGeoJSON = (mapData, units="")=>{
+  const renderGeoJSON = (mapData, units = "") => {
     const maxValue = _.max(_.values(_.omit(mapData, "US")));
     geoJsonLayer.clearLayers();
     let marker = null;
     geoJsonLayer.addLayer(L.geoJson(WorldGeoJSON, {
-      style: (feature)=>{
+      style: (feature) => {
         let value = mapData[feature.properties.iso_a2];
         return {
           fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
@@ -43,9 +43,9 @@ Template.map.onRendered(function () {
           fillOpacity: 1
         };
       },
-      onEachFeature: (feature, layer)=>{
-        layer.on('mouseover', (event)=>{
-          if(marker){
+      onEachFeature: (feature, layer) => {
+        layer.on('mouseover', (event) => {
+          if (marker) {
             geoJsonLayer.removeLayer(marker);
           }
           let value = mapData[feature.properties.iso_a2] || 0;
@@ -62,18 +62,24 @@ Template.map.onRendered(function () {
   };
   renderGeoJSON({});
   const mapType = this.mapType;
-  this.autorun(()=>{
+  this.autorun(() => {
     const locationId = FlowRouter.getParam('locationId');
     const location = Locations.findOne({ _id: locationId });
     this.selectedLocation.set(location);
     let route, valueProp, units;
     const mapTypeValue = mapType.get();
-    if(!location) return;
-    if(mapTypeValue === "passengerFlow"){
+    if (!location) return;
+    if (mapTypeValue === "passengerFlow") {
       route = "passengerFlowsByCountry";
       valueProp = "estimatedPassengers";
       units = "passengers per day";
-    } else {
+    }
+    else if (mapTypeValue === "threatLevel") {
+      route = "threatLevel";
+      valueProp = "rank";
+      units = "estimated infected passengers over two weeks";
+    }
+    else {
       route = "inboundTrafficByCountry";
       valueProp = "numSeats";
       units = "seats per day";
@@ -82,40 +88,41 @@ Template.map.onRendered(function () {
       // params: {
       //   arrivesBefore: "2017-10-10"
       // }
-    }, (err, resp)=> {
-      if(err) return console.error(err);
+    }, (err, resp) => {
+      if (err) return console.error(err);
       let result = {};
-      for(let id in resp.data) {
+      for (let id in resp.data) {
         result[id] = resp.data[id][valueProp];
       }
       renderGeoJSON(result, units);
-      L.geoJson({features: location.displayGeoJSON }).addTo(map);
+      L.geoJson({ features: location.displayGeoJSON }).addTo(map);
     });
   });
 });
  
 Template.map.helpers({
-  dateRange: ()=> Template.instance().dateRange,
-  mapTypes: ()=>{
+  dateRange: () => Template.instance().dateRange,
+  mapTypes: () => {
     const selectedType = Template.instance().mapType.get();
     return [
-      {name:"directSeats", label:"Direct Seats"},
-      {name:"passengerFlow", label:"Estimated Passenger Flow"},
-    ].map((type)=>{
+      { name: "directSeats", label: "Direct Seats by Origin Map" },
+      { name: "passengerFlow", label: "Estimated Passenger Flow by Origin Map" },
+      { name: "threatLevel", label: "Threat Level by Origin Map" }
+    ].map((type) => {
       type.selected = type.name == selectedType;
       return type;
     });
   },
   selectedLocationName: () => {
     const selectedLocation = Template.instance().selectedLocation.get();
-    if(selectedLocation) {
+    if (selectedLocation) {
       return selectedLocation.displayName + (selectedLocation.type === "airport" ? " Airport" : "");
     }
   }
 });
 
 Template.map.events({
-  'change #map-type': (event, instance)=>{
+  'change #map-type': (event, instance) => {
     instance.mapType.set(event.target.value);
   }
 });

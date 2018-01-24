@@ -24,7 +24,7 @@ api.addRoute('topLocations', {
     if(this.queryParams.metric === "threatLevel") {
       let arrivalAirportToRankScore = _.object(EventAirportRanks.aggregate([{
         $group: {
-          _id: "$airportId",
+          _id: "$arrivalAirportId",
           rank: {
             $sum: "$rank"
           }
@@ -170,7 +170,7 @@ api.addRoute('locations/:locationId/passengerFlowsByCountry', {
     const location = Locations.findOne(this.urlParams.locationId);
     const periodDays = 14;
     const results = PassengerFlows.find({
-      periodDays: periodDays,
+      simGroup: 'ibis14day',
       arrivalAirport: {
         $in: location.airportIds
       }
@@ -189,6 +189,42 @@ api.addRoute('locations/:locationId/passengerFlowsByCountry', {
 });
 
 /*
+@api {get} locations/:locationId/threatLevel
+@apiName threatLevel
+@apiGroup locations
+*/
+api.addRoute('locations/:locationId/threatLevel', {
+  get: function() {
+    const location = Locations.findOne(this.urlParams.locationId);
+    const periodDays = 14;
+    const results = EventAirportRanks.aggregate([{
+      $match: {
+        arrivalAirportId: {
+          $in: location.airportIds
+        }
+      }
+    }, {
+      $group: {
+        _id: "$departureAirportId",
+        rank: {
+          $sum: "$rank"
+        }
+      }
+    }]);
+    let statsByCountry = {};
+    results.forEach((result) => {
+      const country = airportToCountryCode[result._id];
+      const sofar = statsByCountry[country] || {
+        rank: 0
+      };
+      sofar.rank += result.rank / periodDays;
+      statsByCountry[country] = sofar;
+    });
+    return statsByCountry;
+  }
+});
+
+/*
 @api {get} locations/:locationId/bioevents Get a list of bioevents ranked by their relevance to the given location.
 */
 api.addRoute('locations/:locationId/bioevents', {
@@ -197,18 +233,15 @@ api.addRoute('locations/:locationId/bioevents', {
     return {
       results: EventAirportRanks.aggregate([{
         $match: {
-          airportId: {
+          arrivalAirportId: {
             $in: location.airportIds
           }
         }
       }, {
         $group: {
-          _id: "$event._id",
+          _id: "$eventId",
           rank: {
             $sum: "$rank"
-          },
-          event: {
-            $first: "$event"
           }
         }
       }, {
@@ -217,7 +250,14 @@ api.addRoute('locations/:locationId/bioevents', {
         }
       }, {
         $limit: 10
-      }])
+      }, {
+        $lookup: {
+          from: "resolvedEvents",
+          localField: "_id",
+          foreignField: "_id",
+          as: "event"
+        }
+      }, { $unwind: "$event" }])
     };
   }
 });
@@ -230,12 +270,9 @@ api.addRoute('bioevents', {
     return {
       results: EventAirportRanks.aggregate([{
         $group: {
-          _id: "$event._id",
+          _id: "$eventId",
           rank: {
             $sum: "$rank"
-          },
-          event: {
-            $first: "$event"
           }
         }
       }, {
@@ -244,7 +281,14 @@ api.addRoute('bioevents', {
         }
       }, {
         $limit: 10
-      }])
+      }, {
+        $lookup: {
+          from: "resolvedEvents",
+          localField: "_id",
+          foreignField: "_id",
+          as: "event"
+        }
+      }, { $unwind: "$event" }])
     };
   }
 });

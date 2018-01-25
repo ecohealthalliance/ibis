@@ -3,10 +3,13 @@ template(name='bioeventPanel')
     .header
       h5.bioevent-panel-title Events
       .bioevent-controls
-        select#metric
+        select#rank-metric
           each rankMetrics
             option(value=name selected=selected)=label
-        a(href="/about#rank-metrics").tooltip-btn(data-tooltip-top="-200" data-tooltip-direction="w" data-tooltip="This is a ranked list of disease events that currently threaten the focused location via the flight network. Click here for a detailed description of the ranking metrics.")
+        a(href="/about#rank-metrics").tooltip-btn(
+          data-tooltip-top="-200"
+          data-tooltip-direction="w"
+          data-tooltip="This is a ranked list of disease events that currently threaten the focused location via the flight network. Click here for a detailed description of the ranking metrics.")
           i.fa.fa-question-circle
     ul.list-unstyled.bioevent-items
       each bioevents

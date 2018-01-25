@@ -5,7 +5,7 @@ import {
   PassengerFlows,
   EventAirportRanks
 } from './FlightDB';
-import { airportToCountryCode } from '/imports/geoJSON/indecies';
+import { airportToCountryCode, USAirportIds } from '/imports/geoJSON/indecies';
 
 
 let api = new Restivus({
@@ -217,7 +217,7 @@ api.addRoute('locations/:locationId/threatLevel', {
       const sofar = statsByCountry[country] || {
         rank: 0
       };
-      sofar.rank += result.rank / periodDays;
+      sofar.rank += result.rank / periodDays * 365;
       statsByCountry[country] = sofar;
     });
     return statsByCountry;
@@ -229,12 +229,16 @@ api.addRoute('locations/:locationId/threatLevel', {
 */
 api.addRoute('locations/:locationId/bioevents', {
   get: function() {
-    var location = Locations.findOne(this.urlParams.locationId);
+    const location = Locations.findOne(this.urlParams.locationId);
+    const exUS = this.queryParams.metric == "threatLevelExUS";
     return {
       results: EventAirportRanks.aggregate([{
         $match: {
           arrivalAirportId: {
             $in: location.airportIds
+          },
+          departureAirportId: {
+            $nin: exUS ? USAirportIds : []
           }
         }
       }, {
@@ -267,8 +271,15 @@ api.addRoute('locations/:locationId/bioevents', {
 */
 api.addRoute('bioevents', {
   get: function() {
+    const exUS = this.queryParams.metric == "threatLevelExUS";
     return {
       results: EventAirportRanks.aggregate([{
+        $match: {
+          departureAirportId: {
+            $nin: exUS ? USAirportIds : []
+          }
+        }
+      }, {
         $group: {
           _id: "$eventId",
           rank: {

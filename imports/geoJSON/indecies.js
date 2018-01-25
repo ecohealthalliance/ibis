@@ -57,7 +57,12 @@ const countriesByCode = _.chain(WorldGeoJSON.features)
   .object()
   .value();
 
+const USAirportIds = Airports.find({
+  countryName: "United States"
+}).map((x) => x._id);
+
 module.exports = {
   airportToCountryCode: airportToCountryCode,
-  countriesByCode: countriesByCode
+  countriesByCode: countriesByCode,
+  USAirportIds: USAirportIds
 };

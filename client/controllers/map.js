@@ -6,13 +6,13 @@ import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import Constants from '/imports/constants';
 
 const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
-const getColor = (val)=> {
+const getColor = (val) => {
   //return a color from the ramp based on a 0 to 1 value.
   //If the value exceeds one the last stop is used.
   return RAMP[Math.floor(RAMP.length * Math.max(0, Math.min(val, 0.99)))];
 };
 
-Template.map.onCreated(function () {
+Template.map.onCreated(function() {
   this.mapType = new ReactiveVar("passengerFlow");
   const endDate = new Date();
   const dateRange = this.dateRange = {
@@ -24,7 +24,7 @@ Template.map.onCreated(function () {
     this.subscribe('locations', FlowRouter.getParam('locationId'));
   });
 });
- 
+
 Template.map.onRendered(function() {
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
@@ -52,7 +52,7 @@ Template.map.onRendered(function() {
           marker = L.marker(event.latlng, {
             icon: L.divIcon({
               className: "hover-marker",
-              html: `${feature.properties.name_long}: ${Math.floor(value).toLocaleString()} ${units}`
+              html: `${feature.properties.name_long}: ${value.toLocaleString()} ${units}`
             })
           });
           geoJsonLayer.addLayer(marker);
@@ -77,7 +77,7 @@ Template.map.onRendered(function() {
     else if (mapTypeValue === "threatLevel") {
       route = "threatLevel";
       valueProp = "rank";
-      units = "estimated infected passengers over two weeks";
+      units = "estimated infected passengers per year";
     }
     else {
       route = "inboundTrafficByCountry";
@@ -99,7 +99,7 @@ Template.map.onRendered(function() {
     });
   });
 });
- 
+
 Template.map.helpers({
   dateRange: () => Template.instance().dateRange,
   mapTypes: () => {

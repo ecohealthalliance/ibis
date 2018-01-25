@@ -14,7 +14,46 @@ template(name="about")
 
   .about-content
     +markdown
-      # Rank metrics
+      # Simulations
+      
+      Passengers are simulated over time intervals starting in the last 24 hours
+      through the following two weeks. [The simulator source code is available here.](https://github.com/ecohealthalliance/flirt-simulation-service)
+
+  .about-content
+    +markdown
+      # Bioevent Data
+      
+      Bioevent data is automatically extracted by [EIDR-Connect](https://eidr-connect.eha.io).
+
+  .about-content
+    +markdown
+      # Map Types
+      
+      # Domestic
+
+      ## Threat Exposure
+      The overall levels of risk all bioevents throughout the world pose to
+      U.S. destinations.
+
+      ## Estimated Inbound Passenger Flow
+      The total number of passengers estimated to arrive at each U.S. destination.
+
+      # International
+
+      ## Estimated Passenger Flow by Origin
+      The approximate number of people from each country of origin that arrive at the target
+      location as their terminal destination.
+      
+      ## Direct Flow by Origin
+      The number of seats available on direct flights arriving at the target location.
+
+      ## Threat Level by Origin
+      The esimated risk of any bioevent spreading from each country of origin
+      to the target location.
+
+  .about-content
+    +markdown
+      # Rank Metrics
       
       ## Threat Level
 
@@ -28,3 +67,8 @@ template(name="about")
       __CatchmentPopulation__(airport) = Population of airport's country
 
       __CurrentNumberInfectedInAirportCatchment__(event, airport) = Cumulative cases in airport's country over last two weeks
+
+      ## Ex. US
+      
+      The Ex. US versions of rank metrics exclude the United States as a source
+      of incoming threats.

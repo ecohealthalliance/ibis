@@ -7,8 +7,9 @@ template(name='map')
           each mapTypes
             option(value=name selected=selected)=label
         a.tooltip-btn(
+          href="/about#maptypes"
           data-tooltip-direction="w"
-          data-tooltip="Estimated passenger flow shows the number of people from each country of origin that arrive at the target location as their terminal destination. Direct seat flow shows the number of seats available on direct flights arriving at the target location. Flows are computed using flights scheduled over the next two week interval.")
+          data-tooltip="Click here for descriptions of the map layers.")
           i.fa.fa-question-circle
     #map
     +bioeventPanel dateRange=dateRange

@@ -1,9 +1,10 @@
-/* global L, _, chroma, FlowRouter */
+/* global L, chroma, FlowRouter */
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Locations from '/imports/collections/Locations';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import Constants from '/imports/constants';
+import { _ } from 'meteor/underscore';
 
 const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
 const getColor = (val) => {

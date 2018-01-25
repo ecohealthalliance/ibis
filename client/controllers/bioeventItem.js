@@ -1,4 +1,4 @@
-/* global L, chroma */
+/* global L, chroma, c3 */
 import { _ } from 'meteor/underscore';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 

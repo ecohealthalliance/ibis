@@ -3,4 +3,5 @@ import populateLocations from './populateLocations';
 
 Meteor.startup(() => {
   populateLocations();
+  console.log("Locations populated");
 });

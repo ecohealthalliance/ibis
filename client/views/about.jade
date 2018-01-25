@@ -1,11 +1,74 @@
 template(name="about")
   .about-content
-    | IBIS is a system for monitoring infectious disease bio-events that threaten
-    | the international flight network.
-    | The system runs simulations based on current and future flight schedules to estimate
-    | flows of passengers between airports.
-    | This is combined with a system that extracts the dates and locations of
-    | disease cases from mentions on ProMED-mail to identify locations
-    | in the US that diseases are more likely to reach through the flight network.
-    b IBIS is currently under development. The information that is currently
-      | displayed may be mock data.
+    +markdown
+      IBIS is a system for monitoring infectious disease bio-events that threaten
+      the international flight network.
+      The system runs simulations based on current and future flight schedules to estimate
+      flows of passengers between airports.
+      This is combined with a system that extracts the dates and locations of
+      disease cases from mentions on ProMED-mail to identify locations
+      in the US that diseases are more likely to reach through the flight network.
+
+      __IBIS is currently under development. The information that is currently
+      displayed may be mock data__
+
+  .about-content
+    +markdown
+      # Simulations
+      
+      Passengers are simulated over time intervals starting in the last 24 hours
+      through the following two weeks. [The simulator source code is available here.](https://github.com/ecohealthalliance/flirt-simulation-service)
+
+  .about-content
+    +markdown
+      # Bioevent Data
+      
+      Bioevent data is automatically extracted by [EIDR-Connect](https://eidr-connect.eha.io).
+
+  .about-content
+    +markdown
+      # Map Types
+      
+      # Domestic
+
+      ## Threat Exposure
+      The overall levels of risk all bioevents throughout the world pose to
+      U.S. destinations.
+
+      ## Estimated Inbound Passenger Flow
+      The total number of passengers estimated to arrive at each U.S. destination.
+
+      # International
+
+      ## Estimated Passenger Flow by Origin
+      The approximate number of people from each country of origin that arrive at the target
+      location as their terminal destination.
+      
+      ## Direct Flow by Origin
+      The number of seats available on direct flights arriving at the target location.
+
+      ## Threat Level by Origin
+      The esimated risk of any bioevent spreading from each country of origin
+      to the target location.
+
+  .about-content
+    +markdown
+      # Rank Metrics
+      
+      ## Threat Level
+
+      The threat level is based on a rough approximation of the number of incoming infected passengers.
+      It is computed as follows:
+      
+      __ThreatLevel__(event, inboundAirport) =  *sumOverAirports*[ __EstimatedPassengerFlow__(airport, inboundAirport) * __ProbabilityPassengerInfected__(event, airport) ]
+      
+      __ProbabilityPassengerInfected__(event, departureAirport) = __CurrentNumberInfectedInAirportCatchment__(event, departureAirport) / __CatchmentPopulation__(departureAirport)
+      
+      __CatchmentPopulation__(airport) = Population of airport's country
+
+      __CurrentNumberInfectedInAirportCatchment__(event, airport) = Cumulative cases in airport's country over last two weeks
+
+      ## Ex. US
+      
+      The Ex. US versions of rank metrics exclude the United States as a source
+      of incoming threats.

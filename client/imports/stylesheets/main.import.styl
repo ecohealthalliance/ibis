@@ -12,10 +12,13 @@
 .navbar-brand
   bg('/images/ibis-logo-sm.png', 102px, 30px)
 
-.map-controls .tooltip-btn
+.tooltip-btn
   margin-left 8px
+.tooltip-btn:link
+.tooltip-btn:visited
+  color white
 
-.tooltip 
+.tooltip
   z-index 1001
   pointer-events none
   transition opacity .1s ease-out
@@ -35,6 +38,16 @@
 .about-content
   background lightblue
   padding 1em
+  max-width 800px
+  margin 12px
+  margin-top 0
+  h1
+    font-size 1.6em
+    color $primary-color
+    margin-bottom 1em
+  h2
+    font-size 1.3em
+    color $primary-color
 
 footer
   border-top 2px solid $secondary
@@ -43,5 +56,7 @@ footer
   .contact-info
     margin-left auto
     font-weight 300
+    list-style-type none
+    padding-left 0
   a
     color $primary

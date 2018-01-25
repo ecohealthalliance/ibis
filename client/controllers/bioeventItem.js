@@ -99,5 +99,5 @@ Template.bioeventItem.onRendered(function() {
 });
 
 Template.bioeventItem.helpers({
-
+  eventType: () => "auto-events"
 });

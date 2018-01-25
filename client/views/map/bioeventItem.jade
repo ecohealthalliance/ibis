@@ -1,5 +1,6 @@
 template(name='bioeventItem')
   li.bioevent-item
-    h6 #{event.name}
+    h6
+      a(href="https://eidr-connect.eha.io/events/#{eventType}/#{event._id}")=event.name
       .rank-score Rank Score: #{rank}
     #[.timeline]#[.minimap]

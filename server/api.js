@@ -3,7 +3,8 @@ import Locations from '/imports/collections/Locations';
 import {
   Flights,
   PassengerFlows,
-  EventAirportRanks
+  EventAirportRanks,
+  ResolvedEvents
 } from './FlightDB';
 import { airportToCountryCode, USAirportIds } from '/imports/geoJSON/indecies';
 
@@ -291,7 +292,7 @@ api.addRoute('bioevents', {
           rank: -1
         }
       }, {
-        $limit: 10
+        $limit: 15
       }, {
         $lookup: {
           from: "resolvedEvents",
@@ -301,5 +302,21 @@ api.addRoute('bioevents', {
         }
       }, { $unwind: "$event" }])
     };
+  }
+});
+
+/*
+@api {get} bioeventLastUpdate
+*/
+api.addRoute('bioeventLastUpdate', {
+  get: function() {
+    return ResolvedEvents.aggregate([{
+      $group: {
+        _id: null,
+        value: {
+          $max: "$timestamp"
+        }
+      }
+    }])[0];
   }
 });

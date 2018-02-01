@@ -19,6 +19,6 @@ in .scripts. This will generate an html document in /public showing information
 that can be used check the conputations:
 
 ```
-pip install jupyter pymongo
-MONGO_HOST=localhost:27017 jupyter nbconvert --execute --ExecutePreprocessor.kernel_name=python --ExecutePreprocessor.timeout=None --allow-errors .scripts/rank_events.ipynb --output ../public/rank_event.html 
+pip install jupyter pymongo requests pandas
+MONGO_HOST=localhost:27017 jupyter nbconvert --execute --ExecutePreprocessor.kernel_name=python --ExecutePreprocessor.timeout=None --allow-errors .scripts/rank_events.ipynb --output ../public/rank_events.html 
 ```

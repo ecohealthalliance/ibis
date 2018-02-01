@@ -78,7 +78,7 @@ Template.map.onRendered(function() {
     else if (mapTypeValue === "threatLevel") {
       route = "threatLevel";
       valueProp = "rank";
-      units = "estimated infected passengers per year";
+      units = "";
     }
     else {
       route = "inboundTrafficByCountry";

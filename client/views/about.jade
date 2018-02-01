@@ -16,14 +16,17 @@ template(name="about")
     +markdown
       # Simulations
       
-      Passengers are simulated over time intervals starting in the last 24 hours
-      through the following two weeks. [The simulator source code is available here.](https://github.com/ecohealthalliance/flirt-simulation-service)
+      Passengers are simulated over the present two week time interval every week.
+      [The simulator source code is available here.](https://github.com/ecohealthalliance/flirt-simulation-service)
 
   .about-content
     +markdown
       # Bioevent Data
       
-      Bioevent data is automatically extracted by [EIDR-Connect](https://eidr-connect.eha.io).
+      Bioevent data is automatically extracted by [EIDR-Connect](https://eidr-connect.eha.io) as "Auto Events."
+      An Auto Event is created for each disease for which incident data has been extracted.
+      
+      The Bioevent Data was last updated on #{bioeventLastUpdate}.
 
   .about-content
     +markdown
@@ -57,16 +60,21 @@ template(name="about")
       
       ## Threat Level
 
-      The threat level is based on a rough approximation of the number of incoming infected passengers.
+      The threat level is based on a rough approximation of the number of incoming
+      infected passengers weighted by disease specific coefficients.
       It is computed as follows:
       
-      __ThreatLevel__(event, inboundAirport) =  *sumOverAirports*[ __EstimatedPassengerFlow__(airport, inboundAirport) * __ProbabilityPassengerInfected__(event, airport) ]
+      __ThreatLevel__(event, inboundAirport) = __DiseaseSeverity__(event) * *sumOverAirports*[ __EstimatedPassengerFlow__(airport, inboundAirport) * __ProbabilityPassengerInfected__(event, airport) ]
       
       __ProbabilityPassengerInfected__(event, departureAirport) = __CurrentNumberInfectedInAirportCatchment__(event, departureAirport) / __CatchmentPopulation__(departureAirport)
       
       __CatchmentPopulation__(airport) = Population of airport's country
 
       __CurrentNumberInfectedInAirportCatchment__(event, airport) = Cumulative cases in airport's country over last two weeks
+
+      __DiseaseSeverity__(event) = The Disability Adjusted Life Years per case of the event's disease. The Global Burden of Disease data set is used to compute this.
+      The average DALYs per case across all infectious diseases is used when information is not available for a disease.
+      
 
       ## Ex. US
       

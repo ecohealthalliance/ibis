@@ -1,3 +1,11 @@
+Template.about.onCreated(function() {
+  this.bioeventLastUpdate = new ReactiveVar();
+  HTTP.get("/api/bioeventLastUpdate", {}, (err, resp) => {
+    console.error(err);
+    this.bioeventLastUpdate.set(resp.data.value);
+  });
+});
+
 Template.about.onRendered(function() {
   // Toggle the window location hash after the content is rendered
   // to trigger a scroll to the hash target.
@@ -8,4 +16,8 @@ Template.about.onRendered(function() {
       window.location.replace(originalHash);
     }
   }, 1);
+});
+
+Template.about.helpers({
+  bioeventLastUpdate: () => Template.instance().bioeventLastUpdate.get()
 });

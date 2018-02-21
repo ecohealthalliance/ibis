@@ -85,9 +85,11 @@ Template.splash.onRendered(function() {
       if(!location.displayGeoJSON) return;
       let value = this.mapType.get() === "passengerFlow" ? location.totalPassengers : location.rank;
       var geojsonMarkerOptions = {
-          radius: 1 + 12 * value / airportMax,
-          weight: 0,
-          opacity: 1
+        // The radius is a squre root so that the marker's volume is directly
+        // proprotional to the value.
+        radius: Math.sqrt(2 + 144 * value / airportMax),
+        weight: 0,
+        opacity: 1
       };
       const marker = L.geoJson({features: location.displayGeoJSON}, {
         pointToLayer: function (feature, latlng) {
@@ -98,7 +100,7 @@ Template.splash.onRendered(function() {
           return {
             fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
             weight: 1,
-            color: '#DDDDDD',
+            color: '#888',
             fillOpacity: 1.0
           };
         },

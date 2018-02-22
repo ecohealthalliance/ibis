@@ -26,7 +26,7 @@ Template.bioeventItem.onRendered(function() {
       return {
         fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
         weight: value ? 1 : 0,
-        color: value ? getColor(value / 10000) : '#DDDDDD',
+        color: value ? getColor(value / maxValue) : '#DDDDDD',
         fillOpacity: 1
       };
     }

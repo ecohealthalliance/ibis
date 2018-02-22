@@ -13,7 +13,7 @@ const getColor = (val) =>{
 };
 
 Template.splash.onCreated(function() {
-  this.mapType = new ReactiveVar("threatLevel");
+  this.mapType = new ReactiveVar("threatLevelExUS");
   this.locations = new ReactiveVar([]);
   this.autorun(()=>{
     HTTP.get('/api/topLocations', {
@@ -146,6 +146,7 @@ Template.splash.helpers({
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
     return [
+      {name:"threatLevelExUS", label:"Threat Level Exposure Map (Ex. US)"},
       {name:"threatLevel", label:"Threat Level Exposure Map"},
       {name:"passengerFlow", label:"Estimated Inbound Passenger Flow Map"},
     ].map((type)=>{

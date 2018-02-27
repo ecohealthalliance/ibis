@@ -22,8 +22,15 @@ let api = new Restivus({
 */
 api.addRoute('topLocations', {
   get: function() {
-    if(this.queryParams.metric === "threatLevel") {
+    if(this.queryParams.metric.startsWith("threatLevel")) {
+      const exUS = this.queryParams.metric == "threatLevelExUS";
       let arrivalAirportToRankScore = _.object(EventAirportRanks.aggregate([{
+        $match: {
+          departureAirportId: {
+            $nin: exUS ? USAirportIds : []
+          }
+        }
+      }, {
         $group: {
           _id: "$arrivalAirportId",
           rank: {

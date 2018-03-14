@@ -71,21 +71,18 @@ def get_airport_to_country_code(db):
     return airport_to_country_code
 
 
-AREA_OF_EARTH_M = 510.1e12
-STEP = 0.2
-lat_band_df = gpd.GeoDataFrame(crs={'init':'epsg:4326'}, geometry=[
-    shapely.geometry.box(-180,i,180,i + STEP)
-    for i in np.arange(-90, 90, STEP)
-])
-lat_band_df = lat_band_df.to_crs({'proj':'cea'})
-lat_band_df['aream'] = lat_band_df.area
-lat_band_df = lat_band_df.to_crs({'init':'epsg:4326'})
-area_raster = rasterio.features.rasterize(
-    [(row.geometry, row.aream) for idx, row in lat_band_df.iterrows()],
-    out_shape=base_raster.shape,
-    transform=base_raster.transform)
-# Adjust area raster so the area of each pixel is its value
-area_raster *= AREA_OF_EARTH_M / area_raster.sum()
+area_raster = np.zeros(base_raster.shape)
+for row in range(base_raster.shape[0]):
+    for col in range(1):
+        origin = base_raster.xy(row, col, offset='ul')[::-1]
+        ur = base_raster.xy(row, col, offset='ur')[::-1]
+        ll = base_raster.xy(row, col, offset='ll')[::-1]
+        width = great_circle(origin, ur).kilometers * 1000
+        height = great_circle(origin, ll).kilometers * 1000
+        area_raster[row, :] = width * height
+# The raster just goes from -60 latitude to 85 so the total area is less
+# than the area of the world.
+print "Total raster area:", area_raster.sum()
 save_image(area_raster, "area_raster")
 
 def plot_airport(long_lat, georaster, out_raster, magnitude):

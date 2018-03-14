@@ -230,7 +230,9 @@ def gen_ranks():
                 else:
                     probability_passenger_infected = float(cases_in_catchment) / catchment_population
                 rank_score = probability_passenger_infected * passenger_flow * DALYs_per_case
-                if rank_score == 0:
+                if not(rank_score > 0):
+                    rank_score = 0
+                if not(passenger_flow > 0):
                     continue
                 yield {
                     'eventId': event_id,

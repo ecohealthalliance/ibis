@@ -4,7 +4,9 @@ import pandas as pd
 import numpy
 import datetime
 import os
-from compute_case_raster import compute_case_raster
+from compute_case_raster import compute_case_raster, plot_airport, compute_outflows, get_airport_to_country_code
+import rasterio
+import numpy as np
 
 def batched(iterable, batch_size=10):
     """
@@ -25,11 +27,12 @@ print "Evaluation Started: " + str(datetime.datetime.now())
 
 print "Downloading Events..."
 events = requests.get('https://eidr-connect.eha.io/api/auto-events', params={
-    'limit': 20000
+    'limit': 20000,
+    'query': '{}'
 }).json()
-len(events)
+print "\t%s events found." % len(events)
 
-print "Downloading passenger flows"
+print "Downloading passenger flows..."
 passenger_flows = list(db.passengerFlows.find({
     'simGroup': 'ibis14day'
 }))
@@ -42,13 +45,13 @@ airports = []
 for idx, airport in enumerate(airport_set):
     airport_to_idx[airport] = idx
     airports.append(airport)
-print "Flows for %s airports found." % len(airports)
 flow_matrix = numpy.zeros(shape=(len(airport_set), len(airport_set)))
 for flow in passenger_flows:
     # Remove US airports from departures?
     flow_matrix[
         airport_to_idx[flow['departureAirport']],
         airport_to_idx[flow['arrivalAirport']]] = flow['estimatedPassengers']
+print "\tFlows for %s airports found." % len(airports)
 
 print "Resolving events..."
 resolved_events = []
@@ -66,36 +69,71 @@ def resolved_event_iter(events):
         for result in results:
             yield result
 events_with_resolved_data = list(zip(events, resolved_event_iter(events)))
+print "\t%s events with resolved data." % len([
+    event for event, resolved_data in events_with_resolved_data
+    if len(resolved_data['fullLocations']['children']) > 0])
 
 
 print "Loading population data..."
-population_gr = gr.from_file('gpw/gpw_v4_population_count_rev10_2015_15_min.tif')
-population_gr.raster[population_gr.raster <= 0] = 0
-#Image.fromarray(np.array(population_gr.raster / population_gr.raster.max() * 255, dtype=np.uint8), 'L')
+population_raster = rasterio.open("gpw/gpw_v4_population_count_rev10_2015_15_min.tif")
+population_raster_data = population_raster.read(1)
+population_raster_data[population_raster_data < 0] = 0
+print "\tPopulation raster sum:", population_raster_data.sum()
+
+
+print "Computing outflows..."
+outflows = compute_outflows(db, {
+    "departureDateTime": {
+        "$lte": end_date,
+        "$gte": start_date
+    }
+})
+max_outflow = max(outflows.values())
+print "\tMax outflow:", max_outflow
+
+print "Computing all airport raster..."
+all_airport_raster_data = np.zeros(population_raster.shape)
+for airport in list(db.airports.find()):
+    magnitude = float(outflows.get(airport['_id'], 0)) / max_outflow
+    if magnitude > 0:
+        plot_airport(
+            airport['loc']['coordinates'],
+            population_raster, all_airport_raster_data,
+            magnitude)
+print "\tDone."
 
 print "Computing probabilities of passengers being infected"
 cases_in_catchment_matrix = numpy.zeros(shape=(len(events), len(airport_set)))
 catchment_population_matrix = numpy.zeros(shape=(len(events), len(airport_set)))
 for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
+    if sum(child2['value'] for child2 in resolved_event_data['fullLocations']['children']) == 0:
+        continue
     case_raster = compute_case_raster(resolved_event_data)
-    rows = []
     for airport in db.airports.find():
-        airport_gr = gr.GeoRaster(
-            np.zeros(population_gr.raster.shape),
-            population_gr.geot)
-        plot_airport(airport['loc']['coordinates'], 1.00, airport_gr)
-        cases_in_catchment_matrix[idx, airport_to_idx[airport]] = (airport_gr.raster * case_raster).sum()
-        catchment_population_matrix[idx, airport_to_idx[airport]] = (airport_gr.raster * population_gr.raster).sum()
+        result = np.zeros(population_raster_data.shape)
+        airport_id = airport['_id']
+        magnitude = float(outflows.get(airport_id, 0)) / max_outflow
+        if magnitude > 0 and airport_id in airport_to_idx:
+            plot_airport(
+                airport['loc']['coordinates'],
+                population_raster, result,
+                magnitude)
+            result[all_airport_raster_data > 0] = result[all_airport_raster_data > 0] / all_airport_raster_data[all_airport_raster_data > 0]
+            cases_in_catchment_matrix[idx, airport_to_idx[airport_id]] = (result * case_raster).sum()
+            catchment_population_matrix[idx, airport_to_idx[airport_id]] = (result * population_raster_data).sum()
+print "\tDone."
 
 
-# Compute cases by country:
+print "Computeing cases by country..."
 for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
     resolved_ccs = {}
     for child in resolved_event_data['fullLocations']['children']:
         cc = child['location']['countryCode']
         resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
     resolved_event_data['locations'] = resolved_ccs
+print "\tDone."
 
+print "Storing resolved event data..."
 for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
     db.resolvedEvents_create.insert_one(dict(
         resolved_event,
@@ -103,8 +141,9 @@ for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
         name=event['eventName'],
         timestamp=datetime.datetime.now()))
 db.resolvedEvents_create.rename("resolvedEvents", dropTarget=True)
+print "\tDone."
 
-print "Computing disease severity coefficients"
+print "Computing disease severity coefficients..."
 # Determine DALYs Per case using GBD data.
 # Citation:
 # Global Burden of Disease Collaborative Network.
@@ -131,7 +170,7 @@ totals = formatted_df[formatted_df.cause.isin([
     'Diarrhea, lower respiratory, and other common infectious diseases',
     'Neglected tropical diseases and malaria'])].sum()
 average_DALYs_per_case = totals['DALYs (Disability-Adjusted Life Years)'] / totals['Incidence']
-average_DALYs_per_case
+print "\tAverage DALYs per case:", average_DALYs_per_case
 
 def valid_ratio(x):
     return not(pd.isna(x) or x > 100)
@@ -166,8 +205,10 @@ disease_uri_to_DALYs_per_case = {
     k: max(v, key=lambda x: x['weight'])['DALYsPerCase']
     for k, v in disease_uri_to_DALYs_per_case.items()
 }
+print "\tDone."
 
 print "Inserting rank data..."
+airport_to_country_code = get_airport_to_country_code(db)
 def gen_ranks():
     for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
         event_id = event['_id']
@@ -177,14 +218,17 @@ def gen_ranks():
                 continue
             arrival_airport_idx = airport_to_idx[arrival_airport]
             for departure_airport, departure_country_code in airport_to_country_code.items():
-                if departure_country_code not in resolved_event['locations'] or/
+                if departure_country_code not in resolved_event['locations'] or\
                     departure_airport not in airport_to_idx:
                     continue
                 dep_airport_idx = airport_to_idx[departure_airport]
                 passenger_flow = flow_matrix[dep_airport_idx, arrival_airport_idx]
                 cases_in_catchment = cases_in_catchment_matrix[idx, dep_airport_idx]
                 catchment_population = catchment_population_matrix[idx, dep_airport_idx]
-                probability_passenger_infected = float(cases_in_catchment) / catchment_population
+                if catchment_population == 0:
+                    probability_passenger_infected = 0
+                else:
+                    probability_passenger_infected = float(cases_in_catchment) / catchment_population
                 rank_score = probability_passenger_infected * passenger_flow * DALYs_per_case
                 if rank_score == 0:
                     continue
@@ -200,10 +244,11 @@ def gen_ranks():
 
 for ranks in batched(gen_ranks(), 50000):
     result = db.eventAirportRanks_create.insert_many(ranks)
-    print(len(result.inserted_ids), '/', len(ranks), 'records inserted')
+    print len(result.inserted_ids), '/', len(ranks), 'records inserted'
 db.eventAirportRanks_create.rename("eventAirportRanks", dropTarget=True)
+print "\tDone."
 
-print "Print rank for spot checking:"
+print "Print first rank for spot checking:"
 print db.eventAirportRanks.find_one({
     'rank': {'$gt': 0}
 })

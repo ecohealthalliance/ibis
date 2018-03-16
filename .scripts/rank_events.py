@@ -28,7 +28,7 @@ print "Evaluation Started: " + str(datetime.datetime.now())
 print "Downloading Events..."
 events = requests.get('https://eidr-connect.eha.io/api/auto-events', params={
     'limit': 20000,
-    'query': '{}'
+    #'query': '{}'
 }).json()
 print "\t%s events found." % len(events)
 
@@ -106,9 +106,13 @@ print "Computing probabilities of passengers being infected"
 cases_in_catchment_matrix = numpy.zeros(shape=(len(events), len(airport_set)))
 catchment_population_matrix = numpy.zeros(shape=(len(events), len(airport_set)))
 for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
-    if sum(child2['value'] for child2 in resolved_event_data['fullLocations']['children']) == 0:
+    resolved_location_tree = resolved_event_data['fullLocations']
+    if sum(child2['value'] for child2 in resolved_location_tree['children']) == 0:
         continue
-    case_raster = compute_case_raster(resolved_event_data)
+    case_raster = compute_case_raster(resolved_location_tree)
+    print 'total cases:', case_raster.sum()
+    actual_case_total = sum(child2['value'] for child2 in resolved_event_data['fullLocations']['children'])
+    print 'error:', case_raster.sum() / actual_case_total
     for airport in db.airports.find():
         result = np.zeros(population_raster_data.shape)
         airport_id = airport['_id']
@@ -254,3 +258,5 @@ print "Print first rank for spot checking:"
 print db.eventAirportRanks.find_one({
     'rank': {'$gt': 0}
 })
+
+print "Finished at: " + str(datetime.datetime.now())

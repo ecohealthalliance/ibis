@@ -47,7 +47,6 @@ for idx, airport in enumerate(airport_set):
     airports.append(airport)
 flow_matrix = numpy.zeros(shape=(len(airport_set), len(airport_set)))
 for flow in passenger_flows:
-    # Remove US airports from departures?
     flow_matrix[
         airport_to_idx[flow['departureAirport']],
         airport_to_idx[flow['arrivalAirport']]] = flow['estimatedPassengers']
@@ -59,13 +58,15 @@ end_date = datetime.datetime.now()
 start_date = end_date - datetime.timedelta(days=14)
 def resolved_event_iter(events):
     for event_batch in batched(events, 5):
-        results = requests.get('https://eidr-connect.eha.io/api/events-with-resolved-data', params={
+        url = 'https://eidr-connect.eha.io/api/events-with-resolved-data'
+        request_result = requests.get(url, params={
             'ids': [event['_id'] for event in event_batch],
             'startDate': start_date.isoformat(),
             'endDate': end_date.isoformat(),
             'eventType': 'auto',
             'fullLocations': True
-        }).json()['events']
+        })
+        results = request_result.json()['events']
         for result in results:
             yield result
 events_with_resolved_data = list(zip(events, resolved_event_iter(events)))
@@ -83,9 +84,9 @@ print "\tPopulation raster sum:", population_raster_data.sum()
 
 print "Computing outflows..."
 outflows = compute_outflows(db, {
-    "departureDateTime": {
-        "$lte": end_date,
-        "$gte": start_date
+    'departureDateTime': {
+        '$lte': end_date,
+        '$gte': start_date
     }
 })
 max_outflow = max(outflows.values())
@@ -109,10 +110,12 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
     resolved_location_tree = resolved_event_data['fullLocations']
     if sum(child2['value'] for child2 in resolved_location_tree['children']) == 0:
         continue
+    print '\n'
+    print event['eventName']
     case_raster = compute_case_raster(resolved_location_tree)
     print 'total cases:', case_raster.sum()
     actual_case_total = sum(child2['value'] for child2 in resolved_event_data['fullLocations']['children'])
-    print 'error:', case_raster.sum() / actual_case_total
+    print 'error:', 100.0 * (case_raster.sum() / actual_case_total - 1.0), "%"
     for airport in db.airports.find():
         result = np.zeros(population_raster_data.shape)
         airport_id = airport['_id']
@@ -122,18 +125,20 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
                 airport['loc']['coordinates'],
                 population_raster, result,
                 magnitude)
-            result[all_airport_raster_data > 0] = result[all_airport_raster_data > 0] / all_airport_raster_data[all_airport_raster_data > 0]
+            result[all_airport_raster_data > 0] =\
+                result[all_airport_raster_data > 0] /\
+                all_airport_raster_data[all_airport_raster_data > 0]
             cases_in_catchment_matrix[idx, airport_to_idx[airport_id]] = (result * case_raster).sum()
             catchment_population_matrix[idx, airport_to_idx[airport_id]] = (result * population_raster_data).sum()
 print "\tDone."
-
 
 print "Computeing cases by country..."
 for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
     resolved_ccs = {}
     for child in resolved_event_data['fullLocations']['children']:
-        cc = child['location']['countryCode']
-        resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
+        cc = child['location'].get('countryCode')
+        if cc:
+            resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
     resolved_event_data['locations'] = resolved_ccs
 print "\tDone."
 
@@ -165,7 +170,9 @@ formatted_df = df[df.year > 2000]\
 # The DALYs for a given year can come from cases that occurred in previous years,
 # and the temporal offset is dependent on the disease. To reduce the effects
 # of this descrepancy the annual rates are averaged over the a 10-20 year period.
-formatted_df['ratio'] = formatted_df['DALYs (Disability-Adjusted Life Years)'] / formatted_df['Incidence']
+formatted_df['ratio'] =\
+    formatted_df['DALYs (Disability-Adjusted Life Years)'] /\
+    formatted_df['Incidence']
 formatted_df.sort_values('ratio')
 # Get total DALYs per case for top level disease categories
 totals = formatted_df[formatted_df.cause.isin([
@@ -198,11 +205,12 @@ for idx, x in formatted_df.iterrows():
         cause = name_mappings[cause]
     disease_ent = next(epitator_db.lookup_synonym(cause, 'disease'), None)
     if disease_ent:
-        disease_uri_to_DALYs_per_case[disease_ent['id']] = disease_uri_to_DALYs_per_case.get(disease_ent['id'], []) + [{
-            'label': disease_ent['label'],
-            'DALYsPerCase': x['ratio'] if valid_ratio(x['ratio']) else average_DALYs_per_case,
-            'weight': disease_ent['weight']
-        }]
+        disease_uri_to_DALYs_per_case[disease_ent['id']] =\
+            disease_uri_to_DALYs_per_case.get(disease_ent['id'], []) + [{
+                'label': disease_ent['label'],
+                'DALYsPerCase': x['ratio'] if valid_ratio(x['ratio']) else average_DALYs_per_case,
+                'weight': disease_ent['weight']
+            }]
     else:
         print("Unresolved: " + x['cause'])
 disease_uri_to_DALYs_per_case = {
@@ -216,7 +224,9 @@ airport_to_country_code = get_airport_to_country_code(db)
 def gen_ranks():
     for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
         event_id = event['_id']
-        DALYs_per_case = disease_uri_to_DALYs_per_case.get(event['diseases'][0]['id'], average_DALYs_per_case)
+        DALYs_per_case = disease_uri_to_DALYs_per_case.get(
+            event['diseases'][0]['id'],
+            average_DALYs_per_case)
         for arrival_airport, arrival_country_code in airport_to_country_code.items():
             if arrival_country_code != "US" or arrival_airport not in airport_to_idx:
                 continue
@@ -232,7 +242,8 @@ def gen_ranks():
                 if catchment_population == 0:
                     probability_passenger_infected = 0
                 else:
-                    probability_passenger_infected = float(cases_in_catchment) / catchment_population
+                    probability_passenger_infected =\
+                        float(cases_in_catchment) / catchment_population
                 rank_score = probability_passenger_infected * passenger_flow * DALYs_per_case
                 if not(rank_score > 0):
                     rank_score = 0

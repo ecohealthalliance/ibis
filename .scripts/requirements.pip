@@ -1,0 +1,9 @@
+pymongo
+requests
+pandas
+epitator
+matplotlib
+numpy
+geopandas
+rasterstats
+pillow

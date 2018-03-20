@@ -7,3 +7,4 @@ numpy
 geopandas
 rasterstats
 pillow
+rasterio==1.0a12

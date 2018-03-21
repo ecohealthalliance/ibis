@@ -21,8 +21,6 @@ def save_image(raster, name):
         dtype=np.uint8))
     img.save(name + ".png", "PNG")
 
-population_raster = rasterio.open('gpw/gpw_v4_population_count_rev10_2015_15_min.tif')
-
 world_df = gpd.read_file("../imports/geoJSON/world.geo.json")
 # Use cylindrical equal-area projection
 # https://gis.stackexchange.com/questions/218450/getting-polygon-areas-using-geopandas
@@ -72,21 +70,6 @@ def get_airport_to_country_code(db):
         for airport in db.airports.find({})
     }
     return airport_to_country_code
-
-
-area_raster = np.zeros(population_raster.shape)
-for row in range(population_raster.shape[0]):
-    for col in range(1):
-        origin = population_raster.xy(row, col, offset='ul')[::-1]
-        ur = population_raster.xy(row, col, offset='ur')[::-1]
-        ll = population_raster.xy(row, col, offset='ll')[::-1]
-        width = great_circle(origin, ur).kilometers * 1000
-        height = great_circle(origin, ll).kilometers * 1000
-        area_raster[row, :] = width * height
-# The raster just goes from -60 latitude to 85 so the total area is less
-# than the area of the world.
-print "Total raster area in square meters:", area_raster.sum()
-save_image(area_raster, "area_raster")
 
 def plot_airport(long_lat, rasterio_handle, out_raster, magnitude):
     """
@@ -177,43 +160,27 @@ def create_location_shapes(resolved_location_tree, parent_shape=None):
     return shapes
 
 
-def compute_case_raster(resolved_location_tree):
+def compute_case_raster(resolved_location_tree, population_raster, population_raster_data):
     """
     Convert a resolved value location tree into a raster map where the
     value of each pixel corresponds to the number of cases that occurred
     within it.
     """
-    shapes = create_location_shapes(resolved_location_tree)
-    print "Removed cases:", sum([shape[1]
-        for shape in shapes
-        if not(shape[0] and shape[0].area > 0)])
-    shapes = [shape
-        for shape in shapes
-        if shape[0] and shape[0].area > 0]
-    max_pixel_area = area_raster.max()
+    shape_values = create_location_shapes(resolved_location_tree)
+    print "Removed cases:", sum([value
+        for shape, value in shape_values
+        if not(shape and shape.area > 0)])
+    shape_values = [shape_value
+        for shape_value in shape_values
+        if shape_value[0] and shape_value[0].area > 0]
     projected_shapes = list(gpd.GeoDataFrame(
         crs={'proj':'cea'},
-        # A buffer is added around all shapes so they take up at least one pixel
-        # on the raster. Ideally, all_touched could be used as a rasterization
-        # parameter, however it causes errors in of GDAL when used in
-        # conjuntion with the additive merge algorithm.
-        geometry=[s[0].buffer(math.sqrt(max_pixel_area)) for s in shapes]).to_crs({
+        geometry=[shape for shape, _ in shape_values]).to_crs({
             'init':'epsg:4326'
         }).geometry)
-    shape_raster_areas = rasterstats.zonal_stats(
-        projected_shapes,
-        area_raster,
-        affine=population_raster.transform,
-        stats=['sum'],
-        nodata=0)
-    if len(shapes) > 0:
-        case_per_m_raster = rasterio.features.rasterize(
-            zip(
-                projected_shapes,
-                [s[1] / raster_area['sum'] for s, raster_area in zip(shapes, shape_raster_areas)]
-            ),
-            out_shape=population_raster.shape,
-            transform=population_raster.transform,
+    case_raster = np.zeros(population_raster.shape)
+    if len(shape_values) > 0:
+        for projected_shape, (_, value) in zip(projected_shapes, shape_values):
             # There a couple options for combining sub-locations with their
             # parents. One is to limit sub-location desitys to the cases within
             # them, replacing the parent location pixels even when
@@ -221,9 +188,13 @@ def compute_case_raster(resolved_location_tree):
             # The other is to add the sub-location densitys to the parent location
             # densitys. I think adding makes more sense because data for
             # sub-locations is likely to be more incomplete.
-            merge_alg='add'
-        )
-        case_raster = case_per_m_raster * area_raster
+            mask = rasterio.features.rasterize(
+                [(projected_shape, 1.0,)],
+                out_shape=population_raster.shape,
+                transform=population_raster.transform,
+                all_touched=True)
+            masked_pop = population_raster_data * mask
+            case_raster += masked_pop * (value / (0.1 + masked_pop.sum()))
     return case_raster
 
 
@@ -253,6 +224,10 @@ if __name__ == "__main__":
     import os
     import requests
 
+    population_raster = rasterio.open('gpw/gpw_v4_population_count_rev10_2015_15_min.tif')
+    population_raster_data = population_raster.read(1)
+    population_raster_data[population_raster_data < 0] = 0
+
     end_date = datetime.datetime.now()
     start_date = end_date - datetime.timedelta(days=300)
     results = requests.get('https://eidr-connect.eha.io/api/events-with-resolved-data', params={
@@ -262,7 +237,6 @@ if __name__ == "__main__":
         'eventType': 'auto',
         'fullLocations': True
     }).json()['events']
-
     db = pymongo.MongoClient(os.environ['MONGO_HOST'])['flirt']
 
     resolved_event_data = results[0]
@@ -271,7 +245,7 @@ if __name__ == "__main__":
         cc = child['location']['countryCode']
         resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
     resolved_event_data['locations'] = resolved_ccs
-    case_raster = compute_case_raster(resolved_event_data['fullLocations'])
+    case_raster = compute_case_raster(resolved_event_data['fullLocations'], population_raster, population_raster_data)
     print 'total cases:', case_raster.sum()
     actual_case_total = sum(child2['value'] for child2 in resolved_event_data['fullLocations']['children'])
     print 'error:', case_raster.sum() / actual_case_total
@@ -292,8 +266,6 @@ if __name__ == "__main__":
     })
     max_outflow = max(outflows.values())
 
-    population_raster_data = population_raster.read(1)
-    population_raster_data[population_raster_data < 0] = 0
     all_airport_raster_data = np.zeros(population_raster.shape)
     for airport in list(db.airports.find()):
         magnitude = float(outflows.get(airport['_id'], 0)) / max_outflow

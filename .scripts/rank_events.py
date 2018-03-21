@@ -112,7 +112,10 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
         continue
     print '\n'
     print event['eventName']
-    case_raster = compute_case_raster(resolved_location_tree)
+    case_raster = compute_case_raster(
+        resolved_location_tree,
+        population_raster,
+        population_raster_data)
     print 'total cases:', case_raster.sum()
     actual_case_total = sum(child2['value'] for child2 in resolved_event_data['fullLocations']['children'])
     print 'error:', 100.0 * (case_raster.sum() / actual_case_total - 1.0), "%"

@@ -1,4 +1,5 @@
 /* global FlowRouter */
+import { _ } from 'meteor/underscore';
 import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
@@ -32,6 +33,9 @@ Template.bioeventPanel.onCreated(function() {
 });
 
 Template.bioeventPanel.helpers({
+  maxCases: () => _.max(Template.instance().bioevents.get().map((x) => {
+    return _.max(_.pluck(x.event.timeseries, 'value'));
+  })),
   bioevents: () => Template.instance().bioevents.get().map((x) => {
     x.rank = x.rank.toFixed(2);
     return x;

@@ -275,6 +275,59 @@ api.addRoute('locations/:locationId/bioevents', {
 });
 
 /*
+@api {get} rankData Get all the rank data for the bioevent and optional locaiton.
+*/
+api.addRoute('rankData', {
+  get: function() {
+    const exUS = this.queryParams.metric == "threatLevelExUS";
+    var matchQuery = {
+      departureAirportId: {
+        $nin: exUS ? USAirportIds : []
+      },
+      eventId: this.queryParams.eventId
+    };
+    if(this.queryParams.locationId && this.queryParams.locationId !== "undefined") {
+      const location = Locations.findOne(this.queryParams.locationId);
+      matchQuery.arrivalAirportId = {
+        $in: location.airportIds
+      };
+    }
+    return {
+      results: EventAirportRanks.aggregate([{
+        $match: matchQuery
+      }, {
+        $group: {
+          _id: "$departureAirportId",
+          passengerFlow: {
+            $sum: "$passengerFlow"
+          },
+          infectedPassengers: {
+            $sum: {
+              $multiply: [
+                "$probabilityPassengerInfected",
+                "$passengerFlow"
+              ]
+            }
+          },
+          rank: {
+            $sum: "$rank"
+          },
+          threatCoefficient: {
+            $first: "$threatCoefficient"
+          }
+        }
+      }, {
+        $sort: {
+          rank: -1
+        }
+      }, {
+        $limit: 100
+      }])
+    };
+  }
+});
+
+/*
 @api {get} bioevents Get a ranked list of bioevents
 */
 api.addRoute('bioevents', {

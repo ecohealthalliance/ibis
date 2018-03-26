@@ -329,39 +329,57 @@ api.addRoute('rankData', {
 
 /*
 @api {get} bioevents Get a ranked list of bioevents
+@apiParam {ISODateString} metric threatLevel/threatLevelExUS/mostRecent
 */
 api.addRoute('bioevents', {
   get: function() {
     const exUS = this.queryParams.metric == "threatLevelExUS";
-    return {
-      results: EventAirportRanks.aggregate([{
-        $match: {
-          departureAirportId: {
-            $nin: exUS ? USAirportIds : []
+    const mostRecent = this.queryParams.metric == "mostRecent";
+    if(mostRecent) {
+      return {
+        results: _.sortBy(ResolvedEvents.find().map((event)=>{
+          return {
+            _id: event._id,
+            event: event,
+            lastIncident: _.chain(event.timeseries || [])
+              .pluck('date')
+              .map((x) => new Date(x))
+              .max()
+              .value()
+          };
+        }), (event) => event.lastIncident).slice(-15).reverse()
+      };
+    } else {
+      return {
+        results: EventAirportRanks.aggregate([{
+          $match: {
+            departureAirportId: {
+              $nin: exUS ? USAirportIds : []
+            }
           }
-        }
-      }, {
-        $group: {
-          _id: "$eventId",
-          rank: {
-            $sum: "$rank"
+        }, {
+          $group: {
+            _id: "$eventId",
+            rank: {
+              $sum: "$rank"
+            }
           }
-        }
-      }, {
-        $sort: {
-          rank: -1
-        }
-      }, {
-        $limit: 15
-      }, {
-        $lookup: {
-          from: "resolvedEvents",
-          localField: "_id",
-          foreignField: "_id",
-          as: "event"
-        }
-      }, { $unwind: "$event" }])
-    };
+        }, {
+          $sort: {
+            rank: -1
+          }
+        }, {
+          $limit: 15
+        }, {
+          $lookup: {
+            from: "resolvedEvents",
+            localField: "_id",
+            foreignField: "_id",
+            as: "event"
+          }
+        }, { $unwind: "$event" }])
+      };
+    }
   }
 });
 

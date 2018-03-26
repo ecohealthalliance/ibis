@@ -37,7 +37,8 @@ Template.bioeventPanel.helpers({
     return _.max(_.pluck(x.event.timeseries, 'value'));
   })),
   bioevents: () => Template.instance().bioevents.get().map((x) => {
-    x.rank = x.rank.toFixed(2);
+    if(x.rank) x.rank = x.rank.toFixed(2);
+    if(x.lastIncident) x.lastIncident = ("" + x.lastIncident).split("T")[0];
     return x;
   }),
   dateRange: () => Template.instance().dateRange,
@@ -45,7 +46,8 @@ Template.bioeventPanel.helpers({
     const selectedType = Template.instance().rankMetric.get();
     return [
       { name: "threatLevel", label: "Ranked by Threat Level" },
-      { name: "threatLevelExUS", label: "Ranked by Threat Level (Ex. US)" }
+      { name: "threatLevelExUS", label: "Ranked by Threat Level (Ex. US)" },
+      { name: "mostRecent", label: "Ranked by Latest Incident" }
     ].map((type) => {
       type.selected = type.name == selectedType;
       return type;

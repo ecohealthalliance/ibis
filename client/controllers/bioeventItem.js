@@ -18,16 +18,14 @@ Template.bioeventItem.onRendered(function() {
     attributionControl: false
   });
   const locationMap = this.data.bioevent.event.locations;
-  const maxValue = _.max(WorldGeoJSON.features.map(
-    (feature) => locationMap[feature.properties.iso_a2]
-  ));
+  const maxCasesForLocation = this.data.maxCasesForLocation;
   const geoJsonLayer = L.geoJson(WorldGeoJSON, {
     style: (feature) => {
       const value = locationMap[feature.properties.iso_a2];
       return {
-        fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
+        fillColor: value ? getColor(Math.log(1 + value) / Math.log(1 + maxCasesForLocation)) : '#FFFFFF',
         weight: value ? 1 : 0,
-        color: value ? getColor(value / maxValue) : '#DDDDDD',
+        color: value ? getColor(Math.log(1 + value) / Math.log(1 + maxCasesForLocation)) : '#DDDDDD',
         fillOpacity: 1
       };
     }
@@ -39,7 +37,7 @@ Template.bioeventItem.onRendered(function() {
   // map.touchZoom.disable();
   const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
   const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
-  const timelineMax = this.data.maxCases;
+  const timelineMax = this.data.timelineMax;
   let formattedTimeseries = [];
   let prev = null;
   this.data.bioevent.event.timeseries.forEach((x) => {

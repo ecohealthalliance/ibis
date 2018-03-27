@@ -33,8 +33,17 @@ Template.bioeventPanel.onCreated(function() {
 });
 
 Template.bioeventPanel.helpers({
-  maxCases: () => _.max(Template.instance().bioevents.get().map((x) => {
-    return _.max(_.pluck(x.event.timeseries, 'value'));
+  timelineMax: () => _.max(Template.instance().bioevents.get().map((x) => {
+    return _.chain(x.event.timeseries)
+      .pluck('value')
+      .max()
+      .value();
+  })),
+  maxCasesForLocation: () => _.max(Template.instance().bioevents.get().map((x) => {
+    return _.chain(x.event.locations)
+      .values()
+      .max()
+      .value();
   })),
   bioevents: () => Template.instance().bioevents.get().map((x) => {
     if(x.rank) x.rank = x.rank.toFixed(2);

@@ -63,7 +63,7 @@ Template.bioeventItem.onRendered(function() {
     },
     data: {
       json: formattedTimeseries.map((x) => {
-        x.value = Math.log(1 + x.value) / Math.LN10;
+        x.value = Math.log(1 + x.value);
         return x;
       }),
       keys: {
@@ -92,9 +92,9 @@ Template.bioeventItem.onRendered(function() {
       },
       y: {
         min: 0,
-        max: Math.log(timelineMax) / Math.LN10,
+        max: Math.log(timelineMax),
         tick: {
-          values: [0, Math.log(timelineMax) / Math.LN10 / 2, Math.log(timelineMax) / Math.LN10],
+          values: [0, Math.log(timelineMax) / 2, Math.log(timelineMax)],
           format: (x) => (Math.pow(10, x) - 1).toPrecision(1)
         },
         show: true

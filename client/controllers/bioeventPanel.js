@@ -1,4 +1,5 @@
 /* global FlowRouter */
+import { _ } from 'meteor/underscore';
 import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
@@ -32,8 +33,21 @@ Template.bioeventPanel.onCreated(function() {
 });
 
 Template.bioeventPanel.helpers({
+  timelineMax: () => _.max(Template.instance().bioevents.get().map((x) => {
+    return _.chain(x.event.timeseries)
+      .pluck('value')
+      .max()
+      .value();
+  })),
+  maxCasesForLocation: () => _.max(Template.instance().bioevents.get().map((x) => {
+    return _.chain(x.event.locations)
+      .values()
+      .max()
+      .value();
+  })),
   bioevents: () => Template.instance().bioevents.get().map((x) => {
-    x.rank = x.rank.toFixed(2);
+    if(x.rank) x.rank = x.rank.toFixed(2);
+    if(x.lastIncident) x.lastIncident = ("" + x.lastIncident).split("T")[0];
     return x;
   }),
   dateRange: () => Template.instance().dateRange,
@@ -41,7 +55,8 @@ Template.bioeventPanel.helpers({
     const selectedType = Template.instance().rankMetric.get();
     return [
       { name: "threatLevel", label: "Ranked by Threat Level" },
-      { name: "threatLevelExUS", label: "Ranked by Threat Level (Ex. US)" }
+      { name: "threatLevelExUS", label: "Ranked by Threat Level (Ex. US)" },
+      { name: "mostRecent", label: "Ranked by Latest Incident" }
     ].map((type) => {
       type.selected = type.name == selectedType;
       return type;

@@ -13,4 +13,15 @@ template(name='bioeventPanel')
           i.fa.fa-question-circle
     ul.list-unstyled.bioevent-items
       each bioevents
-        +bioeventItem rank=rank event=event dateRange=../dateRange
+        +bioeventItem maxCasesForLocation=maxCasesForLocation timelineMax=timelineMax bioevent=this dateRange=../dateRange
+
+  .modal(tabindex='-1', role='dialog')#rank-info-modal
+    .modal-dialog(role='document')
+      .modal-content
+        .modal-header
+          h5.modal-title Rank Info
+          button.close(type='button', data-dismiss='modal', aria-label='Close')
+            span(aria-hidden='true') ×
+        .modal-body.content
+        .modal-footer
+          button.btn.btn-secondary(type='button', data-dismiss='modal') Close

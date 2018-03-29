@@ -1,6 +1,7 @@
-/* global L, chroma, c3 */
+/* global L, chroma, c3, FlowRouter */
 import { _ } from 'meteor/underscore';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
+import { Blaze } from 'meteor/blaze';
 
 const RAMP = chroma.scale(["#ffffff", "#a10000"]).colors(10);
 const getColor = (val) => {
@@ -16,17 +17,15 @@ Template.bioeventItem.onRendered(function() {
     zoomControl: false,
     attributionControl: false
   });
-  const locationMap = this.data.event.locations;
-  const maxValue = _.max(WorldGeoJSON.features.map(
-    (feature) => locationMap[feature.properties.iso_a2]
-  ));
+  const locationMap = this.data.bioevent.event.locations;
+  const maxCasesForLocation = this.data.maxCasesForLocation;
   const geoJsonLayer = L.geoJson(WorldGeoJSON, {
     style: (feature) => {
       const value = locationMap[feature.properties.iso_a2];
       return {
-        fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
+        fillColor: value ? getColor(Math.log(1 + value) / Math.log(1 + maxCasesForLocation)) : '#FFFFFF',
         weight: value ? 1 : 0,
-        color: value ? getColor(value / maxValue) : '#DDDDDD',
+        color: value ? getColor(Math.log(1 + value) / Math.log(1 + maxCasesForLocation)) : '#DDDDDD',
         fillOpacity: 1
       };
     }
@@ -38,10 +37,10 @@ Template.bioeventItem.onRendered(function() {
   // map.touchZoom.disable();
   const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
   const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
-  const timelineMax = _.max(_.pluck(this.data.event.timeseries, 'value'));
+  const timelineMax = this.data.timelineMax;
   let formattedTimeseries = [];
   let prev = null;
-  this.data.event.timeseries.forEach((x) => {
+  this.data.bioevent.event.timeseries.forEach((x) => {
     if (prev) {
       formattedTimeseries.push({
         date: prev.date,
@@ -63,13 +62,22 @@ Template.bioeventItem.onRendered(function() {
       text: 'Cases per day'
     },
     data: {
-      json: formattedTimeseries,
+      json: formattedTimeseries.map((x) => {
+        x.value = Math.log(1 + x.value);
+        return x;
+      }),
       keys: {
         x: 'date',
         value: ['value'],
       },
       type: 'area',
-      color: () => '#ffffff'
+      color: () => '#ffffff',
+      labels : {
+        show:true,
+        format: {
+          data1: (x) => (Math.pow(10, x) - 1).toFixed(0)
+        }
+      }
     },
     axis: {
       x: {
@@ -84,10 +92,10 @@ Template.bioeventItem.onRendered(function() {
       },
       y: {
         min: 0,
-        max: timelineMax,
+        max: Math.log(timelineMax),
         tick: {
-          values: [0, timelineMax],
-          format: (x) => x.toPrecision(1)
+          values: [0, Math.log(timelineMax) / 2, Math.log(timelineMax)],
+          format: (x) => (Math.pow(10, x) - 1).toPrecision(1)
         },
         show: true
       }
@@ -100,4 +108,15 @@ Template.bioeventItem.onRendered(function() {
 
 Template.bioeventItem.helpers({
   eventType: () => "auto-events"
+});
+
+Template.bioeventItem.events({
+  'click .rank-score': (event, instance) => {
+    let bioevent = instance.data.bioevent;
+    $('#rank-info-modal').modal('show');
+    Blaze.renderWithData(Template.rankInfo, {
+      locationId: FlowRouter.getParam('locationId'),
+      eventId: bioevent.event._id
+    }, $('#rank-info-modal .content')[0]);
+  }
 });

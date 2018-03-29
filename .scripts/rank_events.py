@@ -256,6 +256,7 @@ def gen_ranks():
                     'eventId': event_id,
                     'departureAirportId': departure_airport,
                     'arrivalAirportId': arrival_airport,
+                    'catchmentPopulation': catchment_population,
                     'probabilityPassengerInfected': probability_passenger_infected,
                     'passengerFlow': passenger_flow,
                     'threatCoefficient': DALYs_per_case,

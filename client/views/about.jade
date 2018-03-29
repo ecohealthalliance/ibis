@@ -10,7 +10,7 @@ template(name="about")
       in the US that diseases are more likely to reach through the flight network.
 
       __IBIS is currently under development. The information that is currently
-      displayed may be mock data__
+      displayed may be mock data.__
 
   .about-content
     +markdown
@@ -57,24 +57,27 @@ template(name="about")
   .about-content
     +markdown
       # Rank Metrics
-      
+
       ## Threat Level
 
       The threat level is based on a rough approximation of the number of incoming
       infected passengers weighted by disease specific coefficients.
       It is computed as follows:
-      
-      __ThreatLevel__(event, inboundAirport) = __DiseaseSeverity__(event) * *sumOverAirports*[ __EstimatedPassengerFlow__(airport, inboundAirport) * __ProbabilityPassengerInfected__(event, airport) ]
-      
-      __ProbabilityPassengerInfected__(event, departureAirport) = __CurrentNumberInfectedInAirportCatchment__(event, departureAirport) / __CatchmentPopulation__(departureAirport)
-      
-      __CatchmentPopulation__(airport) = Population of airport's country
 
-      __CurrentNumberInfectedInAirportCatchment__(event, airport) = Cumulative cases in airport's country over last two weeks
+      __ThreatLevel__(event, inboundAirport) = __DiseaseSeverity__(event) * *sumOverAirports*[ __EstimatedPassengerFlow__(airport, inboundAirport) * __ProbabilityPassengerInfected__(event, airport) ]
+
+      __ProbabilityPassengerInfected__(event, departureAirport) = __CurrentNumberInfectedInAirportCatchment__(event, departureAirport) / __CatchmentPopulation__(departureAirport)
+
+      __CatchmentPopulation__(airport) = The number of people in the airport's catchment.
+
+      __CurrentNumberInfectedInAirportCatchment__(event, airport) = Cumulative cases in airport's catchment over last two weeks
 
       __DiseaseSeverity__(event) = The Disability Adjusted Life Years per case of the event's disease. The Global Burden of Disease data set is used to compute this.
       The average DALYs per case across all infectious diseases is used when information is not available for a disease.
-      
+
+      Airport catchment is a raster map of 0 to 1 values that indicate the portion of poeple within
+      each pixel that would use the airport to travel. The values are determined by
+      the distance from the airport, the distance to alternative airports, and the outflow of the airport.
 
       ## Ex. US
       

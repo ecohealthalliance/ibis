@@ -275,23 +275,45 @@ api.addRoute('locations/:locationId/bioevents', {
 });
 
 /*
-@api {get} bioevents Get a ranked list of bioevents
+@api {get} rankData Get all the rank data for the bioevent and optional locaiton.
 */
-api.addRoute('bioevents', {
+api.addRoute('rankData', {
   get: function() {
     const exUS = this.queryParams.metric == "threatLevelExUS";
+    var matchQuery = {
+      departureAirportId: {
+        $nin: exUS ? USAirportIds : []
+      },
+      eventId: this.queryParams.eventId
+    };
+    if(this.queryParams.locationId && this.queryParams.locationId !== "undefined") {
+      const location = Locations.findOne(this.queryParams.locationId);
+      matchQuery.arrivalAirportId = {
+        $in: location.airportIds
+      };
+    }
     return {
       results: EventAirportRanks.aggregate([{
-        $match: {
-          departureAirportId: {
-            $nin: exUS ? USAirportIds : []
-          }
-        }
+        $match: matchQuery
       }, {
         $group: {
-          _id: "$eventId",
+          _id: "$departureAirportId",
+          passengerFlow: {
+            $sum: "$passengerFlow"
+          },
+          infectedPassengers: {
+            $sum: {
+              $multiply: [
+                "$probabilityPassengerInfected",
+                "$passengerFlow"
+              ]
+            }
+          },
           rank: {
             $sum: "$rank"
+          },
+          threatCoefficient: {
+            $first: "$threatCoefficient"
           }
         }
       }, {
@@ -299,16 +321,65 @@ api.addRoute('bioevents', {
           rank: -1
         }
       }, {
-        $limit: 15
-      }, {
-        $lookup: {
-          from: "resolvedEvents",
-          localField: "_id",
-          foreignField: "_id",
-          as: "event"
-        }
-      }, { $unwind: "$event" }])
+        $limit: 100
+      }])
     };
+  }
+});
+
+/*
+@api {get} bioevents Get a ranked list of bioevents
+@apiParam {ISODateString} metric threatLevel/threatLevelExUS/mostRecent
+*/
+api.addRoute('bioevents', {
+  get: function() {
+    const exUS = this.queryParams.metric == "threatLevelExUS";
+    const mostRecent = this.queryParams.metric == "mostRecent";
+    if(mostRecent) {
+      return {
+        results: _.sortBy(ResolvedEvents.find().map((event)=>{
+          return {
+            _id: event._id,
+            event: event,
+            lastIncident: _.chain(event.timeseries || [])
+              .pluck('date')
+              .map((x) => new Date(x))
+              .max()
+              .value()
+          };
+        }), (event) => event.lastIncident).slice(-15).reverse()
+      };
+    } else {
+      return {
+        results: EventAirportRanks.aggregate([{
+          $match: {
+            departureAirportId: {
+              $nin: exUS ? USAirportIds : []
+            }
+          }
+        }, {
+          $group: {
+            _id: "$eventId",
+            rank: {
+              $sum: "$rank"
+            }
+          }
+        }, {
+          $sort: {
+            rank: -1
+          }
+        }, {
+          $limit: 15
+        }, {
+          $lookup: {
+            from: "resolvedEvents",
+            localField: "_id",
+            foreignField: "_id",
+            as: "event"
+          }
+        }, { $unwind: "$event" }])
+      };
+    }
   }
 });
 

@@ -14,6 +14,88 @@ let api = new Restivus({
   prettyJson: true
 });
 
+var cached = function(func) {
+  var cache = {};
+  var cacheDate = {};
+  let that = this;
+  return function(...args) {
+    let strArgs = "" + args;
+    if(strArgs in cache) {
+      let cacheExpireDate = new Date(cacheDate[strArgs]);
+      cacheExpireDate.setHours(cacheExpireDate.getHours() + 5);
+      if(new Date() < cacheExpireDate) {
+        return cache[strArgs];
+      }
+    }
+    let result = func.call(that, ...args);
+    cache[strArgs] = result;
+    cacheDate[strArgs] = new Date();
+    return result;
+  };
+};
+
+var topLocations = cached((metric)=>{
+  if(metric.startsWith("threatLevel")) {
+    const exUS = metric == "threatLevelExUS";
+    let arrivalAirportToRankScore = _.object(EventAirportRanks.aggregate([{
+      $match: {
+        departureAirportId: {
+          $nin: exUS ? USAirportIds : []
+        }
+      }
+    }, {
+      $group: {
+        _id: "$arrivalAirportId",
+        rank: {
+          $sum: "$rank"
+        }
+      }
+    }]).map((x)=> [x._id, x.rank]));
+    return {
+      locations: Locations.find({
+        airportIds: {$in: Object.keys(arrivalAirportToRankScore)}
+      }).map((location)=>{
+        location.rank = 0;
+        location.airportIds.forEach((airportId)=>{
+          location.rank += arrivalAirportToRankScore[airportId] || 0;
+        });
+        return location;
+      })
+    };
+  } else {
+    const periodDays = 14;
+    // Only return locations with incoming passengers
+    let arrivalAirportToPassengers = _.object(PassengerFlows.aggregate([{
+      $match: {
+        simGroup: 'ibis14day'
+      }
+    }, {
+      $group: {
+        _id: "$arrivalAirport",
+        totalPassengers: { $sum: "$estimatedPassengers" }
+      }
+    }]).map((x)=> [x._id, x.totalPassengers]));
+    return {
+      locations: Locations.find({
+        airportIds: {$in: Object.keys(arrivalAirportToPassengers)}
+      }).map((location)=>{
+        location.totalPassengers = 0;
+        location.airportIds.forEach((airportId)=>{
+          location.totalPassengers += arrivalAirportToPassengers[airportId] / periodDays || 0;
+        });
+        return location;
+      })
+    };
+  }
+});
+
+var updateCache = ()=>{
+  ['threatLevel', 'threatLevelExUS', 'passengerFlow'].map((metric)=>{
+    topLocations(metric);
+  });
+};
+updateCache();
+setInterval(updateCache, 1000 * 60 * 60);
 
 /*
 @api {get} topLocations
@@ -22,58 +104,7 @@ let api = new Restivus({
 */
 api.addRoute('topLocations', {
   get: function() {
-    if(this.queryParams.metric.startsWith("threatLevel")) {
-      const exUS = this.queryParams.metric == "threatLevelExUS";
-      let arrivalAirportToRankScore = _.object(EventAirportRanks.aggregate([{
-        $match: {
-          departureAirportId: {
-            $nin: exUS ? USAirportIds : []
-          }
-        }
-      }, {
-        $group: {
-          _id: "$arrivalAirportId",
-          rank: {
-            $sum: "$rank"
-          }
-        }
-      }]).map((x)=> [x._id, x.rank]));
-      return {
-        locations: Locations.find({
-          airportIds: {$in: Object.keys(arrivalAirportToRankScore)}
-        }).map((location)=>{
-          location.rank = 0;
-          location.airportIds.forEach((airportId)=>{
-            location.rank += arrivalAirportToRankScore[airportId] || 0;
-          });
-          return location;
-        })
-      };
-    } else {
-      const periodDays = 14;
-      // Only return locations with incoming passengers
-      let arrivalAirportToPassengers = _.object(PassengerFlows.aggregate([{
-        $match: {
-          simGroup: 'ibis14day'
-        }
-      }, {
-        $group: {
-          _id: "$arrivalAirport",
-          totalPassengers: { $sum: "$estimatedPassengers" }
-        }
-      }]).map((x)=> [x._id, x.totalPassengers]));
-      return {
-        locations: Locations.find({
-          airportIds: {$in: Object.keys(arrivalAirportToPassengers)}
-        }).map((location)=>{
-          location.totalPassengers = 0;
-          location.airportIds.forEach((airportId)=>{
-            location.totalPassengers += arrivalAirportToPassengers[airportId] / periodDays || 0;
-          });
-          return location;
-        })
-      };
-    }
+    return topLocations(this.queryParams.metric);
   }
 });
 

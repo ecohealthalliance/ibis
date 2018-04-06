@@ -121,7 +121,12 @@ def create_location_shapes(resolved_location_tree, parent_shape=None):
         location = child['location']
         matching_countries = world_df[world_df.iso_a2 == location.get('countryCode', 'NoCountry')]
         excess_value = child['value'] - sum(child2['value'] for child2 in child['children'])
-        assert excess_value >= 0
+        # Excess value could be slightly negative due to floating point error.
+        if excess_value < -0.01:
+            print child
+            print [child2['value'] for child2 in child['children']]
+            raise Exception('Bad tree')
+        excess_value = max(0, excess_value)
         if len(matching_countries):
             country_shape = matching_countries.geometry.iloc[0]
         if location.get('featureCode', '').startswith('PCL') and country_shape:
@@ -228,10 +233,11 @@ if __name__ == "__main__":
     population_raster_data = population_raster.read(1)
     population_raster_data[population_raster_data < 0] = 0
 
-    end_date = datetime.datetime.now()
-    start_date = end_date - datetime.timedelta(days=300)
+    end_date = datetime.datetime(2016, 6, 1)
+    start_date = datetime.datetime(2016, 7, 1)
+
     results = requests.get('https://eidr-connect.eha.io/api/events-with-resolved-data', params={
-        'ids': ['jqrHoSTJa687S5cqs'],
+        'ids': ['C8cWLWrJhwHQohko5'],
         'startDate': start_date.isoformat(),
         'endDate': end_date.isoformat(),
         'eventType': 'auto',
@@ -260,8 +266,8 @@ if __name__ == "__main__":
 
     outflows = compute_outflows(db, {
         "departureDateTime": {
-            "$lte": datetime.datetime(2016, 7, 1),
-            "$gte": datetime.datetime(2016, 6, 1)
+            "$lte": end_date,
+            "$gte": start_date
         }
     })
     max_outflow = max(outflows.values())

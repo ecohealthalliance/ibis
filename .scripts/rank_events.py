@@ -64,7 +64,8 @@ def resolved_event_iter(events):
             'startDate': start_date.isoformat(),
             'endDate': end_date.isoformat(),
             'eventType': 'auto',
-            'fullLocations': True
+            'fullLocations': True,
+            'activeCases': True
         })
         results = request_result.json()['events']
         for result in results:

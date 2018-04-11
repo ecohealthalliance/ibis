@@ -67,7 +67,13 @@ def resolved_event_iter(events):
             'fullLocations': True,
             'activeCases': True
         })
-        results = request_result.json()['events']
+        request_result.raise_for_status()
+        try:
+            results = request_result.json()['events']
+        except:
+            print "Bad response:"
+            print request_result.content
+            raise
         for result in results:
             yield result
 events_with_resolved_data = list(zip(events, resolved_event_iter(events)))

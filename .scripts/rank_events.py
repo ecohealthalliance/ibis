@@ -57,7 +57,7 @@ resolved_events = []
 end_date = datetime.datetime.now()
 start_date = end_date - datetime.timedelta(days=14)
 def resolved_event_iter(events):
-    for event_batch in batched(events, 2):
+    for event_batch in batched(events, 5):
         url = 'https://eidr-connect.eha.io/api/events-with-resolved-data'
         request_result = requests.get(url, params={
             'ids': [event['_id'] for event in event_batch],
@@ -270,6 +270,8 @@ def gen_ranks():
                     'rank': rank_score
                 }
 
+# Drop database in case it still exists from a failed prior run.
+db.eventAirportRanks_create.drop()
 for ranks in batched(gen_ranks(), 50000):
     result = db.eventAirportRanks_create.insert_many(ranks)
     print len(result.inserted_ids), '/', len(ranks), 'records inserted'

@@ -233,36 +233,28 @@ if __name__ == "__main__":
     population_raster_data = population_raster.read(1)
     population_raster_data[population_raster_data < 0] = 0
 
-    end_date = datetime.datetime(2016, 6, 1)
-    start_date = datetime.datetime(2016, 7, 1)
+    end_date = datetime.datetime(2018, 4, 17)
+    start_date = datetime.datetime(2018, 3, 29)
 
     results = requests.get('https://eidr-connect.eha.io/api/events-with-resolved-data', params={
-        'ids': ['C8cWLWrJhwHQohko5'],
+        'ids': ['RJ8oAew6rntCQMuZY'],
         'startDate': start_date.isoformat(),
         'endDate': end_date.isoformat(),
         'eventType': 'auto',
-        'fullLocations': True
+        'fullLocations': True,
+        'activeCases': True
     }).json()['events']
+
+    import yaml
+    print yaml.dump(results)
     db = pymongo.MongoClient(os.environ['MONGO_HOST'])['flirt']
 
     resolved_event_data = results[0]
-    resolved_ccs = {}
-    for child in resolved_event_data['fullLocations']['children']:
-        cc = child['location']['countryCode']
-        resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
-    resolved_event_data['locations'] = resolved_ccs
     case_raster = compute_case_raster(resolved_event_data['fullLocations'], population_raster, population_raster_data)
     print 'total cases:', case_raster.sum()
     actual_case_total = sum(child2['value'] for child2 in resolved_event_data['fullLocations']['children'])
     print 'error:', case_raster.sum() / actual_case_total
     save_image(case_raster ** 0.2, "case_raster")
-
-    airport_to_country_code = get_airport_to_country_code(db)
-    pops_by_cc = {
-        row.iso_a2: row.pop_est
-        for idx, row in world_df.iterrows()
-        if row.iso_a2
-    }
 
     outflows = compute_outflows(db, {
         "departureDateTime": {
@@ -292,12 +284,13 @@ if __name__ == "__main__":
                 population_raster, result,
                 magnitude)
             result[all_airport_raster_data > 0] = result[all_airport_raster_data > 0] / all_airport_raster_data[all_airport_raster_data > 0]
+            if airport['_id'] == 'SEA':
+                save_image(result, 'SEA_airport_raster')
             airport['catchment_cases'] = (result * case_raster).sum()
             airport['catchment_pop'] = (result * population_raster_data).sum()
-            airport['simple_ratio'] = float(resolved_event_data['locations'].get(cc, 0)) / pops_by_cc[cc]
             rows.append(airport)
 
     df = pd.DataFrame(rows)
     df['prob_infected'] = df.catchment_cases / df.catchment_pop
     df = df.query('catchment_pop > 0')
-    print df.sort_values('prob_infected')[['simple_ratio', 'prob_infected', 'name']]
+    print df.sort_values('prob_infected')[['prob_infected', 'name']]

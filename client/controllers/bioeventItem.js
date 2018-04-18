@@ -38,18 +38,13 @@ Template.bioeventItem.onRendered(function() {
   const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
   const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
   const timelineMax = this.data.timelineMax;
-  let formattedTimeseries = [];
-  let prev = null;
-  this.data.bioevent.event.timeseries.forEach((x) => {
-    if (prev) {
-      formattedTimeseries.push({
-        date: prev.date,
-        value: x.value
-      });
-    }
-    x.date = x.date.split('T')[0];
-    formattedTimeseries.push(x);
-    prev = x;
+  const timeseries = this.data.bioevent.event.timeseries;
+  let formattedTimeseries = timeseries.map(([date, value]) => {
+    date = date.split('T')[0];
+    return {
+      date: date,
+      value: value
+    };
   });
   const chart = c3.generate({
     bindto: this.$('.timeline')[0],

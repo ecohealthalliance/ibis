@@ -153,6 +153,8 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
 print "\tDone."
 
 print "Storing resolved event data..."
+# Drop collection in case it still exists from a failed prior run.
+db.resolvedEvents_create.drop()
 for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
     db.resolvedEvents_create.insert_one(dict(
         resolved_event,
@@ -270,7 +272,7 @@ def gen_ranks():
                     'rank': rank_score
                 }
 
-# Drop database in case it still exists from a failed prior run.
+# Drop collection in case it still exists from a failed prior run.
 db.eventAirportRanks_create.drop()
 for ranks in batched(gen_ranks(), 50000):
     result = db.eventAirportRanks_create.insert_many(ranks)

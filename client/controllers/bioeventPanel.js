@@ -34,10 +34,11 @@ Template.bioeventPanel.onCreated(function() {
 
 Template.bioeventPanel.helpers({
   timelineMax: () => _.max(Template.instance().bioevents.get().map((x) => {
-    return _.chain(x.event.timeseries)
-      .pluck('value')
+    const bioeventMax = _.chain(x.event.timeseries)
+      .map(x => x[1])
       .max()
       .value();
+    return bioeventMax;
   })),
   maxCasesForLocation: () => _.max(Template.instance().bioevents.get().map((x) => {
     return _.chain(x.event.locations)

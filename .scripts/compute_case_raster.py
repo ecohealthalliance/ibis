@@ -88,7 +88,6 @@ def plot_airport(long_lat, rasterio_handle, out_raster, magnitude):
     row, col = np.array(rasterio_handle.index(*long_lat)).astype(int)
     for i in range(row - WINDOW_SIZE[0] / 2, row + WINDOW_SIZE[0] / 2):
         for j in range(col - WINDOW_SIZE[1] / 2, col + WINDOW_SIZE[1] / 2):
-
             distance_km = great_circle(
                 long_lat[::-1],
                 rasterio_handle.xy(i, j)[::-1]).kilometers

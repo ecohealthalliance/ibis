@@ -53,9 +53,6 @@ Template.bioeventItem.onRendered(function() {
       left: 40,
       top: 10
     },
-    title: {
-      text: 'Cases per day'
-    },
     data: {
       json: formattedTimeseries.map((x) => {
         x.value = Math.log(1 + x.value);
@@ -102,7 +99,8 @@ Template.bioeventItem.onRendered(function() {
 });
 
 Template.bioeventItem.helpers({
-  eventType: () => "auto-events"
+  eventType: () => "auto-events",
+  timelineTitle: () => "Active Cases"
 });
 
 Template.bioeventItem.events({

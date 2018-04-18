@@ -6,4 +6,4 @@ template(name='bioeventItem')
         .rank-score Rank Score: #{bioevent.rank}
       else if bioevent.lastIncident
         .last-incident Last Incident: #{bioevent.lastIncident}
-    #[.timeline]#[.minimap]
+    #[.timeline-container #[.title=timelineTitle] #[.timeline]]#[.minimap]

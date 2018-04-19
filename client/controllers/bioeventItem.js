@@ -1,4 +1,4 @@
-/* global L, chroma, c3, FlowRouter */
+/* global L, chroma, c3, FlowRouter, $ */
 import { _ } from 'meteor/underscore';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import { Blaze } from 'meteor/blaze';
@@ -23,9 +23,9 @@ Template.bioeventItem.onRendered(function() {
     style: (feature) => {
       const value = locationMap[feature.properties.iso_a2];
       return {
-        fillColor: value ? getColor(Math.log(1 + value) / Math.log(1 + maxCasesForLocation)) : '#FFFFFF',
+        fillColor: value ? getColor(Math.log10(1 + value) / Math.log10(1 + maxCasesForLocation)) : '#FFFFFF',
         weight: value ? 1 : 0,
-        color: value ? getColor(Math.log(1 + value) / Math.log(1 + maxCasesForLocation)) : '#DDDDDD',
+        color: value ? getColor(Math.log10(1 + value) / Math.log10(1 + maxCasesForLocation)) : '#DDDDDD',
         fillOpacity: 1
       };
     }
@@ -46,6 +46,14 @@ Template.bioeventItem.onRendered(function() {
       value: value
     };
   });
+  const formatNumber = (x) => {
+    const value = Math.pow(10, x) - 1;
+    if(value >= 1000) {
+      return value.toPrecision(1);
+    } else {
+      return value.toFixed(0);
+    }
+  };
   const chart = c3.generate({
     bindto: this.$('.timeline')[0],
     padding: {
@@ -55,7 +63,9 @@ Template.bioeventItem.onRendered(function() {
     },
     data: {
       json: formattedTimeseries.map((x) => {
-        x.value = Math.log(1 + x.value);
+        console.log(x);
+        x = Object.create(x);
+        x.value = Math.log10(1 + x.value);
         return x;
       }),
       keys: {
@@ -65,9 +75,9 @@ Template.bioeventItem.onRendered(function() {
       type: 'area',
       color: () => '#ffffff',
       labels : {
-        show:true,
+        show: true,
         format: {
-          data1: (x) => (Math.pow(10, x) - 1).toFixed(0)
+          data1: formatNumber
         }
       }
     },
@@ -84,10 +94,10 @@ Template.bioeventItem.onRendered(function() {
       },
       y: {
         min: 0,
-        max: Math.log(timelineMax),
+        max: Math.log10(timelineMax),
         tick: {
-          values: [0, Math.log(timelineMax) / 2, Math.log(timelineMax)],
-          format: (x) => (Math.pow(10, x) - 1).toPrecision(1)
+          values: [0, Math.log10(timelineMax) / 2, Math.log10(timelineMax)],
+          format: formatNumber
         },
         show: true
       }

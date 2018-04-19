@@ -63,7 +63,6 @@ Template.bioeventItem.onRendered(function() {
     },
     data: {
       json: formattedTimeseries.map((x) => {
-        console.log(x);
         x = Object.create(x);
         x.value = Math.log10(1 + x.value);
         return x;

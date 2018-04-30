@@ -116,6 +116,7 @@ Template.bioeventItem.events({
   'click .rank-score': (event, instance) => {
     let bioevent = instance.data.bioevent;
     $('#rank-info-modal').modal('show');
+    $('#rank-info-modal .content').replaceWith('<div class="content modal-body">');
     Blaze.renderWithData(Template.rankInfo, {
       locationId: FlowRouter.getParam('locationId'),
       eventId: bioevent.event._id

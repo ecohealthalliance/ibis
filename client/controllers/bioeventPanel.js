@@ -7,7 +7,7 @@ import { ReactiveVar } from 'meteor/reactive-var';
 Template.bioeventPanel.onCreated(function() {
   const dateRange = this.dateRange = this.data.dateRange;
   const bioevents = this.bioevents = new ReactiveVar([]);
-  const rankMetric = this.rankMetric = new ReactiveVar("threatLevel");
+  const rankMetric = this.rankMetric = new ReactiveVar("threatLevelExUS");
 
   this.autorun(() => {
     const locationId = FlowRouter.getParam('locationId');
@@ -47,7 +47,7 @@ Template.bioeventPanel.helpers({
       .value();
   })),
   bioevents: () => Template.instance().bioevents.get().map((x) => {
-    if(x.rank) x.rank = x.rank.toFixed(2);
+    if(x.rank) x.rank = x.rank.toPrecision(2);
     if(x.lastIncident) x.lastIncident = ("" + x.lastIncident).split("T")[0];
     return x;
   }),

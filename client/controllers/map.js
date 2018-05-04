@@ -14,7 +14,7 @@ const getColor = (val) => {
 };
 
 Template.map.onCreated(function() {
-  this.mapType = new ReactiveVar("passengerFlow");
+  this.mapType = new ReactiveVar("threatLevel");
   const endDate = new Date();
   const dateRange = this.dateRange = {
     start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),

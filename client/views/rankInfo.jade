@@ -3,11 +3,11 @@ template(name='rankInfo')
     | to compute the rank score.
     a(href="/about#threatlevel") The ranking formula is described here.
   if threatCoefficient
-    p Disease Severity Score: #{threatCoefficient}
+    p Disease Severity Score: {{toPrecision threatCoefficient 4}}
   each rankedOrigins
     .ranked-origin
       pre
         | Origin Airport: #{_id}
-        | Rank Score: #{rank}
-        | Passenger Flow: #{passengerFlow}
-        | Infected Passengers: #{infectedPassengers}
+        | Rank Score: {{toPrecision rank 4}}
+        | Passenger Flow: {{toPrecision passengerFlow 4}}
+        | Infected Passengers: {{toPrecision infectedPassengers 4}}

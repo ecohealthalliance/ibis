@@ -350,7 +350,10 @@ api.addRoute('rankData', {
       departureAirportId: {
         $nin: exUS ? USAirportIds : []
       },
-      eventId: this.queryParams.eventId
+      eventId: this.queryParams.eventId,
+      rank: {
+        $gt: 0
+      }
     };
     if(this.queryParams.locationId && this.queryParams.locationId !== "undefined") {
       const location = Locations.findOne(this.queryParams.locationId);

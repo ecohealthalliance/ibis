@@ -23,6 +23,7 @@ Template.rankInfo.onCreated(function() {
 
 Template.rankInfo.helpers({
   threatCoefficient: () => Template.instance().threatCoefficient.get(),
-  rankedOrigins: () => Template.instance().rankedOrigins.get()
+  rankedOrigins: () => Template.instance().rankedOrigins.get(),
+  toPrecision: (number, precision)=> number.toPrecision(precision)
 });
 

@@ -6,4 +6,11 @@ template(name='bioeventItem')
         .rank-score Rank Score: #{bioevent.rank}
       else if bioevent.lastIncident
         .last-incident Last Incident: #{bioevent.lastIncident}
-    #[.timeline-container #[.title=timelineTitle] #[.timeline]]#[.minimap]
+    #[+timeline type=timelineType]#[.minimap]
+
+template(name='timeline')
+  .timeline-container
+    .type-toggle
+      .timeline-type(class="{{#if type.activeCases}}active{{/if}}" data-timeline-type="activeCases") Active Cases
+      .timeline-type(class="{{#if type.newCases}}active{{/if}}" data-timeline-type="newCases") New Cases
+    .timeline

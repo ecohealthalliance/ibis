@@ -23,7 +23,8 @@ def batched(iterable, batch_size=10):
 
 db = pymongo.MongoClient(os.environ['MONGO_HOST'])['flirt']
 
-print "Evaluation Started: " + str(datetime.datetime.now())
+processing_start_date = datetime.datetime.now()
+print "Evaluation Started: " + str(processing_start_date)
 
 print "Downloading Events..."
 events = requests.get('https://eidr-connect.eha.io/api/auto-events', params={
@@ -283,6 +284,12 @@ print "\tDone."
 print "Print first rank for spot checking:"
 print db.eventAirportRanks.find_one({
     'rank': {'$gt': 0}
+})
+
+db.rankEvaluationMetadata.insert_one({
+    'start': processing_start_date,
+    'finish': datetime.datetime.now(),
+    'numEvents': len(events)
 })
 
 print "Finished at: " + str(datetime.datetime.now())

@@ -72,16 +72,27 @@ $subheader-height = 44px
     background lightblue
   .timeline
     height 130px
-  .timeline-container .title
-    line-height 20px
-    font-size 0.8em
-    top 8px
-    position relative
-    display table
-    margin 0 auto
-    outline 1px solid lightgray
-    font-weight normal
-    padding 0 4px
+  .timeline-container
+    .type-toggle
+      top 8px
+      position relative
+      display block
+      margin 0 auto
+      width 174px
+      outline 1px solid lightgray
+      .timeline-type
+        &.active
+          background-color white
+          color $primary-color-light
+        background-color $primary-color-light
+        line-height 20px
+        font-size 0.8em
+        font-weight normal
+        display inline-block
+        width 84px
+        text-align center
+        cursor pointer
+
 .bioevent-item:first-of-type
   margin-top 1px
 

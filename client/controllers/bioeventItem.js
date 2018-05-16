@@ -2,6 +2,7 @@
 import { _ } from 'meteor/underscore';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import { Blaze } from 'meteor/blaze';
+import { ReactiveVar } from 'meteor/reactive-var';
 
 const RAMP = chroma.scale(["#ffffff", "#a10000"]).colors(10);
 const getColor = (val) => {
@@ -10,7 +11,9 @@ const getColor = (val) => {
   return RAMP[Math.floor(RAMP.length * Math.max(0, Math.min(val, 0.99)))];
 };
 
-Template.bioeventItem.onCreated(function() {});
+Template.bioeventItem.onCreated(function() {
+  this.timelineType = new ReactiveVar({activeCases: true});
+});
 
 Template.bioeventItem.onRendered(function() {
   const map = L.map(this.$('.minimap')[0], {
@@ -35,84 +38,109 @@ Template.bioeventItem.onRendered(function() {
   // map.doubleClickZoom.disable();
   // map.scrollWheelZoom.disable();
   // map.touchZoom.disable();
-  const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
-  const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
-  const timelineMax = this.data.timelineMax;
-  const timeseries = this.data.bioevent.event.timeseries;
-  let formattedTimeseries = timeseries.map(([date, value]) => {
-    date = date.split('T')[0];
-    return {
-      date: date,
-      value: value
-    };
-  });
-  const formatNumber = (x) => {
-    const value = Math.pow(10, x) - 1;
-    if(value >= 1000) {
-      return value.toPrecision(1);
-    } else {
-      return value.toFixed(0);
-    }
-  };
-  const chart = c3.generate({
-    bindto: this.$('.timeline')[0],
-    padding: {
-      right: 20,
-      left: 40,
-      top: 10
-    },
-    data: {
-      json: formattedTimeseries.map((x) => {
-        x = Object.create(x);
-        x.value = Math.log10(1 + x.value);
-        return x;
-      }),
-      keys: {
-        x: 'date',
-        value: ['value'],
-      },
-      type: 'area',
-      color: () => '#ffffff',
-      labels : {
-        show: true,
-        format: {
-          data1: formatNumber
+  this.autorun(() => {
+    const curTimelineType = this.timelineType.get();
+    const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
+    const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
+    const timelineMax = this.data.timelineMax;
+    var timeseries = this.data.bioevent.event.timeseries;
+    if(curTimelineType.newCases) {
+      timeseries = this.data.bioevent.event.dailyRateTimeseries.reduce((sofar, [date, value]) => {
+        if(sofar) {
+          const prev = sofar.slice(-1)[0];
+          return sofar.concat([
+            [prev[0], value],
+            [date, value]
+          ]);
+        } else {
+          return [[date, value]];
         }
-      }
-    },
-    axis: {
-      x: {
-        min: startDateStr,
-        max: endDateStr,
-        tick: {
-          // this also works for non timeseries data
-          values: [startDateStr, endDateStr]
-        },
-        type: 'timeseries',
-        show: true
-      },
-      y: {
-        min: 0,
-        max: Math.log10(timelineMax),
-        tick: {
-          values: [0, Math.log10(timelineMax) / 2, Math.log10(timelineMax)],
-          format: formatNumber
-        },
-        show: true
-      }
-    },
-    legend: {
-      show: false
+      }, null);
     }
+    let formattedTimeseries = timeseries.map(([date, value]) => {
+      //date = date.split('T')[0];
+      return {
+        date: date,
+        value: value
+      };
+    });
+    const formatNumber = (x) => {
+      const value = Math.pow(10, x) - 1;
+      if(value >= 1000) {
+        return value.toPrecision(1);
+      } else {
+        return value.toFixed(0);
+      }
+    };
+    const chart = c3.generate({
+      bindto: this.$('.timeline')[0],
+      padding: {
+        right: 20,
+        left: 40,
+        top: 10
+      },
+      data: {
+        json: formattedTimeseries.map((x) => {
+          x = Object.create(x);
+          x.value = Math.log10(1 + x.value);
+          return x;
+        }),
+        keys: {
+          x: 'date',
+          value: ['value'],
+        },
+        type: 'area',
+        color: () => '#ffffff',
+        labels : {
+          show: true,
+          format: {
+            data1: formatNumber
+          }
+        }
+      },
+      axis: {
+        x: {
+          min: startDateStr,
+          max: endDateStr,
+          tick: {
+            // this also works for non timeseries data
+            values: [startDateStr, endDateStr]
+          },
+          type: 'timeseries',
+          show: true
+        },
+        y: {
+          min: 0,
+          max: Math.log10(timelineMax),
+          tick: {
+            values: [0, Math.log10(timelineMax) / 2, Math.log10(timelineMax)],
+            format: formatNumber
+          },
+          show: true
+        }
+      },
+      legend: {
+        show: false
+      }
+    });
   });
 });
 
 Template.bioeventItem.helpers({
   eventType: () => "auto-events",
-  timelineTitle: () => "Active Cases"
+  timelineType: () => {
+    return Template.instance().timelineType.get();
+  }
 });
 
 Template.bioeventItem.events({
+  'click .timeline-type': (event, instance) => {
+    const timelineType = $(event.target).data('timeline-type');
+    instance.timelineType.set({
+      newCases: timelineType == "newCases",
+      activeCases: timelineType == "activeCases"
+    });
+  },
   'click .rank-score': (event, instance) => {
     let bioevent = instance.data.bioevent;
     $('#rank-info-modal').modal('show');

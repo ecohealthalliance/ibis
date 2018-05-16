@@ -245,7 +245,7 @@ if __name__ == "__main__":
     }).json()['events']
 
     import yaml
-    print yaml.dump(results)
+    print yaml.safe_dump(results)
     db = pymongo.MongoClient(os.environ['MONGO_HOST'])['flirt']
 
     resolved_event_data = results[0]

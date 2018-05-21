@@ -48,6 +48,7 @@ Template.bioeventPanel.helpers({
   })),
   bioevents: () => Template.instance().bioevents.get().map((x) => {
     if(x.rank) x.rank = x.rank.toPrecision(2);
+    if(x.activeCases) x.activeCases = x.activeCases.toPrecision(2);
     if(x.lastIncident) x.lastIncident = ("" + x.lastIncident).split("T")[0];
     return x;
   }),
@@ -55,9 +56,10 @@ Template.bioeventPanel.helpers({
   rankMetrics: () => {
     const selectedType = Template.instance().rankMetric.get();
     return [
-      { name: "threatLevel", label: "Ranked by Threat Level" },
       { name: "threatLevelExUS", label: "Ranked by Threat Level (Ex. US)" },
-      { name: "mostRecent", label: "Ranked by Latest Incident" }
+      { name: "threatLevel", label: "Ranked by Threat Level" },
+      { name: "mostRecent", label: "Ranked by Latest Incident" },
+      { name: "activeCases", label: "Ranked by Active Cases" }
     ].map((type) => {
       type.selected = type.name == selectedType;
       return type;

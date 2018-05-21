@@ -102,19 +102,29 @@ var topLocations = cached((metric)=>{
 var rankedBioevents = cached((metric, locationId=null)=>{
   const exUS = metric == "threatLevelExUS";
   const mostRecent = metric == "mostRecent";
+  const activeCases = metric == "activeCases";
   if(mostRecent) {
     return {
       results: _.sortBy(ResolvedEvents.find().map((event)=>{
         return {
           _id: event._id,
           event: event,
-          lastIncident: _.chain(event.timeseries || [])
-            .pluck('date')
-            .map((x) => new Date(x))
+          lastIncident: _.chain(event.dailyRateTimeseries || [])
+            .map((x) => new Date(x[0]))
             .max()
             .value()
         };
       }), (event) => event.lastIncident).slice(-15).reverse()
+    };
+  } else if(activeCases) {
+    return {
+      results: _.sortBy(ResolvedEvents.find().map((event)=>{
+        return {
+          _id: event._id,
+          event: event,
+          activeCases: _.last(event.timeseries)[1]
+        };
+      }), (event) => event.activeCases).slice(-15).reverse()
     };
   } else {
     let matchQuery = {

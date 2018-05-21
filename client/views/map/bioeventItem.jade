@@ -3,9 +3,11 @@ template(name='bioeventItem')
     h6
       a(href="https://eidr-connect.eha.io/events/#{eventType}/#{bioevent.event._id}")=bioevent.event.name
       if bioevent.rank
-        .rank-score Rank Score: #{bioevent.rank}
+        .rank-score.rank-data Rank Score: #{bioevent.rank}
       else if bioevent.lastIncident
-        .last-incident Last Incident: #{bioevent.lastIncident}
+        .rank-data Last Incident: #{bioevent.lastIncident}
+      else if bioevent.activeCases
+        .rank-data Active Cases: #{bioevent.activeCases}
     #[+timeline type=timelineType]#[.minimap]
 
 template(name='timeline')

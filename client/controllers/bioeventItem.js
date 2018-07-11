@@ -46,7 +46,7 @@ Template.bioeventItem.onRendered(function() {
     var timeseries = this.data.bioevent.event.timeseries;
     if(curTimelineType.newCases) {
       timeseries = this.data.bioevent.event.dailyRateTimeseries.reduce((sofar, [date, value]) => {
-        if(sofar) {
+        if(sofar.length > 0) {
           const prev = sofar.slice(-1)[0];
           return sofar.concat([
             [prev[0], value],
@@ -55,12 +55,13 @@ Template.bioeventItem.onRendered(function() {
         } else {
           return [[date, value]];
         }
-      }, null);
+      }, []);
     }
-    let formattedTimeseries = timeseries.map(([date, value]) => {
-      //date = date.split('T')[0];
+    let formattedTimeseries = timeseries.map(([date, value], idx) => {
+      // The date is slightly perturbed to ensure that it always increasing.
+      // Equal dates can cause errors in the plot.
       return {
-        date: date,
+        date: Number(new Date(date)) + idx,
         value: value
       };
     });
@@ -104,7 +105,8 @@ Template.bioeventItem.onRendered(function() {
           max: endDateStr,
           tick: {
             // this also works for non timeseries data
-            values: [startDateStr, endDateStr]
+            values: [startDateStr, endDateStr],
+            format: (x)=> new Date(x).toISOString().split('T')[0]
           },
           type: 'timeseries',
           show: true

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import requests
 import pymongo
 import pandas as pd
@@ -7,6 +8,9 @@ import os
 from compute_case_raster import compute_case_raster, plot_airport, compute_outflows, get_airport_to_country_code
 import rasterio
 import numpy as np
+import argparse
+from dateutil import parser as date_parser
+
 
 def batched(iterable, batch_size=10):
     """
@@ -21,21 +25,37 @@ def batched(iterable, batch_size=10):
             batch = []
     yield batch
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--start_date", default=None)
+parser.add_argument("--end_date", default=None)
+parser.add_argument("--sim_group", default="ibis14day")
+parser.add_argument("--rank_group", default=None)
+args = parser.parse_args()
+
+if args.end_date:
+    end_date = date_parser.parse(args.end_date)
+else:
+    end_date = datetime.datetime.now()
+if args.start_date:
+    start_date = date_parser.parse(args.start_date)
+else:
+    start_date = end_date - datetime.timedelta(days=14)
+
 db = pymongo.MongoClient(os.environ['MONGO_HOST'])['flirt']
 
 processing_start_date = datetime.datetime.now()
-print "Evaluation Started: " + str(processing_start_date)
+print("Evaluation Started: " + str(processing_start_date))
 
-print "Downloading Events..."
+print("Downloading Events...")
 events = requests.get('https://eidr-connect.eha.io/api/auto-events', params={
     'limit': 20000,
     #'query': '{}'
 }).json()
-print "\t%s events found." % len(events)
+print("\t%s events found." % len(events))
 
-print "Downloading passenger flows..."
+print("Downloading passenger flows...")
 passenger_flows = list(db.passengerFlows.find({
-    'simGroup': 'ibis14day'
+    'simGroup': args.sim_group
 }))
 airport_set = set()
 for flow in passenger_flows:
@@ -51,12 +71,11 @@ for flow in passenger_flows:
     flow_matrix[
         airport_to_idx[flow['departureAirport']],
         airport_to_idx[flow['arrivalAirport']]] = flow['estimatedPassengers']
-print "\tFlows for %s airports found." % len(airports)
+print("\tFlows for %s airports found." % len(airports))
 
-print "Resolving events..."
+print("Resolving events...")
 resolved_events = []
-end_date = datetime.datetime.now()
-start_date = end_date - datetime.timedelta(days=14)
+
 def resolved_event_iter(events):
     for event_batch in batched(events, 5):
         url = 'https://eidr-connect.eha.io/api/events-with-resolved-data'
@@ -72,25 +91,25 @@ def resolved_event_iter(events):
         try:
             results = request_result.json()['events']
         except:
-            print "Bad response:"
-            print request_result.content
+            print("Bad response:")
+            print(request_result.content)
             raise
         for result in results:
             yield result
 events_with_resolved_data = list(zip(events, resolved_event_iter(events)))
-print "\t%s events with resolved data." % len([
+print("\t%s events with resolved data." % len([
     event for event, resolved_data in events_with_resolved_data
-    if len(resolved_data['fullLocations']['children']) > 0])
+    if len(resolved_data['fullLocations']['children']) > 0]))
 
 
-print "Loading population data..."
+print("Loading population data...")
 population_raster = rasterio.open("gpw/gpw_v4_population_count_rev10_2015_15_min.tif")
 population_raster_data = population_raster.read(1)
 population_raster_data[population_raster_data < 0] = 0
-print "\tPopulation raster sum:", population_raster_data.sum()
+print("\tPopulation raster sum:", population_raster_data.sum())
 
 
-print "Computing outflows..."
+print("Computing outflows...")
 outflows = compute_outflows(db, {
     'departureDateTime': {
         '$lte': end_date,
@@ -98,9 +117,9 @@ outflows = compute_outflows(db, {
     }
 })
 max_outflow = max(outflows.values())
-print "\tMax outflow:", max_outflow
+print("\tMax outflow:", max_outflow)
 
-print "Computing all airport raster..."
+print("Computing all airport raster...")
 all_airport_raster_data = np.zeros(population_raster.shape)
 for airport in list(db.airports.find()):
     magnitude = float(outflows.get(airport['_id'], 0)) / max_outflow
@@ -109,24 +128,24 @@ for airport in list(db.airports.find()):
             airport['loc']['coordinates'],
             population_raster, all_airport_raster_data,
             magnitude)
-print "\tDone."
+print("\tDone.")
 
-print "Computing probabilities of passengers being infected"
+print("Computing probabilities of passengers being infected")
 cases_in_catchment_matrix = numpy.zeros(shape=(len(events), len(airport_set)))
 catchment_population_matrix = numpy.zeros(shape=(len(events), len(airport_set)))
 for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
     resolved_location_tree = resolved_event_data['fullLocations']
     if sum(child2['value'] for child2 in resolved_location_tree['children']) == 0:
         continue
-    print '\n'
-    print event['eventName']
+    print('\n')
+    print(event['eventName'])
     case_raster = compute_case_raster(
         resolved_location_tree,
         population_raster,
         population_raster_data)
-    print 'total cases:', case_raster.sum()
+    print('total cases:', case_raster.sum())
     actual_case_total = sum(child2['value'] for child2 in resolved_event_data['fullLocations']['children'])
-    print 'error:', 100.0 * (case_raster.sum() / actual_case_total - 1.0), "%"
+    print('error:', 100.0 * (case_raster.sum() / actual_case_total - 1.0), "%")
     for airport in db.airports.find():
         result = np.zeros(population_raster_data.shape)
         airport_id = airport['_id']
@@ -141,9 +160,9 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
                 all_airport_raster_data[all_airport_raster_data > 0]
             cases_in_catchment_matrix[idx, airport_to_idx[airport_id]] = (result * case_raster).sum()
             catchment_population_matrix[idx, airport_to_idx[airport_id]] = (result * population_raster_data).sum()
-print "\tDone."
+print("\tDone.")
 
-print "Computeing cases by country..."
+print("Computeing cases by country...")
 for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
     resolved_ccs = {}
     for child in resolved_event_data['fullLocations']['children']:
@@ -151,21 +170,22 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
         if cc:
             resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
     resolved_event_data['locations'] = resolved_ccs
-print "\tDone."
+print("\tDone.")
 
-print "Storing resolved event data..."
-# Drop collection in case it still exists from a failed prior run.
-db.resolvedEvents_create.drop()
-for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
-    db.resolvedEvents_create.insert_one(dict(
-        resolved_event,
-        _id=event['_id'],
-        name=event['eventName'],
-        timestamp=datetime.datetime.now()))
-db.resolvedEvents_create.rename("resolvedEvents", dropTarget=True)
-print "\tDone."
+if args.rank_group:
+    print("Storing resolved event data...")
+    # Drop collection in case it still exists from a failed prior run.
+    db.resolvedEvents_create.drop()
+    for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
+        db.resolvedEvents_create.insert_one(dict(
+            resolved_event,
+            _id=event['_id'],
+            name=event['eventName'],
+            timestamp=datetime.datetime.now()))
+    db.resolvedEvents_create.rename("resolvedEvents", dropTarget=True)
+    print("\tDone.")
 
-print "Computing disease severity coefficients..."
+print("Computing disease severity coefficients...")
 # Determine DALYs Per case using GBD data.
 # Citation:
 # Global Burden of Disease Collaborative Network.
@@ -194,7 +214,7 @@ totals = formatted_df[formatted_df.cause.isin([
     'Diarrhea, lower respiratory, and other common infectious diseases',
     'Neglected tropical diseases and malaria'])].sum()
 average_DALYs_per_case = totals['DALYs (Disability-Adjusted Life Years)'] / totals['Incidence']
-print "\tAverage DALYs per case:", average_DALYs_per_case
+print("\tAverage DALYs per case:", average_DALYs_per_case)
 
 def valid_ratio(x):
     return not(pd.isna(x) or x > 100)
@@ -230,9 +250,9 @@ disease_uri_to_DALYs_per_case = {
     k: max(v, key=lambda x: x['weight'])['DALYsPerCase']
     for k, v in disease_uri_to_DALYs_per_case.items()
 }
-print "\tDone."
+print("\tDone.")
 
-print "Inserting rank data..."
+print("Inserting rank data...")
 airport_to_country_code = get_airport_to_country_code(db)
 def gen_ranks():
     for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
@@ -273,23 +293,41 @@ def gen_ranks():
                     'rank': rank_score
                 }
 
-# Drop collection in case it still exists from a failed prior run.
-db.eventAirportRanks_create.drop()
-for ranks in batched(gen_ranks(), 50000):
-    result = db.eventAirportRanks_create.insert_many(ranks)
-    print len(result.inserted_ids), '/', len(ranks), 'records inserted'
-db.eventAirportRanks_create.rename("eventAirportRanks", dropTarget=True)
-print "\tDone."
+if args.rank_group:
+    db.pastEventAirportRanks.delete_many({
+        'rankGroup': args.rank_group
+    })
+    for ranks in batched(gen_ranks(), 50000):
+        for rank in ranks:
+            rank['rankGroup'] = args.rank_group
+        result = db.pastEventAirportRanks.insert_many(ranks)
+        print(len(result.inserted_ids), '/', len(ranks), 'records inserted')
+    print("\tDone.")
 
-print "Print first rank for spot checking:"
-print db.eventAirportRanks.find_one({
-    'rank': {'$gt': 0}
-})
+    print("Print first rank for spot checking:")
+    print(db.pastEventAirportRanks.find_one({
+        'rankGroup': args.rank_group,
+        'rank': {'$gt': 0}
+    }))
+else:
+    # Drop collection in case it still exists from a failed prior run.
+    db.eventAirportRanks_create.drop()
+    for ranks in batched(gen_ranks(), 50000):
+        result = db.eventAirportRanks_create.insert_many(ranks)
+        print(len(result.inserted_ids), '/', len(ranks), 'records inserted')
+    db.eventAirportRanks_create.rename("eventAirportRanks", dropTarget=True)
+    print("\tDone.")
+
+    print("Print first rank for spot checking:")
+    print(db.eventAirportRanks.find_one({
+        'rank': {'$gt': 0}
+    }))
 
 db.rankEvaluationMetadata.insert_one({
     'start': processing_start_date,
     'finish': datetime.datetime.now(),
-    'numEvents': len(events)
+    'numEvents': len(events),
+    'rankGroup': args.rank_group
 })
 
-print "Finished at: " + str(datetime.datetime.now())
+print("Finished at: " + str(datetime.datetime.now()))

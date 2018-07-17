@@ -23,7 +23,8 @@ def batched(iterable, batch_size=10):
         if batch_idx == batch_size - 1:
             yield batch
             batch = []
-    yield batch
+    if batch:
+      yield batch
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--start_date", default=None)

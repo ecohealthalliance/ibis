@@ -50,7 +50,7 @@ print("Evaluation Started: " + str(processing_start_date))
 print("Downloading Events...")
 events = requests.get('https://eidr-connect.eha.io/api/auto-events', params={
     'limit': 20000,
-    #'query': '{}'
+    # 'query': '{}'
 }).json()
 print("\t%s events found." % len(events))
 
@@ -159,8 +159,10 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
             result[all_airport_raster_data > 0] =\
                 result[all_airport_raster_data > 0] /\
                 all_airport_raster_data[all_airport_raster_data > 0]
-            cases_in_catchment_matrix[idx, airport_to_idx[airport_id]] = (result * case_raster).sum()
-            catchment_population_matrix[idx, airport_to_idx[airport_id]] = (result * population_raster_data).sum()
+            cases_in_catchment_matrix[idx, airport_to_idx[airport_id]] = (
+                result * case_raster).sum()
+            catchment_population_matrix[idx, airport_to_idx[airport_id]] = (
+                result * population_raster_data).sum()
 print("\tDone.")
 
 print("Computeing cases by country...")
@@ -173,8 +175,19 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
     resolved_event_data['locations'] = resolved_ccs
 print("\tDone.")
 
+print("Storing resolved event data...")
 if args.rank_group:
-    print("Storing resolved event data...")
+    db.pastResolvedEvents.delete_many({
+        'rankGroup': args.rank_group
+    })
+    for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
+        db.pastResolvedEvents.insert_one(dict(
+            resolved_event,
+            rankGroup=args.rank_group,
+            _id=event['_id'],
+            name=event['eventName'],
+            timestamp=datetime.datetime.now()))
+else:
     # Drop collection in case it still exists from a failed prior run.
     db.resolvedEvents_create.drop()
     for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
@@ -184,7 +197,7 @@ if args.rank_group:
             name=event['eventName'],
             timestamp=datetime.datetime.now()))
     db.resolvedEvents_create.rename("resolvedEvents", dropTarget=True)
-    print("\tDone.")
+print("\tDone.")
 
 print("Computing disease severity coefficients...")
 # Determine DALYs Per case using GBD data.
@@ -255,6 +268,7 @@ print("\tDone.")
 
 print("Inserting rank data...")
 airport_to_country_code = get_airport_to_country_code(db)
+
 def gen_ranks():
     for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
         event_id = event['_id']

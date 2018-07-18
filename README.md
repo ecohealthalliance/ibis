@@ -14,11 +14,9 @@ variable like so:
 FLIGHT_MONGO_URL=mongodb://localhost:27019/flirt meteor
 ```
 
-IBIS also requires bioevent rank data to be pre-computed by executing the jupyter notebook
-in .scripts. This will generate an html document in /public showing information
-that can be used check the conputations:
+IBIS also requires bioevent rank data to be pre-computed by executing .scripts/rank_events.py
 
 ```
-pip install jupyter pymongo requests pandas
-MONGO_HOST=localhost:27017 jupyter nbconvert --execute --ExecutePreprocessor.kernel_name=python --ExecutePreprocessor.timeout=None --allow-errors .scripts/rank_events.ipynb --output ../public/rank_events.html 
+pip install -r .scripts/requirements.pip
+MONGO_HOST=localhost:27017 python .scripts/rank_events.py
 ```

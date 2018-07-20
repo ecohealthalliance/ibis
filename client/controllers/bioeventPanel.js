@@ -11,7 +11,6 @@ Template.bioeventPanel.onCreated(function() {
 
   this.autorun(() => {
     const locationId = FlowRouter.getParam('locationId');
-    this.subscribe('locations', locationId);
     const requestParams = {
       params: {
         metric: rankMetric.get()

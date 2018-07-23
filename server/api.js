@@ -284,16 +284,24 @@ api.addRoute('locations/:locationId/passengerFlows', {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
     const periodDays = 14;
-    const results = PassengerFlows.find({
-      simGroup: 'ibis14day',
-      arrivalAirport: {
-        $in: location.airportIds
+    const results = PassengerFlows.aggregate([{
+      $match: {
+        simGroup: 'ibis14day',
+        arrivalAirport: {
+          $in: location.airportIds
+        }
       }
-    }).fetch();
+    }, {
+      $group: {
+        _id: "$departureAirport",
+        estimatedPassengers: {
+          $sum: "$estimatedPassengers"
+        }
+      }
+    }]);
     let statsByCountry = {};
     results.forEach((result)=> {
-      result._id = result.departureAirport;
-      const country = airportToCountryCode[result.departureAirport];
+      const country = airportToCountryCode[result._id];
       const sofar = statsByCountry[country] || {
         estimatedPassengers: 0
       };
@@ -302,7 +310,7 @@ api.addRoute('locations/:locationId/passengerFlows', {
     });
     return {
       countryGroups: statsByCountry,
-      allAirports: results
+      allAirports: results.filter((x)=>x.estimatedPassengers >= 1)
     };
   }
 });
@@ -341,7 +349,7 @@ api.addRoute('locations/:locationId/threatLevel', {
     });
     return {
       countryGroups: statsByCountry,
-      allAirports: results
+      allAirports: results.filter((x)=>x.rank >= 0.0000001)
     };
   }
 });

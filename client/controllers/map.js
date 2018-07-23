@@ -78,7 +78,7 @@ Template.map.onRendered(function() {
       } else if (mapTypeValue === "threatLevel") {
         route = "threatLevel";
         valueProp = "rank";
-        units = "";
+        units = "rank score";
       } else {
         route = "inboundTraffic";
         valueProp = "numSeats";
@@ -96,6 +96,7 @@ Template.map.onRendered(function() {
           result[id] = countryGroups[id][valueProp];
         }
         renderGeoJSON(result, valueProp, units);
+        geoJsonLayer.addLayer(L.geoJson({ features: locations[locationId].displayGeoJSON }));
 
         let maxValue = _.max(resp.data.allAirports.map((x) => x[valueProp]));
         geoJsonLayer.addLayer(L.geoJson({
@@ -144,7 +145,6 @@ Template.map.onRendered(function() {
             });
           }
         }));
-        geoJsonLayer.addLayer(L.geoJson({ features: locations[locationId].displayGeoJSON }));
       });
     });
   });

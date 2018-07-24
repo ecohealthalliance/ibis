@@ -73,6 +73,9 @@ Template.bioeventItem.onRendered(function() {
         return value.toFixed(0);
       }
     };
+    const dayBeforeEndStr = new Date(
+      new Date(this.data.dateRange.end).setDate(this.data.dateRange.end.getDate() - 1)
+    ).toISOString().split('T')[0];
     const chart = c3.generate({
       bindto: this.$('.timeline')[0],
       padding: {
@@ -104,8 +107,9 @@ Template.bioeventItem.onRendered(function() {
           min: startDateStr,
           max: endDateStr,
           tick: {
-            // this also works for non timeseries data
-            values: [startDateStr, endDateStr],
+            // The final tick is the day before the right bound so the label
+            // fits.
+            values: [startDateStr, dayBeforeEndStr],
             format: (x)=> new Date(x).toISOString().split('T')[0]
           },
           type: 'timeseries',

@@ -4,6 +4,7 @@ import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import Constants from '/imports/constants';
+import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 
 const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
 const getColor = (val) =>{
@@ -16,14 +17,33 @@ Template.splash.onCreated(function() {
   this.mapType = new ReactiveVar("threatLevelExUS");
   this.locations = new ReactiveVar([]);
   this.autorun(()=>{
-    HTTP.get('/api/topLocations', {
-      params: {
-        metric: this.mapType.get()
-      }
-    }, (err, resp)=> {
-      if(err) return console.error(err);
-      this.locations.set(resp.data.locations);
-    });
+    const metric = this.mapType.get();
+    Promise.all([
+      new Promise((resolve, reject) =>{
+        HTTP.get('/api/topLocations', {
+          params: {
+            metric: metric
+          }
+        }, (err, resp)=> {
+          if(err) return reject(err);
+          resolve(resp.data);
+        });
+      }), locationGeoJsonPromise
+    ]).then(([topLocations, locationGeoJson])=>{
+      const airportValues = topLocations.airportValues;
+      this.locations.set(_.map(locationGeoJson, (location, locationId)=>{
+        location = Object.create(location);
+        location[metric] = 0;
+        location.airportIds.forEach((airportId)=>{
+          location[metric] += airportValues[airportId] || 0;
+        });
+        if(location[metric] == 0) return;
+        location._id = locationId;
+        location.type = locationId.split(':')[0];
+        return location;
+      }).filter(x=>x));
+    })
+    
   });
   const endDate = new Date();
   const dateRange = this.dateRange = {
@@ -76,14 +96,14 @@ Template.splash.onRendered(function() {
     let locations = this.locations.get();
     let airportMax = 0;
     let stateMax = 0;
-    locations.map((x)=>{
-      let value = this.mapType.get() === "passengerFlow" ? x.totalPassengers : x.rank;
-      if(x.type === 'state' && value > stateMax) stateMax = value;
-      if(x.type === 'airport' && value > airportMax) airportMax = value;
+    locations.map((location)=>{
+      let value = location[this.mapType.curValue];
+      if(location.type === 'state' && value > stateMax) stateMax = value;
+      if(location.type === 'airport' && value > airportMax) airportMax = value;
     });
     locations.forEach((location)=>{
       if(!location.displayGeoJSON) return;
-      let value = this.mapType.get() === "passengerFlow" ? location.totalPassengers : location.rank;
+      let value = location[this.mapType.curValue];
       var geojsonMarkerOptions = {
         // The radius is a squre root so that the marker's volume is directly
         // proprotional to the value.
@@ -116,9 +136,9 @@ Template.splash.onRendered(function() {
               hoverMarker = L.marker(event.latlng, {
                 icon: L.divIcon({
                   className: "hover-marker",
-                  html: location.displayName + ": " + (this.mapType.get() === "passengerFlow" ?
-                    Math.floor(location.totalPassengers).toLocaleString() + " passengers per day" :
-                    location.rank.toFixed(2))
+                  html: location.displayName + ": " + (this.mapType.curValue === "passengerFlow" ?
+                    Math.floor(value).toLocaleString() + " passengers per day" :
+                    value.toFixed(2))
                 })
               }).addTo(map);
               layer.setStyle({

@@ -1,11 +1,11 @@
 import { _ } from 'meteor/underscore';
-import Locations from '/imports/collections/Locations';
 import {
   Flights,
   PassengerFlows,
   EventAirportRanks,
   ResolvedEvents
 } from './FlightDB';
+import locationData from '/server/locationData';
 import { airportToCountryCode, USAirportIds } from '/imports/geoJSON/indecies';
 
 
@@ -51,6 +51,9 @@ var topLocations = cached((metric)=>{
       $match: {
         departureAirportId: {
           $nin: exUS ? USAirportIds : []
+        },
+        arrivalAirportId: {
+          $in: USAirportIds
         }
       }
     }, {
@@ -62,22 +65,17 @@ var topLocations = cached((metric)=>{
       }
     }]).map((x)=> [x._id, x.rank]));
     return {
-      locations: Locations.find({
-        airportIds: {$in: Object.keys(arrivalAirportToRankScore)}
-      }).map((location)=>{
-        location.rank = 0;
-        location.airportIds.forEach((airportId)=>{
-          location.rank += arrivalAirportToRankScore[airportId] || 0;
-        });
-        return location;
-      })
+      airportValues: arrivalAirportToRankScore
     };
   } else {
     const periodDays = 14;
     // Only return locations with incoming passengers
     let arrivalAirportToPassengers = _.object(PassengerFlows.aggregate([{
       $match: {
-        simGroup: 'ibis14day'
+        simGroup: 'ibis14day',
+        arrivalAirport: {
+          $in: USAirportIds
+        }
       }
     }, {
       $group: {
@@ -86,15 +84,7 @@ var topLocations = cached((metric)=>{
       }
     }]).map((x)=> [x._id, x.totalPassengers]));
     return {
-      locations: Locations.find({
-        airportIds: {$in: Object.keys(arrivalAirportToPassengers)}
-      }).map((location)=>{
-        location.totalPassengers = 0;
-        location.airportIds.forEach((airportId)=>{
-          location.totalPassengers += arrivalAirportToPassengers[airportId] / periodDays || 0;
-        });
-        return location;
-      })
+      airportValues: arrivalAirportToPassengers
     };
   }
 });
@@ -133,7 +123,7 @@ var rankedBioevents = cached((metric, locationId=null)=>{
       }
     };
     if(locationId) {
-      const location = Locations.findOne(locationId);
+      const location = locationData.locations[locationId];
       matchQuery.arrivalAirportId = {
         $in: location.airportIds
       };
@@ -186,6 +176,12 @@ api.addRoute('topLocations', {
   }
 });
 
+api.addRoute('locationGeoJson', {
+  get: function() {
+    return locationData.locations;
+  }
+});
+
 /*
 @api {get} locations/:locationId/inboundFlights Get inbound flights for the given location
 @apiName inboundFlights
@@ -195,7 +191,7 @@ api.addRoute('topLocations', {
 */
 api.addRoute('locations/:locationId/inboundFlights', {
   get: function() {
-    var location = Locations.findOne(this.urlParams.locationId);
+    var location = locationData.locations[this.urlParams.locationId];
     var arrivesBefore = new Date(this.queryParams.arrivesBefore || new Date());
     return Flights.find({
       'arrivalAirport': {
@@ -217,15 +213,15 @@ api.addRoute('locations/:locationId/inboundFlights', {
 });
 
 /*
-@api {get} locations/:locationId/inboundTrafficByCountry Get inbound traffic stats by country
-@apiName inboundTrafficByCountry
+@api {get} locations/:locationId/inboundTraffic Get inbound traffic stats
+@apiName inboundTraffic
 @apiGroup locations
 @apiParam {ISODateString} arrivesAfter
 @apiParam {ISODateString} arrivesBefore
 */
-api.addRoute('locations/:locationId/inboundTrafficByCountry', {
+api.addRoute('locations/:locationId/inboundTraffic', {
   get: function() {
-    const location = Locations.findOne(this.urlParams.locationId);
+    const location = locationData.locations[this.urlParams.locationId];
     const arrivesBefore = new Date(this.queryParams.arrivesBefore || new Date());
     const arrivesAfter = new Date(this.queryParams.arrivesAfter || new Date(arrivesBefore - 1000000000));
     const MILLIS_PER_DAY = 1000 * 60 * 60  * 24;
@@ -248,8 +244,7 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
             }
           ]
         }
-      },
-      {
+      }, {
         $group: {
           _id: "$departureAirport",
           numFlights: {
@@ -272,36 +267,51 @@ api.addRoute('locations/:locationId/inboundTrafficByCountry', {
       sofar.numSeats += airportStats.numSeats / periodDays;
       statsByCountry[country] = sofar;
     });
-    return statsByCountry;
+    return {
+      countryGroups: statsByCountry,
+      allAirports: results
+    };
   }
 });
 
 /*
-@api {get} locations/:locationId/passengerFlowsByCountry Get estimates of the
+@api {get} locations/:locationId/passengerFlows Get estimates of the
   total number of passengers arriving from each country.
-@apiName passengerFlowsByCountry
+@apiName passengerFlows
 @apiGroup locations
 */
-api.addRoute('locations/:locationId/passengerFlowsByCountry', {
+api.addRoute('locations/:locationId/passengerFlows', {
   get: function() {
-    const location = Locations.findOne(this.urlParams.locationId);
+    const location = locationData.locations[this.urlParams.locationId];
     const periodDays = 14;
-    const results = PassengerFlows.find({
-      simGroup: 'ibis14day',
-      arrivalAirport: {
-        $in: location.airportIds
+    const results = PassengerFlows.aggregate([{
+      $match: {
+        simGroup: 'ibis14day',
+        arrivalAirport: {
+          $in: location.airportIds
+        }
       }
-    }).fetch();
+    }, {
+      $group: {
+        _id: "$departureAirport",
+        estimatedPassengers: {
+          $sum: "$estimatedPassengers"
+        }
+      }
+    }]);
     let statsByCountry = {};
     results.forEach((result)=> {
-      const country = airportToCountryCode[result.departureAirport];
+      const country = airportToCountryCode[result._id];
       const sofar = statsByCountry[country] || {
         estimatedPassengers: 0
       };
       sofar.estimatedPassengers += result.estimatedPassengers / periodDays;
       statsByCountry[country] = sofar;
     });
-    return statsByCountry;
+    return {
+      countryGroups: statsByCountry,
+      allAirports: results.filter((x)=>x.estimatedPassengers >= 1)
+    };
   }
 });
 
@@ -312,7 +322,7 @@ api.addRoute('locations/:locationId/passengerFlowsByCountry', {
 */
 api.addRoute('locations/:locationId/threatLevel', {
   get: function() {
-    const location = Locations.findOne(this.urlParams.locationId);
+    const location = locationData.locations[this.urlParams.locationId];
     const periodDays = 14;
     const results = EventAirportRanks.aggregate([{
       $match: {
@@ -337,7 +347,10 @@ api.addRoute('locations/:locationId/threatLevel', {
       sofar.rank += result.rank / periodDays * 365;
       statsByCountry[country] = sofar;
     });
-    return statsByCountry;
+    return {
+      countryGroups: statsByCountry,
+      allAirports: results.filter((x)=>x.rank >= 0.0000001)
+    };
   }
 });
 
@@ -366,7 +379,7 @@ api.addRoute('rankData', {
       }
     };
     if(this.queryParams.locationId && this.queryParams.locationId !== "undefined") {
-      const location = Locations.findOne(this.queryParams.locationId);
+      const location = locationData.locations[this.queryParams.locationId];
       matchQuery.arrivalAirportId = {
         $in: location.airportIds
       };

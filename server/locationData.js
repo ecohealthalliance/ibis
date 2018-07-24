@@ -1,5 +1,4 @@
 import {
-  Flights,
   Airports
 } from './FlightDB';
 import StateGeoJSON from '/imports/geoJSON/ch_2016_us_state_500k.geo.json';
@@ -13,7 +12,7 @@ let locations = {};
 
 Airports.find().map((airport)=> {
   if(airport.countryName == "United States") {
-    stateData = locations['state:' + airport.state];
+    const stateData = locations['state:' + airport.state];
     if(stateData) {
       stateData.airportIds.push(airport._id);
     } else {
@@ -21,7 +20,7 @@ Airports.find().map((airport)=> {
         airportIds: [airport._id],
         displayName: airport.stateName,
         displayGeoJSON: stateGeoJSONIndex[airport.state]
-      }
+      };
     }
   }
   locations['airport:' + airport._id] = {
@@ -37,18 +36,5 @@ Airports.find().map((airport)=> {
 });
 
 module.exports = {
-  locations: locations,
-  stateGeoJSONIndex: stateGeoJSONIndex,
-  getDataForLocation: (locationId) => {
-    let data = locations[locationId];
-    if(!data) return;
-    data = Object.create(data);
-    if(locationId.startsWith('state:')) {
-      data.displayGeoJSON = stateGeoJSONIndex[locationId];
-    }
-    if(locationId.startsWith('airport:')) {
-      data.airportIds = [locationId.split(':')[1]];
-    }
-    return data;
-  }
+  locations: locations
 };

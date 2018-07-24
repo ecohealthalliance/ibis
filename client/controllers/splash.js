@@ -117,9 +117,6 @@ Template.splash.onRendered(function() {
         },
         style: (feature) =>{
           let maxValue = location.type === 'airport' ? airportMax : stateMax;
-          // if(_.isNaN(value / maxValue)) {
-          //   console.log(value, maxValue, location)
-          // }
           return {
             fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
             weight: 1,

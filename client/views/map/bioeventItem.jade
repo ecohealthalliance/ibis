@@ -7,12 +7,12 @@ template(name='bioeventItem')
       else if bioevent.lastIncident
         .rank-data Last Incident: #{bioevent.lastIncident}
       else if bioevent.activeCases
-        .rank-data Active Cases: #{bioevent.activeCases}
+        .rank-data Estimated Active Cases: #{bioevent.activeCases}
     #[+timeline type=timelineType]#[.minimap]
 
 template(name='timeline')
   .timeline-container
     .type-toggle
-      .timeline-type(class="{{#if type.activeCases}}active{{/if}}" data-timeline-type="activeCases") Active Cases
+      .timeline-type(class="{{#if type.activeCases}}active{{/if}}" data-timeline-type="activeCases") Estimated Active Cases
       .timeline-type(class="{{#if type.newCases}}active{{/if}}" data-timeline-type="newCases") New Cases
     .timeline

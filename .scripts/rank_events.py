@@ -184,7 +184,7 @@ if args.rank_group:
         db.pastResolvedEvents.insert_one(dict(
             resolved_event,
             rankGroup=args.rank_group,
-            _id=event['_id'],
+            eventId=event['_id'],
             name=event['eventName'],
             timestamp=datetime.datetime.now()))
 else:

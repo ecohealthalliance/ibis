@@ -91,11 +91,11 @@ Template.map.onRendered(function() {
       }, (err, resp) => {
         if (err) return console.error(err);
         let result = {};
-        const countryGroups = resp.data.countryGroups
+        const countryGroups = resp.data.countryGroups;
         for (let id in countryGroups) {
           result[id] = countryGroups[id][valueProp];
         }
-        renderGeoJSON(result, valueProp, units);
+        renderGeoJSON(result, units);
         geoJsonLayer.addLayer(L.geoJson({ features: locations[locationId].displayGeoJSON }));
 
         let maxValue = _.max(resp.data.allAirports.map((x) => x[valueProp]));

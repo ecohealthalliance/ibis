@@ -320,10 +320,12 @@ if args.rank_group:
     print("\tDone.")
 
     print("Print first rank for spot checking:")
-    print(db.pastEventAirportRanks.find_one({
+    first_rank = db.pastEventAirportRanks.find_one({
         'rankGroup': args.rank_group,
         'rank': {'$gt': 0}
-    }))
+    })
+    assert first_rank
+    print(first_rank)
 else:
     # Drop collection in case it still exists from a failed prior run.
     db.eventAirportRanks_create.drop()
@@ -334,9 +336,11 @@ else:
     print("\tDone.")
 
     print("Print first rank for spot checking:")
-    print(db.eventAirportRanks.find_one({
+    first_rank = db.eventAirportRanks.find_one({
         'rank': {'$gt': 0}
-    }))
+    })
+    assert first_rank
+    print(first_rank)
 
 db.rankEvaluationMetadata.insert_one({
     'start': processing_start_date,

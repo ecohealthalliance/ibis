@@ -323,7 +323,6 @@ api.addRoute('locations/:locationId/passengerFlows', {
 api.addRoute('locations/:locationId/threatLevel', {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
-    const periodDays = 14;
     const results = EventAirportRanks.aggregate([{
       $match: {
         arrivalAirportId: {
@@ -344,7 +343,7 @@ api.addRoute('locations/:locationId/threatLevel', {
       const sofar = statsByCountry[country] || {
         rank: 0
       };
-      sofar.rank += result.rank / periodDays * 365;
+      sofar.rank += result.rank;
       statsByCountry[country] = sofar;
     });
     return {

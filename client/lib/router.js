@@ -10,6 +10,12 @@ FlowRouter.route('/locations/:locationId', {
   }
 });
 
+FlowRouter.route('/bioevents/:bioeventId', {
+  action: function(params, queryParams) {
+    BlazeLayout.render('layout', {main: 'bioevent'});
+  }
+});
+
 FlowRouter.route('/about', {
   action: function(params, queryParams) {
     BlazeLayout.render('layout', {main: 'about'});

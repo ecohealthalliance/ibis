@@ -55,10 +55,10 @@ Template.bioeventPanel.helpers({
   rankMetrics: () => {
     const selectedType = Template.instance().rankMetric.get();
     return [
-      { name: "threatLevelExUS", label: "Ranked by Threat Level (Ex. US)" },
-      { name: "threatLevel", label: "Ranked by Threat Level" },
-      { name: "mostRecent", label: "Ranked by Latest Incident" },
-      { name: "activeCases", label: "Ranked by Active Cases" }
+      { name: "threatLevelExUS", label: "Threat Level (Ex. US)" },
+      { name: "threatLevel", label: "Threat Level" },
+      { name: "mostRecent", label: "Latest Incident" },
+      { name: "activeCases", label: "Active Cases" }
     ].map((type) => {
       type.selected = type.name == selectedType;
       return type;

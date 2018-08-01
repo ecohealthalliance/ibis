@@ -429,6 +429,48 @@ api.addRoute('bioevents', {
 });
 
 /*
+@api {get} bioevents/:bioeventId Get top locations for the given bioevent
+@apiName bioevents
+*/
+api.addRoute('bioevents/:bioeventId', {
+  get: function() {
+    let result = EventAirportRanks.aggregate([{
+      $match: {
+        eventId: this.urlParams.bioeventId
+      }
+    }, {
+      $facet: {
+        "destinationThreatExposure": [{
+          $group: {
+            _id: "$arrivalAirportId",
+            rank: {
+              $sum: "$rank"
+            }
+          }
+        }],
+        "originThreatLevel": [{
+          $group: {
+            _id: "$departureAirportId",
+            rank: {
+              $sum: "$rank"
+            }
+          }
+        }]
+      }
+    }]);
+    airportValues = {
+      destinationThreatExposure: _.object(result[0].destinationThreatExposure.map((x)=>[x._id, x.rank])),
+      originThreatLevel: _.object(result[0].originThreatLevel.map((x)=>[x._id, x.rank]))
+    };
+    return {
+      airportValues: airportValues,
+      resolvedBioevent: ResolvedEvents.findOne({ _id: this.urlParams.bioeventId }),
+      USAirportIds: USAirportIds
+    };
+  }
+});
+
+/*
 @api {get} bioeventLastUpdate
 */
 api.addRoute('bioeventLastUpdate', {

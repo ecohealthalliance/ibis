@@ -1,43 +1,48 @@
-/* global L, _, chroma, FlowRouter */
+/* global L, FlowRouter */
 import { HTTP } from 'meteor/http';
-import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
-import Constants from '/imports/constants';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
+import Constants from '/imports/constants';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
+import { _ } from 'meteor/underscore';
 
-Template.splash.onCreated(function() {
-  this.mapType = new ReactiveVar("threatLevelExUS");
+Template.bioevent.onCreated(function() {
+  this.mapType = new ReactiveVar("destinationThreatExposure");
+  this.USOnly = new ReactiveVar(true);
   this.locations = new ReactiveVar([]);
+  this.resolvedBioevent = new ReactiveVar();
   this.autorun(()=>{
+    const bioeventId = FlowRouter.getParam('bioeventId');
     const metric = this.mapType.get();
     Promise.all([
       new Promise((resolve, reject) =>{
-        HTTP.get('/api/topLocations', {
-          params: {
-            metric: metric
-          }
-        }, (err, resp)=> {
+        HTTP.get('/api/bioevents/' + bioeventId, (err, resp)=> {
           if(err) return reject(err);
           resolve(resp.data);
         });
       }), locationGeoJsonPromise
-    ]).then(([topLocations, locationGeoJson])=>{
-      const airportValues = topLocations.airportValues;
+    ]).then(([bioeventData, locationGeoJson])=>{
+      const airportValues = bioeventData.airportValues;
+      const USAirportIds = bioeventData.USAirportIds;
+      this.resolvedBioevent.set(bioeventData.resolvedBioevent);
       this.locations.set(_.map(locationGeoJson, (location, locationId)=>{
+        let locationName;
         location = Object.create(location);
-        location[metric] = 0;
-        location.airportIds.forEach((airportId)=>{
-          location[metric] += airportValues[airportId] || 0;
+        ["destinationThreatExposure", "originThreatLevel"].forEach((metric) => {
+          location[metric] = 0;
+          location.airportIds.forEach((airportId)=>{
+            location[metric] += airportValues[metric][airportId] || 0;
+          });
         });
-        if(location[metric] == 0) return;
         location._id = locationId;
-        location.type = locationId.split(':')[0];
+        [location.type, locationName] = locationId.split(':');
+        if(location.type == "airport") {
+          location.USAirport = USAirportIds.indexOf(locationName) >= 0
+        }
         return location;
-      }).filter(x=>x));
-    })
-    
+      }));
+    });
   });
   const endDate = new Date();
   const dateRange = this.dateRange = {
@@ -45,8 +50,8 @@ Template.splash.onCreated(function() {
     end: endDate
   };
 });
- 
-Template.splash.onRendered(function() {
+
+Template.bioevent.onRendered(function() {
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
   let geoJsonLayer = null;
@@ -60,7 +65,7 @@ Template.splash.onRendered(function() {
       style: (feature)=>{
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(value / maxValue, INBOUND_RAMP) : '#FFFFFF',
+          fillColor: value ? getColor(value / maxValue, this.ramp) : '#FFFFFF',
           weight: 1,
           color: '#DDDDDD',
           // Hide the US since it will be shown in the states layer.
@@ -85,19 +90,25 @@ Template.splash.onRendered(function() {
   };
   renderGeoJSON({});
   let locationLayer = null;
-  this.autorun(()=> {
+  this.autorun(()=>{
+    const mapType = this.mapType.get();
+    if(mapType == "originThreatLevel") {
+      this.ramp = OUTBOUND_RAMP;
+    } else {
+      this.ramp = INBOUND_RAMP;
+    }
     let layers = [];
-    let locations = this.locations.get();
+    let locations = this.locations.get().filter(x=>x[mapType]);
     let airportMax = 0;
     let stateMax = 0;
     locations.map((location)=>{
-      let value = location[this.mapType.curValue];
+      let value = location[mapType];
       if(location.type === 'state' && value > stateMax) stateMax = value;
       if(location.type === 'airport' && value > airportMax) airportMax = value;
     });
     locations.forEach((location)=>{
       if(!location.displayGeoJSON) return;
-      let value = location[this.mapType.curValue];
+      const value = location[mapType];
       var geojsonMarkerOptions = {
         // The radius is a squre root so that the marker's volume is directly
         // proprotional to the value.
@@ -109,10 +120,10 @@ Template.splash.onRendered(function() {
         pointToLayer: function (feature, latlng) {
           return L.circleMarker(latlng, geojsonMarkerOptions);
         },
-        style: (feature) =>{
+        style: (feature)=>{
           let maxValue = location.type === 'airport' ? airportMax : stateMax;
           return {
-            fillColor: value ? getColor(value / maxValue, INBOUND_RAMP) : '#FFFFFF',
+            fillColor: value ? getColor(value / maxValue, this.ramp) : '#FFFFFF',
             weight: 1,
             color: '#888',
             fillOpacity: 1.0
@@ -130,9 +141,7 @@ Template.splash.onRendered(function() {
               hoverMarker = L.marker(event.latlng, {
                 icon: L.divIcon({
                   className: "hover-marker",
-                  html: location.displayName + ": " + (this.mapType.curValue === "passengerFlow" ?
-                    Math.floor(value).toLocaleString() + " passengers per day" :
-                    value.toFixed(2))
+                  html: location.displayName + ": " + value.toFixed(2)
                 })
               }).addTo(map);
               layer.setStyle({
@@ -154,24 +163,54 @@ Template.splash.onRendered(function() {
     locationLayer = new L.layerGroup(layers).addTo(map);
   });
 });
- 
-Template.splash.helpers({
-  dateRange: ()=> Template.instance().dateRange,
+
+Template.bioevent.helpers({
+  USOnly: () => Template.instance().USOnly.get(),
+  topDestinations: () => {
+    return _.sortBy(Template.instance().locations.get().map((loc)=>{
+      let type, name;
+      [type, name] = loc._id.split(':');
+      if(type == "airport" && loc.USAirport) {
+        return {
+          name: name,
+          value: loc.destinationThreatExposure
+        }
+      }
+    }).filter(x=>x), x=>-x.value).slice(0, 10);
+  },
+  topOrigins: () => {
+    return _.sortBy(Template.instance().locations.get().map((loc)=>{
+      let type, name;
+      [type, name] = loc._id.split(':');
+      if(type == "airport") {
+        return {
+          name: name,
+          value: loc.originThreatLevel
+        }
+      }
+    }).filter(x=>x), x=>-x.value).slice(0, 10);
+  },
+  dateRange: () => Template.instance().dateRange,
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
     return [
-      {name:"threatLevelExUS", label:"Threat Level Exposure Map (Ex. US)"},
-      {name:"threatLevel", label:"Threat Level Exposure Map"},
-      {name:"passengerFlow", label:"Estimated Inbound Passenger Flow Map"},
+      { name: "originThreatLevel", label: "Threat Level by Origin Map" },
+      { name: "destinationThreatExposure", label: "Threat Exposure by Destination Map" }
     ].map((type)=>{
       type.selected = type.name == selectedType;
       return type;
     });
+  },
+  resolvedBioevent: ()=>{
+    return Template.instance().resolvedBioevent.get()
   }
 });
 
-Template.splash.events({
+Template.bioevent.events({
   'change #map-type': (event, instance)=>{
     instance.mapType.set(event.target.value);
+  },
+  'click .us-only-checkbox': (event, instance)=>{
+    instance.USOnly.set(instance.USOnly.get())
   }
 });

@@ -276,7 +276,7 @@ def gen_ranks():
             event['diseases'][0]['id'],
             average_DALYs_per_case)
         for arrival_airport, arrival_country_code in airport_to_country_code.items():
-            if arrival_country_code != "US" or arrival_airport not in airport_to_idx:
+            if arrival_airport not in airport_to_idx:
                 continue
             arrival_airport_idx = airport_to_idx[arrival_airport]
             for departure_airport, departure_country_code in airport_to_country_code.items():

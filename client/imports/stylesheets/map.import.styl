@@ -1,27 +1,5 @@
 @import 'variables.import.styl'
 
-$subheader-height = 44px
-
-.side-panel
-  position absolute
-  background-color white
-  top 0
-  bottom 0
-  right 0
-  width $side-panel-width
-  z-index 1000
-  .header
-    background-color $primary-color
-    height $subheader-height
-    color white
-    padding 10px
-
-.bioevent-panel
-  border-left 1px solid white
-
-.bioevent-panel-title
-  display inline-block
-
 .map-page-container
   position absolute
   top $header-height
@@ -51,6 +29,9 @@ $subheader-height = 44px
   display inline-block
   float right
 
+.bioevent-panel-title
+  display inline-block
+
 .bioevent-item
   background-color $primary-color
   color white
@@ -72,65 +53,12 @@ $subheader-height = 44px
     background lightblue
   .timeline
     height 128px
-  .timeline-container
-    .type-toggle
-      top 0px
-      position relative
-      display flex
-      flex-direction row
-      margin 0 auto
-      width 100%
-      border-top 1px solid white
-      border-bottom 1px solid white
-      color silver
-      .timeline-type
-        &.active
-          background-color white
-          color $primary-color-light
-          font-weight bold
-        background-color $primary-color-light
-        line-height 20px
-        font-size 0.8em
-        font-weight normal
-        display inline-block
-        flex-grow 1
-        text-align center
-        cursor pointer
 
 .bioevent-item:first-of-type
   margin-top 1px
 
-.bioevent-items
-  width 100%
-  position absolute
-  top $subheader-height
-  bottom 0
-  overflow-y scroll
-  margin-bottom 0
-
-//timeline
-.bioevent-item
-  .c3-tooltip
-    color black
-    th
-      line-height 1.5
-      color black
-
-  .c3 .c3-axis-x path,
-  .c3 .c3-axis-x line,
-  
-  .c3 .c3-axis-y path
-  .c3 .c3-axis-y line
-    stroke white
-  
-  
-  .c3 .c3-axis-x g,
-  .c3 .c3-axis-y g,
-  .c3 .c3-legend-item-data text
-    fill whitesmoke
-
-  text.c3-title
-    fill whitesmoke
+.bioevent-details
+  background $primary-color-light
 
 .rank-data
   font-size .5em

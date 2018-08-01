@@ -1,5 +1,6 @@
 @import 'variables.import.styl'
 @import 'map.import.styl'
+@import 'timeline.import.styl'
 
 .subheader
   background-color $primary-color
@@ -60,3 +61,43 @@ footer
     padding-left 0
   a
     color $primary
+
+.side-panel
+  position absolute
+  background-color white
+  top 0
+  bottom 0
+  right 0
+  width $side-panel-width
+  z-index 1000
+  border-left 1px solid white
+  .header
+    background-color $primary-color
+    height $subheader-height
+    color white
+    padding 10px
+
+.side-panel-body
+  width 100%
+  position absolute
+  top $subheader-height
+  bottom 0
+  overflow-y scroll
+  margin-bottom 0
+  color white
+
+.section-head
+  margin 0 auto
+  padding 0 5px
+  width 100%
+  border-top 1px solid white
+  border-bottom 1px solid white
+  background-color white
+  color $primary-color-light
+  font-weight bold
+  line-height 2em
+  display inline-block
+
+  .controls
+    float right
+    font-weight normal

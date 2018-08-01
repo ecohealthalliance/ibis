@@ -1,0 +1,38 @@
+template(name='bioevent')
+  .map-page-container
+    nav.subheader
+      h5.title {{resolvedBioevent.eventName}}
+      .map-controls
+        select#map-type
+          each mapTypes
+            option(value=name selected=selected)=label
+        a.tooltip-btn(
+          href="/about#maptypes"
+          data-tooltip-direction="w"
+          data-tooltip="Click here for descriptions of the map layers.")
+          i.fa.fa-question-circle
+    #map
+
+    .side-panel
+      .header
+        h5.bioevent-panel-title Summary
+      .bioevent-details.side-panel-body
+        if resolvedBioevent
+          +timeline dateRange=dateRange resolvedBioevent=resolvedBioevent
+        .summary-section
+          .section-head Top Destinations
+            .controls
+              input(type="checkbox" checked=USOnly).us-only-checkbox
+              | US Only
+          ol.airport-list
+            each topDestinations
+              li #{name}: #{value}
+        .summary-section
+          .section-head Top Origins
+          ol.airport-list
+            each topOrigins
+              li #{name}: #{value}
+        .summary-section
+          .section-head
+            a(href="https://eidr-connect.eha.io/events/auto-events/#{resolvedBioevent._id}") EIDR-Connect Data
+  +tooltips

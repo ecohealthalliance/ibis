@@ -1,17 +1,11 @@
-/* global L, chroma, FlowRouter */
+/* global L, FlowRouter */
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import Constants from '/imports/constants';
 import { _ } from 'meteor/underscore';
-
-const RAMP = chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10);
-const getColor = (val) => {
-  //return a color from the ramp based on a 0 to 1 value.
-  //If the value exceeds one the last stop is used.
-  return RAMP[Math.floor(RAMP.length * Math.max(0, Math.min(val, 0.99)))];
-};
+import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 
 Template.map.onCreated(function() {
   this.mapType = new ReactiveVar("threatLevel");
@@ -35,7 +29,7 @@ Template.map.onRendered(function() {
       style: (feature) => {
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
+          fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP) : '#FFFFFF',
           weight: 1,
           color: '#DDDDDD',
           fillOpacity: 1
@@ -123,7 +117,7 @@ Template.map.onRendered(function() {
           style: (feature) => {
             let value = feature.properties[valueProp];
             return {
-              fillColor: value ? getColor(value / maxValue) : '#FFFFFF',
+              fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
               weight: 1,
               color: '#DDDDDD',
               fillOpacity: 1

@@ -1,0 +1,6 @@
+template(name='timeline')
+  .timeline-container
+    .type-toggle
+      .timeline-type(class="{{#if type.activeCases}}active{{/if}}" data-timeline-type="activeCases") Estimated Active Cases
+      .timeline-type(class="{{#if type.newCases}}active{{/if}}" data-timeline-type="newCases") New Cases
+    .timeline

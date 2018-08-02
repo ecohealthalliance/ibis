@@ -7,5 +7,4 @@ module.exports = {
       //If the value exceeds one the last stop is used.
       return ramp[Math.floor(ramp.length * Math.max(0, Math.min(val, 0.99)))];
     }
-}
-// create myCircleMarker
+};

@@ -12,7 +12,7 @@ template(name='bioevent')
           data-tooltip="Click here for descriptions of the map layers.")
           i.fa.fa-question-circle
     #map
-
+    +legend title=legendTitle ramp=legendRamp
     .side-panel
       .header
         h5.bioevent-panel-title Summary
@@ -26,12 +26,12 @@ template(name='bioevent')
               | US Only
           ol.airport-list
             each topDestinations
-              li #{name}: #{value}
+              li #{name}: {{toFixed value 2}}
         .summary-section
           .section-head Top Origins
           ol.airport-list
             each topOrigins
-              li #{name}: #{value}
+              li #{name}: {{toFixed value 2}}
         .summary-section
           .section-head
             a(href="https://eidr-connect.eha.io/events/auto-events/#{resolvedBioevent._id}") EIDR-Connect Data

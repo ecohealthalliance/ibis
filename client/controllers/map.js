@@ -6,6 +6,7 @@ import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import Constants from '/imports/constants';
 import { _ } from 'meteor/underscore';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
+import typeToTitle from '/imports/typeToTitle';
 
 Template.map.onCreated(function() {
   this.mapType = new ReactiveVar("threatLevel");
@@ -29,9 +30,9 @@ Template.map.onRendered(function() {
       style: (feature) => {
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP) : '#FFFFFF',
+          fillColor: value ? getColor(.7 * value / maxValue, OUTBOUND_RAMP) : '#FFFFFF',
           weight: 1,
-          color: '#DDDDDD',
+          color: OUTBOUND_RAMP[9],
           fillOpacity: 1
         };
       },
@@ -90,8 +91,25 @@ Template.map.onRendered(function() {
           result[id] = countryGroups[id][valueProp];
         }
         renderGeoJSON(result, units);
-        geoJsonLayer.addLayer(L.geoJson({ features: locations[locationId].displayGeoJSON }));
-
+        const displayGeoJSON = locations[locationId].displayGeoJSON;
+        geoJsonLayer.addLayer(L.geoJson({
+          features: displayGeoJSON
+        }, {
+          pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+              radius: 10,
+              opacity: 1
+            });
+          },
+          style: (feature) => {
+            return {
+              fillColor: INBOUND_RAMP[5],
+              weight: 1,
+              color: INBOUND_RAMP[9],
+              fillOpacity: 1
+            };
+          },
+        }));
         let maxValue = _.max(resp.data.allAirports.map((x) => x[valueProp]));
         geoJsonLayer.addLayer(L.geoJson({
           features: resp.data.allAirports.map((x)=>{
@@ -110,16 +128,15 @@ Template.map.onRendered(function() {
               // The radius is a squre root so that the marker's volume is directly
               // proprotional to the value.
               radius: Math.sqrt(2 + (value / maxValue) * 144),
-              weight: 0,
               opacity: 1
             });
           },
           style: (feature) => {
             let value = feature.properties[valueProp];
             return {
-              fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
+              fillColor: value ? getColor(.7 * value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
               weight: 1,
-              color: '#DDDDDD',
+              color: OUTBOUND_RAMP[9],
               fillOpacity: 1
             };
           },
@@ -145,6 +162,8 @@ Template.map.onRendered(function() {
 });
 
 Template.map.helpers({
+  legendTitle: x => "Outbound " + typeToTitle[Template.instance().mapType.get()],
+  legendRamp: () => OUTBOUND_RAMP,
   dateRange: () => Template.instance().dateRange,
   mapTypes: () => {
     const selectedType = Template.instance().mapType.get();

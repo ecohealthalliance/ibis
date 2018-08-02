@@ -29,39 +29,21 @@
   display inline-block
   float right
 
-.bioevent-panel-title
+.map-legend
+  z-index 999
+  background white
+  position absolute
+  bottom 10px
+  left 10px
+  width auto
   display inline-block
-
-.bioevent-item
-  background-color $primary-color
-  color white
-  line-height 0
-  margin-top 5px
-  h6
-    padding 10px
-    margin-bottom 0
-  a
-    color white
-  .timeline-container
-  .minimap
-    margin 0
+  padding 5px
+  .title
+    margin-top -5px
+  .values
+    border 1px solid gray
+    line-height 0
+  .value
+    height 10px
+    width 20px
     display inline-block
-    background $primary-color-light
-    height 150px
-    width 50%
-  .minimap
-    background lightblue
-  .timeline
-    height 128px
-
-.bioevent-item:first-of-type
-  margin-top 1px
-
-.bioevent-details
-  background $primary-color-light
-
-.rank-data
-  font-size .5em
-
-.rank-score
-  cursor pointer

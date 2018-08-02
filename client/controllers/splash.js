@@ -6,6 +6,7 @@ import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import Constants from '/imports/constants';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
+import typeToTitle from '/imports/typeToTitle';
 
 Template.splash.onCreated(function() {
   this.mapType = new ReactiveVar("threatLevelExUS");
@@ -60,9 +61,9 @@ Template.splash.onRendered(function() {
       style: (feature)=>{
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(value / maxValue, INBOUND_RAMP) : '#FFFFFF',
+          fillColor: value ? getColor(0.8 * value / maxValue, INBOUND_RAMP) : '#FFFFFF',
           weight: 1,
-          color: '#DDDDDD',
+          color: INBOUND_RAMP[9],
           // Hide the US since it will be shown in the states layer.
           fillOpacity: feature.properties.iso_a2 == 'US' ? 0.0 : 1.0
         };
@@ -112,9 +113,9 @@ Template.splash.onRendered(function() {
         style: (feature) =>{
           let maxValue = location.type === 'airport' ? airportMax : stateMax;
           return {
-            fillColor: value ? getColor(value / maxValue, INBOUND_RAMP) : '#FFFFFF',
+            fillColor: value ? getColor(0.8 * value / maxValue, INBOUND_RAMP) : '#FFFFFF',
             weight: 1,
-            color: '#888',
+            color: INBOUND_RAMP[9],
             fillOpacity: 1.0
           };
         },
@@ -156,6 +157,8 @@ Template.splash.onRendered(function() {
 });
  
 Template.splash.helpers({
+  legendTitle: () => "Incoming " + typeToTitle[Template.instance().mapType.get()],
+  legendRamp: () => INBOUND_RAMP,
   dateRange: ()=> Template.instance().dateRange,
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();

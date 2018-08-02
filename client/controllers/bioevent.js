@@ -6,8 +6,10 @@ import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import Constants from '/imports/constants';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import { _ } from 'meteor/underscore';
+import typeToTitle from '/imports/typeToTitle';
 
 Template.bioevent.onCreated(function() {
+  this.ramp = OUTBOUND_RAMP;
   this.mapType = new ReactiveVar("destinationThreatExposure");
   this.USOnly = new ReactiveVar(true);
   this.locations = new ReactiveVar([]);
@@ -65,9 +67,9 @@ Template.bioevent.onRendered(function() {
       style: (feature)=>{
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(value / maxValue, this.ramp) : '#FFFFFF',
+          fillColor: value ? getColor(0.8 * value / maxValue, this.ramp) : '#FFFFFF',
           weight: 1,
-          color: '#DDDDDD',
+          color: this.ramp[9],
           // Hide the US since it will be shown in the states layer.
           fillOpacity: feature.properties.iso_a2 == 'US' ? 0.0 : 1.0
         };
@@ -123,9 +125,9 @@ Template.bioevent.onRendered(function() {
         style: (feature)=>{
           let maxValue = location.type === 'airport' ? airportMax : stateMax;
           return {
-            fillColor: value ? getColor(value / maxValue, this.ramp) : '#FFFFFF',
+            fillColor: value ? getColor(0.8 * value / maxValue, this.ramp) : '#FFFFFF',
             weight: 1,
-            color: '#888',
+            color: this.ramp[9],
             fillOpacity: 1.0
           };
         },
@@ -165,29 +167,33 @@ Template.bioevent.onRendered(function() {
 });
 
 Template.bioevent.helpers({
+  legendTitle: () => typeToTitle[Template.instance().mapType.get()],
+  legendRamp: () => Template.instance().mapType.get() == "originThreatLevel" ? OUTBOUND_RAMP : INBOUND_RAMP,
+  toFixed: (x, y) => x ? x.toFixed(y) : x,
   USOnly: () => Template.instance().USOnly.get(),
   topDestinations: () => {
+    const USOnly = Template.instance().USOnly.get();
     return _.sortBy(Template.instance().locations.get().map((loc)=>{
       let type, name;
       [type, name] = loc._id.split(':');
-      if(type == "airport" && loc.USAirport) {
-        return {
-          name: name,
-          value: loc.destinationThreatExposure
-        }
-      }
+      if(type != "airport") return;
+      if(USOnly && !loc.USAirport) return;
+      return {
+        name: name,
+        value: loc.destinationThreatExposure
+      };
     }).filter(x=>x), x=>-x.value).slice(0, 10);
   },
   topOrigins: () => {
+    const USOnly = Template.instance().USOnly.get();
     return _.sortBy(Template.instance().locations.get().map((loc)=>{
       let type, name;
       [type, name] = loc._id.split(':');
-      if(type == "airport") {
-        return {
-          name: name,
-          value: loc.originThreatLevel
-        }
-      }
+      if(type != "airport") return;
+      return {
+        name: name,
+        value: loc.originThreatLevel
+      };
     }).filter(x=>x), x=>-x.value).slice(0, 10);
   },
   dateRange: () => Template.instance().dateRange,
@@ -211,6 +217,6 @@ Template.bioevent.events({
     instance.mapType.set(event.target.value);
   },
   'click .us-only-checkbox': (event, instance)=>{
-    instance.USOnly.set(instance.USOnly.get())
+    instance.USOnly.set(!instance.USOnly.get())
   }
 });

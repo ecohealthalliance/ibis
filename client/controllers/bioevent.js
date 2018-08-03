@@ -14,6 +14,7 @@ Template.bioevent.onCreated(function() {
   this.USOnly = new ReactiveVar(true);
   this.locations = new ReactiveVar([]);
   this.resolvedBioevent = new ReactiveVar();
+  this.countryValues = new ReactiveVar();
   this.autorun(()=>{
     const bioeventId = FlowRouter.getParam('bioeventId');
     const metric = this.mapType.get();
@@ -27,11 +28,12 @@ Template.bioevent.onCreated(function() {
     ]).then(([bioeventData, locationGeoJson])=>{
       const airportValues = bioeventData.airportValues;
       const USAirportIds = bioeventData.USAirportIds;
+      this.countryValues.set(bioeventData.countryValues);
       this.resolvedBioevent.set(bioeventData.resolvedBioevent);
       this.locations.set(_.map(locationGeoJson, (location, locationId)=>{
         let locationName;
         location = Object.create(location);
-        ["destinationThreatExposure", "originThreatLevel"].forEach((metric) => {
+        ["destinationThreatExposure", "originThreatLevel", "originProbabilityPassengerInfected"].forEach((metric)=>{
           location[metric] = 0;
           location.airportIds.forEach((airportId)=>{
             location[metric] += airportValues[metric][airportId] || 0;
@@ -90,7 +92,7 @@ Template.bioevent.onRendered(function() {
       }
     })]).addTo(map);
   };
-  renderGeoJSON({});
+  
   let locationLayer = null;
   this.autorun(()=>{
     const mapType = this.mapType.get();
@@ -99,6 +101,9 @@ Template.bioevent.onRendered(function() {
     } else {
       this.ramp = INBOUND_RAMP;
     }
+    const countryValues = this.countryValues.get();
+    const countryValuesForType = countryValues ? countryValues[mapType] : {};
+    renderGeoJSON(countryValuesForType || {});
     let layers = [];
     let locations = this.locations.get().filter(x=>x[mapType]);
     let airportMax = 0;
@@ -168,7 +173,7 @@ Template.bioevent.onRendered(function() {
 
 Template.bioevent.helpers({
   legendTitle: () => typeToTitle[Template.instance().mapType.get()],
-  legendRamp: () => Template.instance().mapType.get() == "originThreatLevel" ? OUTBOUND_RAMP : INBOUND_RAMP,
+  legendRamp: () => (Template.instance().mapType.get() || "").startsWith("origin") ? OUTBOUND_RAMP : INBOUND_RAMP,
   toFixed: (x, y) => x ? x.toFixed(y) : x,
   USOnly: () => Template.instance().USOnly.get(),
   topDestinations: () => {
@@ -201,6 +206,7 @@ Template.bioevent.helpers({
     const selectedType = Template.instance().mapType.get();
     return [
       { name: "originThreatLevel", label: "Threat Level by Origin Map" },
+      { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected by Origin" },
       { name: "destinationThreatExposure", label: "Threat Exposure by Destination Map" }
     ].map((type)=>{
       type.selected = type.name == selectedType;

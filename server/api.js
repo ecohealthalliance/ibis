@@ -440,7 +440,7 @@ api.addRoute('bioevents/:bioeventId', {
       }
     }, {
       $facet: {
-        "destinationThreatExposure": [{
+        "destination": [{
           $group: {
             _id: "$arrivalAirportId",
             rank: {
@@ -448,22 +448,41 @@ api.addRoute('bioevents/:bioeventId', {
             }
           }
         }],
-        "originThreatLevel": [{
+        "origin": [{
           $group: {
             _id: "$departureAirportId",
             rank: {
               $sum: "$rank"
+            },
+            probabilityPassengerInfected: {
+              $first: "$probabilityPassengerInfected"
             }
           }
         }]
       }
     }]);
     airportValues = {
-      destinationThreatExposure: _.object(result[0].destinationThreatExposure.map((x)=>[x._id, x.rank])),
-      originThreatLevel: _.object(result[0].originThreatLevel.map((x)=>[x._id, x.rank]))
+      destinationThreatExposure: _.object(result[0].destination.map((x)=>[x._id, x.rank])),
+      originThreatLevel: _.object(result[0].origin.map((x)=>[x._id, x.rank])),
+      originProbabilityPassengerInfected: _.object(result[0].origin.map((x)=>[x._id, x.probabilityPassengerInfected]))
     };
+    let countryValues = {
+      originThreatLevel: {},
+      destinationThreatExposure: {}
+    };
+    _.map(airportValues.destinationThreatExposure, (value, id) => {
+      const country = airportToCountryCode[id];
+      countryValues.destinationThreatExposure[country] = (
+        countryValues.destinationThreatExposure[country] || 0) + value;
+    });
+    _.map(airportValues.originThreatLevel, (value, id) => {
+      const country = airportToCountryCode[id];
+      countryValues.originThreatLevel[country] = (
+        countryValues.originThreatLevel[country] || 0) + value;
+    });
     return {
       airportValues: airportValues,
+      countryValues: countryValues,
       resolvedBioevent: ResolvedEvents.findOne({ _id: this.urlParams.bioeventId }),
       USAirportIds: USAirportIds
     };

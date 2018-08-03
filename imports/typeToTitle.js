@@ -4,5 +4,6 @@ export default {
   "threatLevelExUS": "Threat Level",
   "threatLevel": "Threat Level",
   "passengerFlow": "Passengers",
-  "directSeats": "Direct Seats"
+  "directSeats": "Direct Seats",
+  "originProbabilityPassengerInfected": "Estimated Probability Passenger Infected"
 };

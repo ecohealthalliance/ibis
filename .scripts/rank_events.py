@@ -187,6 +187,7 @@ if args.rank_group:
             eventId=event['_id'],
             name=event['eventName'],
             timestamp=datetime.datetime.now()))
+    db.pastResolvedEvents.create_index("eventId")
 else:
     # Drop collection in case it still exists from a failed prior run.
     db.resolvedEvents_create.drop()

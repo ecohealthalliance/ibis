@@ -15,10 +15,19 @@ try {
   PassengerFlows = new Meteor.Collection('passengerFlows', {
     _driver: db
   });
+  PastPassengerFlows = new Meteor.Collection('pastPassengerFlows', {
+    _driver: db
+  });
   EventAirportRanks = new Meteor.Collection('eventAirportRanks', {
     _driver: db
   });
   ResolvedEvents = new Meteor.Collection('resolvedEvents', {
+    _driver: db
+  });
+  PastResolvedEvents = new Meteor.Collection('pastResolvedEvents', {
+    _driver: db
+  });
+  PastEventAirportRanks = new Meteor.Collection('pastEventAirportRanks', {
     _driver: db
   });
   Flights.rawCollection().createIndex({
@@ -40,5 +49,8 @@ module.exports = {
   Airports: Airports,
   PassengerFlows: PassengerFlows,
   EventAirportRanks: EventAirportRanks,
-  ResolvedEvents: ResolvedEvents
+  ResolvedEvents: ResolvedEvents,
+  PastResolvedEvents: PastResolvedEvents,
+  PastPassengerFlows: PastPassengerFlows,
+  PastEventAirportRanks: PastEventAirportRanks
 };

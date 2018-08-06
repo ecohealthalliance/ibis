@@ -3,7 +3,10 @@ import {
   Flights,
   PassengerFlows,
   EventAirportRanks,
-  ResolvedEvents
+  ResolvedEvents,
+  PastEventAirportRanks,
+  PastResolvedEvents,
+  PastPassengerFlows
 } from './FlightDB';
 import locationData from '/server/locationData';
 import { airportToCountryCode, USAirportIds } from '/imports/geoJSON/indecies';
@@ -89,13 +92,22 @@ var topLocations = cached((metric)=>{
   }
 });
 
-var rankedBioevents = cached((metric, locationId=null)=>{
+var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
   const exUS = metric == "threatLevelExUS";
   const mostRecent = metric == "mostRecent";
   const activeCases = metric == "activeCases";
+  let resolvedEventsCollection = ResolvedEvents;
+  let eventAirportRanksCollection = EventAirportRanks;
+  let query = {};
+  if(rankGroup) {
+    resolvedEventsCollection = PastResolvedEvents;
+    eventAirportRanksCollection = PastEventAirportRanks;
+    query.rankGroup = rankGroup;
+  }
+  console.log(query);
   if(mostRecent) {
     return {
-      results: _.sortBy(ResolvedEvents.find().map((event)=>{
+      results: _.sortBy(resolvedEventsCollection.find(query).map((event)=>{
         return {
           _id: event._id,
           event: event,
@@ -108,7 +120,7 @@ var rankedBioevents = cached((metric, locationId=null)=>{
     };
   } else if(activeCases) {
     return {
-      results: _.sortBy(ResolvedEvents.find().map((event)=>{
+      results: _.sortBy(resolvedEventsCollection.find(query).map((event)=>{
         return {
           _id: event._id,
           event: event,
@@ -117,20 +129,18 @@ var rankedBioevents = cached((metric, locationId=null)=>{
       }), (event) => event.activeCases).slice(-15).reverse()
     };
   } else {
-    let matchQuery = {
-      departureAirportId: {
-        $nin: exUS ? USAirportIds : []
-      }
+    query.departureAirportId = {
+      $nin: exUS ? USAirportIds : []
     };
     if(locationId) {
       const location = locationData.locations[locationId];
-      matchQuery.arrivalAirportId = {
+      query.arrivalAirportId = {
         $in: location.airportIds
       };
     }
     return {
-      results: EventAirportRanks.aggregate([{
-        $match: matchQuery
+      results: eventAirportRanksCollection.aggregate([{
+        $match: query
       }, {
         $group: {
           _id: "$eventId",
@@ -146,12 +156,18 @@ var rankedBioevents = cached((metric, locationId=null)=>{
         $limit: 10
       }, {
         $lookup: {
-          from: "resolvedEvents",
+          from: rankGroup ? "pastResolvedEvents" : "resolvedEvents",
           localField: "_id",
-          foreignField: "_id",
+          foreignField: "eventId",
           as: "event"
         }
-      }, { $unwind: "$event" }])
+      }, {
+        $unwind: "$event"
+      }, {
+        $match: rankGroup ? {
+          "event.rankGroup": rankGroup
+        } : {}
+      }])
     };
   }
 });
@@ -358,7 +374,10 @@ api.addRoute('locations/:locationId/threatLevel', {
 */
 api.addRoute('locations/:locationId/bioevents', {
   get: function() {
-    return rankedBioevents(this.queryParams.metric, this.urlParams.locationId);
+    return rankedBioevents(
+      this.queryParams.metric,
+      this.urlParams.locationId,
+      rankGroup=this.queryParams.rankGroup);
   }
 });
 
@@ -424,7 +443,10 @@ api.addRoute('rankData', {
 */
 api.addRoute('bioevents', {
   get: function() {
-    return rankedBioevents(this.queryParams.metric);
+    return rankedBioevents(
+      this.queryParams.metric,
+      null,
+      rankGroup=this.queryParams.rankGroup);
   }
 });
 

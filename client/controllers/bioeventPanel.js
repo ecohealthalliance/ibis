@@ -13,7 +13,8 @@ Template.bioeventPanel.onCreated(function() {
     const locationId = FlowRouter.getParam('locationId');
     const requestParams = {
       params: {
-        metric: rankMetric.get()
+        metric: rankMetric.get(),
+        rankGroup: FlowRouter.getQueryParam('rankGroup') || null
       }
     };
     if (locationId) {

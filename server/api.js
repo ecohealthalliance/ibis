@@ -104,7 +104,6 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
     eventAirportRanksCollection = PastEventAirportRanks;
     query.rankGroup = rankGroup;
   }
-  console.log(query);
   if(mostRecent) {
     return {
       results: _.sortBy(resolvedEventsCollection.find(query).map((event)=>{
@@ -456,10 +455,19 @@ api.addRoute('bioevents', {
 */
 api.addRoute('bioevents/:bioeventId', {
   get: function() {
-    let result = EventAirportRanks.aggregate([{
-      $match: {
-        eventId: this.urlParams.bioeventId
-      }
+    let resolvedEventsCollection = ResolvedEvents;
+    let eventAirportRanksCollection = EventAirportRanks;
+    let rankGroup = this.queryParams.rankGroup;
+    let query = {
+      eventId: this.urlParams.bioeventId
+    };
+    if(rankGroup) {
+      resolvedEventsCollection = PastResolvedEvents;
+      eventAirportRanksCollection = PastEventAirportRanks;
+      query.rankGroup = rankGroup;
+    }
+    let result = eventAirportRanksCollection.aggregate([{
+      $match: query
     }, {
       $facet: {
         "destination": [{
@@ -505,7 +513,7 @@ api.addRoute('bioevents/:bioeventId', {
     return {
       airportValues: airportValues,
       countryValues: countryValues,
-      resolvedBioevent: ResolvedEvents.findOne({ _id: this.urlParams.bioeventId }),
+      resolvedBioevent: resolvedEventsCollection.findOne(query),
       USAirportIds: USAirportIds
     };
   }

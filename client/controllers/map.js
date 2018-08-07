@@ -3,18 +3,12 @@ import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
-import Constants from '/imports/constants';
 import { _ } from 'meteor/underscore';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 
 Template.map.onCreated(function() {
   this.mapType = new ReactiveVar("threatLevel");
-  const endDate = new Date();
-  const dateRange = this.dateRange = {
-    start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
-    end: endDate
-  };
   const selectedLocation = this.selectedLocation = new ReactiveVar();
 });
 
@@ -79,11 +73,7 @@ Template.map.onRendered(function() {
         valueProp = "numSeats";
         units = "seats per day";
       }
-      HTTP.get(`/api/locations/${locationId}/${route}`, {
-        // params: {
-        //   arrivesBefore: "2017-10-10"
-        // }
-      }, (err, resp) => {
+      HTTP.get(`/api/locations/${locationId}/${route}`, {}, (err, resp) => {
         if (err) return console.error(err);
         let result = {};
         const countryGroups = resp.data.countryGroups;
@@ -164,7 +154,6 @@ Template.map.onRendered(function() {
 Template.map.helpers({
   legendTitle: x => "Outbound " + typeToTitle[Template.instance().mapType.get()],
   legendRamp: () => OUTBOUND_RAMP,
-  dateRange: () => Template.instance().dateRange,
   mapTypes: () => {
     const selectedType = Template.instance().mapType.get();
     return [

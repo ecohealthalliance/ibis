@@ -14,7 +14,7 @@ template(name='bioeventPanel')
           i.fa.fa-question-circle
     ul.list-unstyled.bioevent-items.side-panel-body
       each bioevents
-        +bioeventItem maxCasesForLocation=maxCasesForLocation timelineMax=timelineMax bioevent=this dateRange=../dateRange
+        +bioeventItem maxCasesForLocation=maxCasesForLocation timelineMax=timelineMax bioevent=this dateRange=dateRange
 
   .modal(tabindex='-1', role='dialog')#rank-info-modal
     .modal-dialog(role='document')

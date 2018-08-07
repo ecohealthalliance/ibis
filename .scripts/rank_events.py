@@ -101,7 +101,9 @@ events_with_resolved_data = list(zip(events, resolved_event_iter(events)))
 print("\t%s events with resolved data." % len([
     event for event, resolved_data in events_with_resolved_data
     if len(resolved_data['fullLocations']['children']) > 0]))
-
+# Verify that resolved event order matches up with the original order.
+for event, resolved_event_data in events_with_resolved_data:
+    assert event['_id'] == resolved_event_data['eventId']
 
 print("Loading population data...")
 population_raster = rasterio.open("gpw/gpw_v4_population_count_rev10_2015_15_min.tif")
@@ -198,6 +200,7 @@ else:
             name=event['eventName'],
             timestamp=datetime.datetime.now()))
     db.resolvedEvents_create.rename("resolvedEvents", dropTarget=True)
+    db.resolvedEvents.create_index("eventId")
 print("\tDone.")
 
 print("Computing disease severity coefficients...")

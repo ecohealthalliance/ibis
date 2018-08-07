@@ -34,5 +34,5 @@ template(name='bioevent')
               li #{name}: {{toFixed value 2}}
         .summary-section
           .section-head
-            a(href="https://eidr-connect.eha.io/events/auto-events/#{resolvedBioevent._id}") EIDR-Connect Data
+            a(href="https://eidr-connect.eha.io/events/auto-events/#{resolvedBioevent.eventId}") EIDR-Connect Data
   +tooltips

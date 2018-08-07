@@ -37,14 +37,8 @@ Template.splash.onCreated(function() {
         location.type = locationId.split(':')[0];
         return location;
       }).filter(x=>x));
-    })
-    
+    });
   });
-  const endDate = new Date();
-  const dateRange = this.dateRange = {
-    start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
-    end: endDate
-  };
 });
  
 Template.splash.onRendered(function() {
@@ -159,7 +153,6 @@ Template.splash.onRendered(function() {
 Template.splash.helpers({
   legendTitle: () => "Incoming " + typeToTitle[Template.instance().mapType.get()],
   legendRamp: () => INBOUND_RAMP,
-  dateRange: ()=> Template.instance().dateRange,
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
     return [

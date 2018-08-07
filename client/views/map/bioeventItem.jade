@@ -1,7 +1,7 @@
 template(name='bioeventItem')
   li.bioevent-item
     h6
-      a(href="/bioevents/#{bioevent.event._id}")=bioevent.event.name
+      a(href="/bioevents/#{bioevent.event.eventId}")=bioevent.event.name
       if bioevent.rank
         .rank-score.rank-data Rank Score: #{bioevent.rank}
       else if bioevent.lastIncident

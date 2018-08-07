@@ -3,9 +3,10 @@ import { _ } from 'meteor/underscore';
 import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
+import Constants from '/imports/constants';
 
 Template.bioeventPanel.onCreated(function() {
-  const dateRange = this.dateRange = this.data.dateRange;
+  const dateRange = this.dateRange = new ReactiveVar({start: new Date(), end: new Date()});
   const bioevents = this.bioevents = new ReactiveVar([]);
   const rankMetric = this.rankMetric = new ReactiveVar("threatLevelExUS");
 
@@ -17,18 +18,21 @@ Template.bioeventPanel.onCreated(function() {
         rankGroup: FlowRouter.getQueryParam('rankGroup') || null
       }
     };
+    let url = "/api/bioevents";
     if (locationId) {
-      HTTP.get(`/api/locations/${locationId}/bioevents`, requestParams, (err, resp) => {
-        if (err) return console.error(err);
-        bioevents.set(EJSON.parse(resp.content).results);
-      });
+      url = `/api/locations/${locationId}/bioevents`
     }
-    else {
-      HTTP.get("/api/bioevents", requestParams, (err, resp) => {
-        if (err) return console.error(err);
-        bioevents.set(EJSON.parse(resp.content).results);
+    HTTP.get(url, requestParams, (err, resp) => {
+      if (err) return console.error(err);
+      const respResults = EJSON.parse(resp.content).results;
+      bioevents.set(respResults);
+      let endDate = new Date(respResults[0].event.timeseries.slice(-1)[0][0]);
+      let startDate = new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY)
+      dateRange.set({
+        start: startDate,
+        end: endDate
       });
-    }
+    });
   });
 });
 
@@ -52,7 +56,7 @@ Template.bioeventPanel.helpers({
     if(x.lastIncident) x.lastIncident = ("" + x.lastIncident).split("T")[0];
     return x;
   }),
-  dateRange: () => Template.instance().dateRange,
+  dateRange: () => Template.instance().dateRange.get(),
   rankMetrics: () => {
     const selectedType = Template.instance().rankMetric.get();
     return [

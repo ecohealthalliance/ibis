@@ -76,7 +76,7 @@ Template.timeline.onRendered(function() {
           tick: {
             // The final tick is the day before the right bound so the label
             // fits.
-            values: [startDateStr, dayBeforeEndStr],
+            values: [new Date(startDateStr), new Date(dayBeforeEndStr)],
             format: (x)=> new Date(x).toISOString().split('T')[0]
           },
           type: 'timeseries',

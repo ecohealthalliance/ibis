@@ -96,10 +96,10 @@ Template.bioevent.onRendered(function() {
   let locationLayer = null;
   this.autorun(()=>{
     const mapType = this.mapType.get();
-    if(mapType == "originThreatLevel") {
-      this.ramp = OUTBOUND_RAMP;
-    } else {
+    if(mapType == "destinationThreatExposure") {
       this.ramp = INBOUND_RAMP;
+    } else {
+      this.ramp = OUTBOUND_RAMP;
     }
     const countryValues = this.countryValues.get();
     const countryValuesForType = countryValues ? countryValues[mapType] : {};
@@ -148,7 +148,7 @@ Template.bioevent.onRendered(function() {
               hoverMarker = L.marker(event.latlng, {
                 icon: L.divIcon({
                   className: "hover-marker",
-                  html: location.displayName + ": " + value.toFixed(2)
+                  html: location.displayName + ": " + value.toPrecision(2)
                 })
               }).addTo(map);
               layer.setStyle({

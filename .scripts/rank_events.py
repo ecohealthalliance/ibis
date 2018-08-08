@@ -167,14 +167,19 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
                 result * population_raster_data).sum()
 print("\tDone.")
 
-print("Computeing cases by country...")
+print("Computing cases by country...")
 for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
     resolved_ccs = {}
-    for child in resolved_event_data['fullLocations']['children']:
-        cc = child['location'].get('countryCode')
-        if cc:
-            resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
+    def traverse_location_tree(node):
+        for child in node['children']:
+            cc = child['location'].get('countryCode')
+            if cc:
+                resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
+            else:
+                traverse_location_tree(child)
+    traverse_location_tree(resolved_event_data['fullLocations'])
     resolved_event_data['locations'] = resolved_ccs
+    assert not(len(resolved_ccs) == 0 and len(resolved_event_data['fullLocations']['children']) > 0)
 print("\tDone.")
 
 print("Storing resolved event data...")

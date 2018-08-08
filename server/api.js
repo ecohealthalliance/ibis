@@ -10,12 +10,17 @@ import {
 } from './FlightDB';
 import locationData from '/server/locationData';
 import { airportToCountryCode, USAirportIds } from '/imports/geoJSON/indecies';
+import { Promise } from "meteor/promise";
 
 
 let api = new Restivus({
   useDefaultAuth: true,
   prettyJson: true
 });
+
+var aggregate = (collection, pipeline) => {
+  return Promise.await(collection.aggregate(pipeline).toArray())
+};
 
 var cached = function(func) {
   let cache = {};
@@ -50,7 +55,7 @@ var cached = function(func) {
 var topLocations = cached((metric)=>{
   if(metric.startsWith("threatLevel")) {
     const exUS = metric == "threatLevelExUS";
-    let arrivalAirportToRankScore = _.object(EventAirportRanks.aggregate([{
+    let arrivalAirportToRankScore = _.object(aggregate(EventAirportRanks, [{
       $match: {
         departureAirportId: {
           $nin: exUS ? USAirportIds : []
@@ -73,7 +78,7 @@ var topLocations = cached((metric)=>{
   } else {
     const periodDays = 14;
     // Only return locations with incoming passengers
-    let arrivalAirportToPassengers = _.object(PassengerFlows.aggregate([{
+    let arrivalAirportToPassengers = _.object(aggregate(PassengerFlows, [{
       $match: {
         simGroup: 'ibis14day',
         arrivalAirport: {
@@ -137,36 +142,37 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
         $in: location.airportIds
       };
     }
+    const results = aggregate(eventAirportRanksCollection, [{
+      $match: query
+    }, {
+      $group: {
+        _id: "$eventId",
+        rank: {
+          $sum: "$rank"
+        }
+      }
+    }, {
+      $sort: {
+        rank: -1
+      }
+    }, {
+      $limit: 10
+    }, {
+      $lookup: {
+        from: rankGroup ? "pastResolvedEvents" : "resolvedEvents",
+        localField: "_id",
+        foreignField: "eventId",
+        as: "event"
+      }
+    }, {
+      $unwind: "$event"
+    }, {
+      $match: rankGroup ? {
+        "event.rankGroup": rankGroup
+      } : {}
+    }]);
     return {
-      results: eventAirportRanksCollection.aggregate([{
-        $match: query
-      }, {
-        $group: {
-          _id: "$eventId",
-          rank: {
-            $sum: "$rank"
-          }
-        }
-      }, {
-        $sort: {
-          rank: -1
-        }
-      }, {
-        $limit: 10
-      }, {
-        $lookup: {
-          from: rankGroup ? "pastResolvedEvents" : "resolvedEvents",
-          localField: "_id",
-          foreignField: "eventId",
-          as: "event"
-        }
-      }, {
-        $unwind: "$event"
-      }, {
-        $match: rankGroup ? {
-          "event.rankGroup": rankGroup
-        } : {}
-      }])
+      results: results
     };
   }
 });
@@ -241,7 +247,7 @@ api.addRoute('locations/:locationId/inboundTraffic', {
     const arrivesAfter = new Date(this.queryParams.arrivesAfter || new Date(arrivesBefore - 1000000000));
     const MILLIS_PER_DAY = 1000 * 60 * 60  * 24;
     const periodDays = (Number(arrivesBefore) - Number(arrivesAfter)) / MILLIS_PER_DAY;
-    const results = Flights.aggregate([
+    const results = aggregate(Flights, [
       {
         $match: {
           'arrivalAirport': {
@@ -299,7 +305,7 @@ api.addRoute('locations/:locationId/passengerFlows', {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
     const periodDays = 14;
-    const results = PassengerFlows.aggregate([{
+    const results = aggregate(PassengerFlows, [{
       $match: {
         simGroup: 'ibis14day',
         arrivalAirport: {
@@ -338,7 +344,7 @@ api.addRoute('locations/:locationId/passengerFlows', {
 api.addRoute('locations/:locationId/threatLevel', {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
-    const results = EventAirportRanks.aggregate([{
+    const results = aggregate(EventAirportRanks, [{
       $match: {
         arrivalAirportId: {
           $in: location.airportIds
@@ -402,7 +408,7 @@ api.addRoute('rankData', {
       };
     }
     return {
-      results: EventAirportRanks.aggregate([{
+      results: aggregate(EventAirportRanks, [{
         $match: matchQuery
       }, {
         $group: {
@@ -466,7 +472,7 @@ api.addRoute('bioevents/:bioeventId', {
       eventAirportRanksCollection = PastEventAirportRanks;
       query.rankGroup = rankGroup;
     }
-    let result = eventAirportRanksCollection.aggregate([{
+    let result = aggregate(eventAirportRanksCollection, [{
       $match: query
     }, {
       $facet: {
@@ -524,7 +530,7 @@ api.addRoute('bioevents/:bioeventId', {
 */
 api.addRoute('bioeventLastUpdate', {
   get: function() {
-    return ResolvedEvents.aggregate([{
+    return aggregate(ResolvedEvents, [{
       $group: {
         _id: null,
         value: {

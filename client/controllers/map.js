@@ -8,7 +8,10 @@ import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 
 Template.map.onCreated(function() {
-  this.mapType = new ReactiveVar("threatLevel");
+  this.mapType = new ReactiveVar();
+  this.autorun(()=>{
+    this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevel");
+  });
   const selectedLocation = this.selectedLocation = new ReactiveVar();
 });
 
@@ -175,6 +178,6 @@ Template.map.helpers({
 
 Template.map.events({
   'change #map-type': (event, instance) => {
-    instance.mapType.set(event.target.value);
+    FlowRouter.setQueryParams({"mapType": event.target.value});
   }
 });

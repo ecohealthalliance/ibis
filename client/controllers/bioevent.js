@@ -10,7 +10,10 @@ import typeToTitle from '/imports/typeToTitle';
 
 Template.bioevent.onCreated(function() {
   this.ramp = OUTBOUND_RAMP;
-  this.mapType = new ReactiveVar("destinationThreatExposure");
+  this.mapType = new ReactiveVar();
+  this.autorun(()=>{
+    this.mapType.set(FlowRouter.getQueryParam("mapType") || "destinationThreatExposure");
+  });
   this.USOnly = new ReactiveVar(true);
   this.locations = new ReactiveVar([]);
   this.resolvedBioevent = new ReactiveVar();
@@ -220,7 +223,7 @@ Template.bioevent.helpers({
 
 Template.bioevent.events({
   'change #map-type': (event, instance)=>{
-    instance.mapType.set(event.target.value);
+    FlowRouter.setQueryParams({"mapType": event.target.value})
   },
   'click .us-only-checkbox': (event, instance)=>{
     instance.USOnly.set(!instance.USOnly.get())

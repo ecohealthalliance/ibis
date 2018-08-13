@@ -8,7 +8,10 @@ import Constants from '/imports/constants';
 Template.bioeventPanel.onCreated(function() {
   const dateRange = this.dateRange = new ReactiveVar({start: new Date(), end: new Date()});
   const bioevents = this.bioevents = new ReactiveVar([]);
-  const rankMetric = this.rankMetric = new ReactiveVar("threatLevelExUS");
+  const rankMetric = this.rankMetric = new ReactiveVar();
+  this.autorun(()=>{
+    rankMetric.set(FlowRouter.getQueryParam("rankMetric") || "threatLevelExUS");
+  });
 
   this.autorun(() => {
     const locationId = FlowRouter.getParam('locationId');
@@ -73,6 +76,6 @@ Template.bioeventPanel.helpers({
 
 Template.bioeventPanel.events({
   'change #rank-metric': (event, instance) => {
-    instance.rankMetric.set(event.target.value);
+    FlowRouter.setQueryParams({"rankMetric": event.target.value});
   }
 });

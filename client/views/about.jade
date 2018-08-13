@@ -9,9 +9,6 @@ template(name="about")
       disease cases from mentions on ProMED-mail to identify locations
       in the US that diseases are more likely to reach through the flight network.
 
-      __IBIS is currently under development. The information that is currently
-      displayed may be mock data.__
-
   .about-content
     +markdown
       # Simulations
@@ -23,10 +20,15 @@ template(name="about")
     +markdown
       # Bioevent Data
       
-      Bioevent data is automatically extracted by [EIDR-Connect](https://eidr-connect.eha.io) as "Auto Events."
+      Bioevent data is automatically extracted from online data sources by
+      [EIDR-Connect](https://eidr-connect.eha.io) and grouped into "Auto Events."
       An Auto Event is created for each disease for which incident data has been extracted.
       
-      The Bioevent Data was last updated on #{bioeventLastUpdate}.
+      The number of active cases for each bioevent is estimated using an
+      exponential decay model where the number of active cases from each
+      incident report decreases over time at a rate dependent on the disease's case duration.
+      
+      The bioevent data was last updated on #{bioeventLastUpdate}.
 
   .about-content
     +markdown
@@ -70,7 +72,7 @@ template(name="about")
 
       __CatchmentPopulation__(airport) = The number of people in the airport's catchment.
 
-      __CurrentNumberInfectedInAirportCatchment__(event, airport) = Cumulative cases in airport's catchment over last two weeks
+      __CurrentNumberInfectedInAirportCatchment__(event, airport) = Estimated active cases in the airport's catchment.
 
       __DiseaseSeverity__(event) = The Disability Adjusted Life Years per case of the event's disease. The Global Burden of Disease data set is used to compute this.
       The average DALYs per case across all infectious diseases is used when information is not available for a disease.

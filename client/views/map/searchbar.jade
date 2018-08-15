@@ -9,4 +9,10 @@ template(name="searchBar")
       .search-results
         each results
           .result
+            if type.airport
+              i.fa.fa-plane
+            else if type.bioevent
+              i.fa.fa-bug
+            else
+              i.fa.fa-map-marker
             a(href="/#{id}")=name

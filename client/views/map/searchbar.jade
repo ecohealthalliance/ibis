@@ -1,0 +1,12 @@
+template(name="searchBar")
+  .search-bar
+    .input-group
+      .input-group-prepend
+        .input-group-text
+          i.fa.fa-search(id="searchIcon")
+      input.form-control.typeahead(type="search" id="search" autocomplete="off")
+    if results
+      .search-results
+        each results
+          .result
+            a(href="/#{id}")=name

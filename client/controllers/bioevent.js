@@ -108,7 +108,7 @@ Template.bioevent.onRendered(function() {
     const countryValuesForType = countryValues ? countryValues[mapType] : {};
     renderGeoJSON(countryValuesForType || {});
     let layers = [];
-    let locations = this.locations.get().filter(x=>x[mapType]);
+    let locations = this.locations.get();
     let airportMax = 0;
     let stateMax = 0;
     locations.map((location)=>{
@@ -118,6 +118,7 @@ Template.bioevent.onRendered(function() {
     });
     locations.forEach((location)=>{
       if(!location.displayGeoJSON) return;
+      if(location.type == 'airport' && !location[mapType]) return;
       const value = location[mapType];
       var geojsonMarkerOptions = {
         // The radius is a squre root so that the marker's volume is directly

@@ -2,7 +2,9 @@ template(name='timeline')
   .timeline-container
     .type-toggle
       .timeline-type(class="{{#if type.activeCases}}active{{/if}}" data-timeline-type="activeCases") Est. Active Cases
-        a(href="/about#bioeventdata"
+        a(
+          href="/about#bioeventdata"
+          target="_blank"
           data-tooltip-direction="w"
           data-tooltip="Active cases are estimated based on reports of new cases.")
           i.fa.fa-question-circle

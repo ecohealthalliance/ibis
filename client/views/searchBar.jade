@@ -4,7 +4,7 @@ template(name="searchBar")
       .input-group-prepend
         .input-group-text
           i.fa.fa-search(id="searchIcon")
-      input.form-control.typeahead(type="search" id="search" autocomplete="off")
+      input.form-control.typeahead(type="search" id="search" autocomplete="off" placeholder="Search locations and bioevents")
     if results
       .search-results
         each results

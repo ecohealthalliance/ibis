@@ -7,7 +7,7 @@ import { _ } from 'meteor/underscore';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 
-Template.map.onCreated(function() {
+Template.location.onCreated(function() {
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
     this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevel");
@@ -15,7 +15,7 @@ Template.map.onCreated(function() {
   const selectedLocation = this.selectedLocation = new ReactiveVar();
 });
 
-Template.map.onRendered(function() {
+Template.location.onRendered(function() {
   let marker = null;
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
@@ -154,7 +154,7 @@ Template.map.onRendered(function() {
   });
 });
 
-Template.map.helpers({
+Template.location.helpers({
   legendTitle: x => "Outbound " + typeToTitle[Template.instance().mapType.get()],
   legendRamp: () => OUTBOUND_RAMP,
   mapTypes: () => {
@@ -176,7 +176,7 @@ Template.map.helpers({
   }
 });
 
-Template.map.events({
+Template.location.events({
   'change #map-type': (event, instance) => {
     FlowRouter.setQueryParams({"mapType": event.target.value});
   }

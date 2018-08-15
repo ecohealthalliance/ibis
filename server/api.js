@@ -540,3 +540,15 @@ api.addRoute('bioeventLastUpdate', {
     }])[0];
   }
 });
+
+/*
+@api {get} typeaheadData
+*/
+const diseaseNames = ResolvedEvents.find({}, {eventId: 1, name: 1}).map((x)=>{
+  return {id: 'bioevents/' + x.eventId, name: x.name};
+});
+api.addRoute('bioeventNames', {
+  get: function() {
+    return diseaseNames;
+  }
+});

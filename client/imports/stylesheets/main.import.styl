@@ -10,9 +10,6 @@
   .title
     display inline-block
 
-.navbar-brand
-  bg('/images/ibis-logo-sm.png', 102px, 30px)
-
 .tooltip-btn
   margin-left 8px
 .tooltip-btn:link
@@ -142,3 +139,29 @@ footer
 
 .rank-score
   cursor pointer
+
+.navbar-header
+  flex 1
+
+.navbar-brand
+  bg('/images/ibis-logo-sm.png', 102px, 30px)
+
+.search-bar
+  display inline-block
+  flex 2
+  .input-group-text
+    background transparent
+
+.search-results
+  position absolute
+  background white
+  z-index 1000
+  border 1px solid lightgray
+  padding 5px 10px
+  .result i
+    margin 0 10px 0 5px
+    color $primary-color
+
+.about
+  text-align right
+  flex 1

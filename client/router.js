@@ -6,7 +6,7 @@ FlowRouter.route('/', {
 
 FlowRouter.route('/locations/:locationId', {
   action: function(params, queryParams) {
-    BlazeLayout.render('layout', {main: 'map'});
+    BlazeLayout.render('layout', {main: 'location'});
   }
 });
 

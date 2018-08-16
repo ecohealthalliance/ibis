@@ -4,3 +4,9 @@ template(name="legend")
     .values
       each legendValues
         .value(style="background:#{color}")
+    hr
+    .layers
+      each layers
+        .layer
+          input(type="checkbox" name=name checked=active)
+          | #{label}

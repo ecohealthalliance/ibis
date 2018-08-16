@@ -7,6 +7,7 @@ import Constants from '/imports/constants';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
+import displayLayers from '/imports/displayLayers';
 
 const mapTypes = [
   {name:"threatLevelExUS", label:"Threat Level Exposure (Ex. US)"},
@@ -94,12 +95,16 @@ Template.splash.onRendered(function() {
     let locations = this.locations.get();
     let airportMax = 0;
     let stateMax = 0;
+    const displayLayersVal = displayLayers.get();
+    const showBubbles = _.findWhere(displayLayersVal, {name: 'bubbles'}).active;
+    const showChoropleth = _.findWhere(displayLayersVal, {name: 'choropleth'}).active;
     locations.map((location)=>{
       let value = location[this.mapType.curValue];
       if(location.type === 'state' && value > stateMax) stateMax = value;
       if(location.type === 'airport' && value > airportMax) airportMax = value;
     });
     locations.forEach((location)=>{
+      if(!showBubbles && location.type == 'airport') return;
       if(!location.displayGeoJSON) return;
       let value = location[this.mapType.curValue];
       var geojsonMarkerOptions = {
@@ -110,13 +115,13 @@ Template.splash.onRendered(function() {
         opacity: 1
       };
       const marker = L.geoJson({features: location.displayGeoJSON}, {
-        pointToLayer: function (feature, latlng) {
+        pointToLayer: (feature, latlng)=>{
           return L.circleMarker(latlng, geojsonMarkerOptions);
         },
-        style: (feature) =>{
+        style: (feature)=>{
           let maxValue = location.type === 'airport' ? airportMax : stateMax;
           return {
-            fillColor: value ? getColor(0.8 * value / maxValue, INBOUND_RAMP) : '#FFFFFF',
+            fillColor: value && (location.type === 'airport' || showChoropleth) ? getColor(0.8 * value / maxValue, INBOUND_RAMP) : '#FFFFFF',
             weight: 1,
             color: INBOUND_RAMP[9],
             fillOpacity: 1.0
@@ -178,7 +183,8 @@ Template.splash.helpers({
       type.selected = type.name == selectedType;
       return type;
     });
-  }
+  },
+  layers: () => displayLayers
 });
 
 Template.splash.events({

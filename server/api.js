@@ -76,7 +76,6 @@ var topLocations = cached((metric)=>{
       airportValues: arrivalAirportToRankScore
     };
   } else {
-    const periodDays = 14;
     // Only return locations with incoming passengers
     let arrivalAirportToPassengers = _.object(aggregate(PassengerFlows, [{
       $match: {

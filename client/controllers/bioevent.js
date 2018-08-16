@@ -7,6 +7,7 @@ import Constants from '/imports/constants';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import { _ } from 'meteor/underscore';
 import typeToTitle from '/imports/typeToTitle';
+import displayLayers from '/imports/displayLayers';
 
 const mapTypes = [
   { name: "originThreatLevel", label: "Threat Level by Origin" },
@@ -110,9 +111,16 @@ Template.bioevent.onRendered(function() {
     } else {
       this.ramp = OUTBOUND_RAMP;
     }
+    const displayLayersVal = displayLayers.get();
+    const showBubbles = _.findWhere(displayLayersVal, {
+      name: 'bubbles'
+    }).active;
+    const showChoropleth = _.findWhere(displayLayersVal, {
+      name: 'choropleth'
+    }).active;
     const countryValues = this.countryValues.get();
     const countryValuesForType = countryValues ? countryValues[mapType] : {};
-    renderGeoJSON(countryValuesForType || {});
+    renderGeoJSON(showChoropleth ? countryValuesForType || {} : {});
     let layers = [];
     let locations = this.locations.get();
     let airportMax = 0;
@@ -123,6 +131,7 @@ Template.bioevent.onRendered(function() {
       if(location.type === 'airport' && value > airportMax) airportMax = value;
     });
     locations.forEach((location)=>{
+      if(!showBubbles && location.type == 'airport') return;
       if(!location.displayGeoJSON) return;
       if(location.type == 'airport' && !location[mapType]) return;
       const value = location[mapType];
@@ -140,7 +149,7 @@ Template.bioevent.onRendered(function() {
         style: (feature)=>{
           let maxValue = location.type === 'airport' ? airportMax : stateMax;
           return {
-            fillColor: value ? getColor(0.8 * value / maxValue, this.ramp) : '#FFFFFF',
+            fillColor: value && (location.type === 'airport' || showChoropleth) ? getColor(0.8 * value / maxValue, this.ramp) : '#FFFFFF',
             weight: 1,
             color: this.ramp[9],
             fillOpacity: 1.0
@@ -212,7 +221,6 @@ Template.bioevent.helpers({
     }).filter(x=>x), x=>-x.value).slice(0, 10);
   },
   topOrigins: () => {
-    const USOnly = Template.instance().USOnly.get();
     return _.sortBy(Template.instance().locations.get().map((loc)=>{
       let type, name;
       [type, name] = loc._id.split(':');
@@ -232,8 +240,9 @@ Template.bioevent.helpers({
     });
   },
   resolvedBioevent: ()=>{
-    return Template.instance().resolvedBioevent.get()
-  }
+    return Template.instance().resolvedBioevent.get();
+  },
+  layers: () => displayLayers
 });
 
 Template.bioevent.events({

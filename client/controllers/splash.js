@@ -8,6 +8,12 @@ import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 
+const mapTypes = [
+  {name:"threatLevelExUS", label:"Threat Level Exposure (Ex. US)"},
+  {name:"threatLevel", label:"Threat Level Exposure"},
+  {name:"passengerFlow", label:"Estimated Inbound Passenger Flow"},
+];
+
 Template.splash.onCreated(function() {
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
@@ -119,7 +125,17 @@ Template.splash.onRendered(function() {
         onEachFeature: (feature, layer)=>{
           layer.on({
             click: (event)=>{
-              FlowRouter.go('/locations/:locationId', {locationId: location._id});
+              const popupElement = $('<div>').get(0);
+              Blaze.renderWithData(Template.locationPopup, {
+                location: location,
+                properties: [{
+                  value: location[this.mapType.curValue],
+                  label: _.findWhere(mapTypes, {name: this.mapType.curValue}).label
+                }]
+              }, popupElement);
+              layer.bindPopup(popupElement)
+                .openPopup()
+                .unbindPopup();
             },
             mouseover: (event)=>{
               if(hoverMarker) {
@@ -158,11 +174,7 @@ Template.splash.helpers({
   legendRamp: () => INBOUND_RAMP,
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
-    return [
-      {name:"threatLevelExUS", label:"Threat Level Exposure Map (Ex. US)"},
-      {name:"threatLevel", label:"Threat Level Exposure Map"},
-      {name:"passengerFlow", label:"Estimated Inbound Passenger Flow Map"},
-    ].map((type)=>{
+    return mapTypes.map((type)=>{
       type.selected = type.name == selectedType;
       return type;
     });

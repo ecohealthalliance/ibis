@@ -138,6 +138,10 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
     };
     if(locationId) {
       const location = locationData.locations[locationId];
+      if(!location) return {
+        statusCode: 404,
+        body: 'Location not found'
+      };
       query.arrivalAirportId = {
         $in: location.airportIds
       };
@@ -268,10 +272,10 @@ api.addRoute('locations/:locationId/inboundTraffic', {
       }, {
         $group: {
           _id: "$departureAirport",
-          numFlights: {
+          directFlights: {
             $sum: 1
           },
-          numSeats: {
+          directSeats: {
             $sum: "$totalSeats"
           }
         }
@@ -281,11 +285,11 @@ api.addRoute('locations/:locationId/inboundTraffic', {
     results.forEach((airportStats)=>{
       const country = airportToCountryCode[airportStats._id];
       const sofar = statsByCountry[country] || {
-        numFlights: 0,
-        numSeats: 0
+        directFlights: 0,
+        directSeats: 0
       };
-      sofar.numFlights += airportStats.numFlights / periodDays;
-      sofar.numSeats += airportStats.numSeats / periodDays;
+      sofar.directFlights += airportStats.directFlights / periodDays;
+      sofar.directSeats += airportStats.directSeats / periodDays;
       statsByCountry[country] = sofar;
     });
     return {
@@ -315,7 +319,7 @@ api.addRoute('locations/:locationId/passengerFlows', {
     }, {
       $group: {
         _id: "$departureAirport",
-        estimatedPassengers: {
+        passengerFlow: {
           $sum: "$estimatedPassengers"
         }
       }
@@ -324,14 +328,14 @@ api.addRoute('locations/:locationId/passengerFlows', {
     results.forEach((result)=> {
       const country = airportToCountryCode[result._id];
       const sofar = statsByCountry[country] || {
-        estimatedPassengers: 0
+        passengerFlow: 0
       };
-      sofar.estimatedPassengers += result.estimatedPassengers / periodDays;
+      sofar.passengerFlow += result.passengerFlow / periodDays;
       statsByCountry[country] = sofar;
     });
     return {
       countryGroups: statsByCountry,
-      allAirports: results.filter((x)=>x.estimatedPassengers >= 1)
+      allAirports: results.filter((x)=>x.passengerFlow >= 1)
     };
   }
 });
@@ -353,7 +357,7 @@ api.addRoute('locations/:locationId/threatLevel', {
     }, {
       $group: {
         _id: "$departureAirportId",
-        rank: {
+        threatLevel: {
           $sum: "$rank"
         }
       }
@@ -362,14 +366,14 @@ api.addRoute('locations/:locationId/threatLevel', {
     results.forEach((result) => {
       const country = airportToCountryCode[result._id];
       const sofar = statsByCountry[country] || {
-        rank: 0
+        threatLevel: 0
       };
-      sofar.rank += result.rank;
+      sofar.threatLevel += result.threatLevel;
       statsByCountry[country] = sofar;
     });
     return {
       countryGroups: statsByCountry,
-      allAirports: results.filter((x)=>x.rank >= 0.0000001)
+      allAirports: results.filter((x)=>x.threatLevel >= 0.0000001)
     };
   }
 });

@@ -1,0 +1,7 @@
+template(name="locationPopup")
+  h5
+    a(href="/locations/#{location._id}")=location.displayName
+  dl
+    each properties
+      dt=label
+      dd {{formatNumber value}}

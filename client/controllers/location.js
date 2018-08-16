@@ -7,12 +7,18 @@ import { _ } from 'meteor/underscore';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 
+const mapTypes = [
+  { name: "directSeats", label: "Direct Seats by Origin" },
+  { name: "passengerFlow", label: "Estimated Passenger Flow by Origin" },
+  { name: "threatLevel", label: "Threat Level by Origin" }
+];
+
 Template.location.onCreated(function() {
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
     this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevel");
   });
-  const selectedLocation = this.selectedLocation = new ReactiveVar();
+  this.selectedLocation = new ReactiveVar();
 });
 
 Template.location.onRendered(function() {
@@ -60,20 +66,17 @@ Template.location.onRendered(function() {
         type: locationId.startsWith("airport") ? "airport" : "state",
         displayName: location.displayName
       });
-      let route, valueProp, units;
+      let route, units;
       const mapTypeValue = mapType.get();
       if (!location) return;
       if (mapTypeValue === "passengerFlow") {
         route = "passengerFlows";
-        valueProp = "estimatedPassengers";
         units = "passengers per day";
       } else if (mapTypeValue === "threatLevel") {
         route = "threatLevel";
-        valueProp = "rank";
         units = "rank score";
       } else {
         route = "inboundTraffic";
-        valueProp = "numSeats";
         units = "seats per day";
       }
       HTTP.get(`/api/locations/${locationId}/${route}`, {}, (err, resp) => {
@@ -81,7 +84,7 @@ Template.location.onRendered(function() {
         let result = {};
         const countryGroups = resp.data.countryGroups;
         for (let id in countryGroups) {
-          result[id] = countryGroups[id][valueProp];
+          result[id] = countryGroups[id][mapTypeValue];
         }
         renderGeoJSON(result, units);
         const displayGeoJSON = locations[locationId].displayGeoJSON;
@@ -103,20 +106,21 @@ Template.location.onRendered(function() {
             };
           },
         }));
-        let maxValue = _.max(resp.data.allAirports.map((x) => x[valueProp]));
+        let maxValue = _.max(resp.data.allAirports.map((x) => x[mapTypeValue]));
         geoJsonLayer.addLayer(L.geoJson({
           features: resp.data.allAirports.map((x)=>{
             const key = 'airport:' + x._id;
             if(!(key in locations)) return;
+            const location = _.extend({}, locations[key], x, {_id: key});
             return {
               "type": "Feature",
               "geometry": locations[key].displayGeoJSON[0],
-              "properties": x
-            }
+              "properties": location
+            };
           }).filter(x=>x)
         }, {
           pointToLayer: function (feature, latlng) {
-            let value = feature.properties[valueProp];
+            let value = feature.properties[mapTypeValue];
             return L.circleMarker(latlng, {
               // The radius is a squre root so that the marker's volume is directly
               // proprotional to the value.
@@ -125,7 +129,7 @@ Template.location.onRendered(function() {
             });
           },
           style: (feature) => {
-            let value = feature.properties[valueProp];
+            let value = feature.properties[mapTypeValue];
             return {
               fillColor: value ? getColor(.7 * value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
               weight: 1,
@@ -134,18 +138,33 @@ Template.location.onRendered(function() {
             };
           },
           onEachFeature: (feature, layer) => {
-            layer.on('mouseover', (event) => {
-              if (marker) {
-                geoJsonLayer.removeLayer(marker);
+            layer.on({
+              click: (event)=>{
+                const popupElement = $('<div>').get(0);
+                Blaze.renderWithData(Template.locationPopup, {
+                  location: feature.properties,
+                  properties: [{
+                    value: feature.properties[this.mapType.curValue],
+                    label: _.findWhere(mapTypes, {name: this.mapType.curValue}).label
+                  }]
+                }, popupElement);
+                layer.bindPopup(popupElement)
+                  .openPopup()
+                  .unbindPopup();
+              },
+              mouseover: (event) => {
+                if (marker) {
+                  geoJsonLayer.removeLayer(marker);
+                }
+                let value = feature.properties[mapTypeValue];
+                marker = L.marker(event.latlng, {
+                  icon: L.divIcon({
+                    className: "hover-marker",
+                    html: `${feature.properties._id}: ${value.toLocaleString()} ${units}`
+                  })
+                });
+                geoJsonLayer.addLayer(marker);
               }
-              let value = feature.properties[valueProp];
-              marker = L.marker(event.latlng, {
-                icon: L.divIcon({
-                  className: "hover-marker",
-                  html: `${feature.properties._id}: ${value.toLocaleString()} ${units}`
-                })
-              });
-              geoJsonLayer.addLayer(marker);
             });
           }
         }));
@@ -159,11 +178,7 @@ Template.location.helpers({
   legendRamp: () => OUTBOUND_RAMP,
   mapTypes: () => {
     const selectedType = Template.instance().mapType.get();
-    return [
-      { name: "directSeats", label: "Direct Seats by Origin Map" },
-      { name: "passengerFlow", label: "Estimated Passenger Flow by Origin Map" },
-      { name: "threatLevel", label: "Threat Level by Origin Map" }
-    ].map((type) => {
+    return mapTypes.map((type) => {
       type.selected = type.name == selectedType;
       return type;
     });

@@ -8,6 +8,12 @@ import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import { _ } from 'meteor/underscore';
 import typeToTitle from '/imports/typeToTitle';
 
+const mapTypes = [
+  { name: "originThreatLevel", label: "Threat Level by Origin" },
+  { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected by Origin" },
+  { name: "destinationThreatExposure", label: "Threat Exposure by Destination" }
+]
+
 Template.bioevent.onCreated(function() {
   this.ramp = OUTBOUND_RAMP;
   this.mapType = new ReactiveVar();
@@ -143,7 +149,19 @@ Template.bioevent.onRendered(function() {
         onEachFeature: (feature, layer)=>{
           layer.on({
             click: (event)=>{
-              FlowRouter.go('/locations/:locationId', {locationId: location._id});
+              const popupElement = $('<div>').get(0);
+              Blaze.renderWithData(Template.locationPopup, {
+                location: location,
+                properties: mapTypes.map((t)=>{
+                  return {
+                    value: location[t.name],
+                    label: t.label
+                  };
+                })
+              }, popupElement);
+              layer.bindPopup(popupElement)
+                .openPopup()
+                .unbindPopup();
             },
             mouseover: (event)=>{
               if(hoverMarker) {
@@ -208,11 +226,7 @@ Template.bioevent.helpers({
   dateRange: () => Template.instance().dateRange,
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
-    return [
-      { name: "originThreatLevel", label: "Threat Level by Origin Map" },
-      { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected by Origin" },
-      { name: "destinationThreatExposure", label: "Threat Exposure by Destination Map" }
-    ].map((type)=>{
+    return mapTypes.map((type)=>{
       type.selected = type.name == selectedType;
       return type;
     });

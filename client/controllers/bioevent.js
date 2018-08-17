@@ -106,7 +106,7 @@ Template.bioevent.onRendered(function() {
       style: (feature)=>{
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(0.8 * value / maxValue, this.ramp) : '#FFFFFF',
+          fillColor: value ? getColor(value / maxValue, this.ramp) : '#FFFFFF',
           weight: 1,
           color: getColor(1, this.ramp),
           // Hide the US since it will be shown in the states layer.
@@ -187,7 +187,7 @@ Template.bioevent.onRendered(function() {
         style: (feature)=>{
           let maxValue = location.type === 'airport' ? airportMax : stateMax;
           return {
-            fillColor: value && (location.type === 'airport' || showChoropleth) ? getColor(0.8 * value / maxValue, this.ramp) : '#FFFFFF',
+            fillColor: value && (location.type === 'airport' || showChoropleth) ? getColor(value / maxValue, this.ramp) : '#FFFFFF',
             weight: 1,
             color: getColor(1, this.ramp),
             fillOpacity: 1.0

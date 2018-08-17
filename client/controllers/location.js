@@ -61,9 +61,9 @@ Template.location.onRendered(function() {
       style: (feature) => {
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(.7 * value / maxValue, OUTBOUND_RAMP) : '#FFFFFF',
+          fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP) : '#FFFFFF',
           weight: 1,
-          color: OUTBOUND_RAMP[9],
+          color: getColor(1, OUTBOUND_RAMP),
           fillOpacity: 1
         };
       },
@@ -127,9 +127,9 @@ Template.location.onRendered(function() {
       },
       style: (feature) => {
         return {
-          fillColor: INBOUND_RAMP[5],
+          fillColor: getColor(0.5, INBOUND_RAMP),
           weight: 1,
-          color: INBOUND_RAMP[9],
+          color: getColor(1, INBOUND_RAMP),
           fillOpacity: 1
         };
       },
@@ -160,9 +160,9 @@ Template.location.onRendered(function() {
       style: (feature) => {
         let value = feature.properties[mapTypeValue];
         return {
-          fillColor: value ? getColor(.7 * value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
+          fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
           weight: 1,
-          color: OUTBOUND_RAMP[9],
+          color: getColor(1, OUTBOUND_RAMP),
           fillOpacity: 1
         };
       },

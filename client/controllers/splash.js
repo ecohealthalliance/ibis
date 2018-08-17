@@ -65,7 +65,7 @@ Template.splash.onRendered(function() {
       style: (feature)=>{
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(0.8 * value / maxValue, INBOUND_RAMP) : '#FFFFFF',
+          fillColor: value ? getColor(value / maxValue, INBOUND_RAMP) : '#FFFFFF',
           weight: 1,
           color: getColor(1, INBOUND_RAMP),
           // Hide the US since it will be shown in the states layer.
@@ -121,7 +121,7 @@ Template.splash.onRendered(function() {
         style: (feature)=>{
           let maxValue = location.type === 'airport' ? airportMax : stateMax;
           return {
-            fillColor: value && (location.type === 'airport' || showChoropleth) ? getColor(0.8 * value / maxValue, INBOUND_RAMP) : '#FFFFFF',
+            fillColor: value && (location.type === 'airport' || showChoropleth) ? getColor(value / maxValue, INBOUND_RAMP) : '#FFFFFF',
             weight: 1,
             color: getColor(1, INBOUND_RAMP),
             fillOpacity: 1.0

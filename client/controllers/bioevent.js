@@ -197,7 +197,7 @@ Template.bioevent.onRendered(function() {
           layer.on({
             click: (event)=>{
               const popupElement = $('<div>').get(0);
-              const properties = [
+              let properties = [
                 { name: "originThreatLevel", label: "Threat Level Posed" },
                 { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected" },
                 { name: "destinationThreatExposure", label: "Threat Exposure" }
@@ -206,16 +206,19 @@ Template.bioevent.onRendered(function() {
                   value: location[t.name],
                   label: t.label
                 };
-              }).concat([{
-                label: "Threat Level Global Rank",
-                value: "" + location["globalOriginRank"]
-              }, {
-                label: "Threat Exposure Global Rank",
-                value: "" + location["globalDestRank"]
-              }, {
-                label: "Threat Exposure US Rank",
-                value: "" + location["USDestRank"]
-              }]);
+              });
+              if(location.type === 'airport') {
+                properties = properties.concat([{
+                  label: "Threat Level Global Rank",
+                  value: "" + location["globalOriginRank"]
+                }, {
+                  label: "Threat Exposure Global Rank",
+                  value: "" + location["globalDestRank"]
+                }, {
+                  label: "Threat Exposure US Rank",
+                  value: "" + location["USDestRank"]
+                }]);
+              }
               Blaze.renderWithData(Template.locationPopup, {
                 location: location,
                 properties: properties
@@ -231,7 +234,7 @@ Template.bioevent.onRendered(function() {
               hoverMarker = L.marker(event.latlng, {
                 icon: L.divIcon({
                   className: "hover-marker",
-                  html: location.displayName + ": " + value.toPrecision(2)
+                  html: location.displayName + (_.isNumber(value) ? ": " + value.toPrecision(2) : "")
                 })
               }).addTo(map);
               layer.setStyle({
@@ -255,11 +258,10 @@ Template.bioevent.onRendered(function() {
 });
 
 Template.bioevent.helpers({
-  legendTitle: () => typeToTitle[Template.instance().mapType.get()],
-  legendRamp: () => getRamp(Template.instance().mapType.get()),
-  toFixed: (x, y) => x ? x.toFixed(y) : x,
-  USOnly: () => Template.instance().USOnly.get(),
-  topDestinations: () => {
+  legendTitle: ()=>typeToTitle[Template.instance().mapType.get()],
+  legendRamp: ()=>getRamp(Template.instance().mapType.get()),
+  USOnly: ()=>Template.instance().USOnly.get(),
+  topDestinations: ()=>{
     const USOnly = Template.instance().USOnly.get();
     return _.chain(Template.instance().locations.get())
       .filter(x=>(USOnly ? x.USDestRank : x.globalDestRank) < 10)
@@ -271,7 +273,7 @@ Template.bioevent.helpers({
         };
       }).sortBy(x=>-x.value).value();
   },
-  topOrigins: () => {
+  topOrigins: ()=>{
     return _.chain(Template.instance().locations.get())
       .filter(x=>x.globalOriginRank < 10)
       .map((loc)=>{
@@ -282,7 +284,7 @@ Template.bioevent.helpers({
         };
       }).sortBy(x=>-x.value).value();
   },
-  dateRange: () => Template.instance().dateRange,
+  dateRange: ()=>Template.instance().dateRange,
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
     return mapTypes.map((type)=>{
@@ -290,10 +292,12 @@ Template.bioevent.helpers({
       return type;
     });
   },
+  showingTopOrigins: ()=>Template.instance().mapType.get() == 'topOrigins',
+  showingTopDestinations: ()=>Template.instance().mapType.get() == 'topDestinations',
   resolvedBioevent: ()=>{
     return Template.instance().resolvedBioevent.get();
   },
-  layers: () => displayLayers
+  layers: ()=>displayLayers
 });
 
 Template.bioevent.events({

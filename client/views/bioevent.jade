@@ -22,21 +22,29 @@ template(name='bioevent')
           +timeline dateRange=dateRange resolvedBioevent=resolvedBioevent
         .summary-section
           .section-head
-            i.fa.fa-circle.show-destinations
+            span.show-destinations
+              if showingTopDestinations
+                i.fa.fa-circle
+              else
+                i.fa.fa-circle-o
             | Top Destinations
             .controls
               input(type="checkbox" checked=USOnly).us-only-checkbox
               | US Only
           ol.airport-list
             each topDestinations
-              li #{name}: {{toFixed value 2}}
+              li #{name}: {{formatNumber value}}
         .summary-section
           .section-head
-            i.fa.fa-circle.show-origins
+            span.show-origins
+              if showingTopOrigins
+                i.fa.fa-circle
+              else
+                i.fa.fa-circle-o
             | Top Origins
           ol.airport-list
             each topOrigins
-              li #{name}: {{toFixed value 2}}
+              li #{name}: {{formatNumber value}}
         .summary-section
           .section-head
             a(href="https://eidr-connect.eha.io/events/auto-events/#{resolvedBioevent.eventId}") EIDR-Connect Data

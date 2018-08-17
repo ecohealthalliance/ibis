@@ -3,9 +3,9 @@ template(name='bioeventItem')
     h6
       a(href="/bioevents/#{bioevent.event.eventId}")=bioevent.event.name
       if bioevent.rank
-        .rank-score.rank-data Rank Score: #{bioevent.rank}
+        .rank-score.rank-data Rank Score: {{formatNumber bioevent.rank}}
       else if bioevent.lastIncident
         .rank-data Last Incident: #{bioevent.lastIncident}
       else if bioevent.activeCases
-        .rank-data Estimated Active Cases: #{bioevent.activeCases}
+        .rank-data Estimated Active Cases: {{formatNumber bioevent.activeCases}}
     #[+timeline dateRange=dateRange max=timelineMax resolvedBioevent=bioevent.event]#[.minimap]

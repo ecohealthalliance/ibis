@@ -1,4 +1,5 @@
 import { ReactiveVar } from 'meteor/reactive-var';
+import utils from '/imports/utils';
 
 Template.timeline.onCreated(function() {
   this.timelineType = new ReactiveVar({activeCases: true});
@@ -34,11 +35,7 @@ Template.timeline.onRendered(function() {
     });
     const formatNumber = (x) => {
       const value = Math.pow(10, x) - 1;
-      if(value >= 1000) {
-        return value.toPrecision(1);
-      } else {
-        return value.toFixed(0);
-      }
+      return utils.formatNumber(value);
     };
     const dayBeforeEndStr = new Date(
       new Date(this.data.dateRange.end).setDate(this.data.dateRange.end.getDate() - 1)

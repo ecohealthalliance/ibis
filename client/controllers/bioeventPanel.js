@@ -54,8 +54,6 @@ Template.bioeventPanel.helpers({
       .value();
   })),
   bioevents: () => Template.instance().bioevents.get().map((x) => {
-    if(x.rank) x.rank = x.rank.toPrecision(2);
-    if(x.activeCases) x.activeCases = x.activeCases.toPrecision(2);
     if(x.lastIncident) x.lastIncident = ("" + x.lastIncident).split("T")[0];
     return x;
   }),

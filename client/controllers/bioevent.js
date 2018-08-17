@@ -81,7 +81,7 @@ Template.bioevent.onRendered(function() {
         return {
           fillColor: value ? getColor(0.8 * value / maxValue, this.ramp) : '#FFFFFF',
           weight: 1,
-          color: this.ramp[9],
+          color: getColor(1, this.ramp),
           // Hide the US since it will be shown in the states layer.
           fillOpacity: feature.properties.iso_a2 == 'US' ? 0.0 : 1.0
         };
@@ -151,7 +151,7 @@ Template.bioevent.onRendered(function() {
           return {
             fillColor: value && (location.type === 'airport' || showChoropleth) ? getColor(0.8 * value / maxValue, this.ramp) : '#FFFFFF',
             weight: 1,
-            color: this.ramp[9],
+            color: getColor(1, this.ramp),
             fillOpacity: 1.0
           };
         },
@@ -184,7 +184,7 @@ Template.bioevent.onRendered(function() {
               }).addTo(map);
               layer.setStyle({
                 weight: 2,
-                color: Constants.OUTBOUND_COLOR
+                color: getColor(1, this.ramp),
               });
               window.setTimeout(()=>{
                 marker.resetStyle(layer);

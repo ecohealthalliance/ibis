@@ -156,7 +156,7 @@ Template.splash.onRendered(function() {
               }).addTo(map);
               layer.setStyle({
                 weight: 2,
-                color: Constants.PRIMARY_COLOR
+                color: Constants.OUTBOUND_COLOR
               });
               window.setTimeout(()=>{
                 marker.resetStyle(layer);

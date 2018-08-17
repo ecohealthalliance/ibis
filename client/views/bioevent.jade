@@ -21,7 +21,9 @@ template(name='bioevent')
         if resolvedBioevent
           +timeline dateRange=dateRange resolvedBioevent=resolvedBioevent
         .summary-section
-          .section-head Top Destinations
+          .section-head
+            i.fa.fa-circle.show-destinations
+            | Top Destinations
             .controls
               input(type="checkbox" checked=USOnly).us-only-checkbox
               | US Only
@@ -29,7 +31,9 @@ template(name='bioevent')
             each topDestinations
               li #{name}: {{toFixed value 2}}
         .summary-section
-          .section-head Top Origins
+          .section-head
+            i.fa.fa-circle.show-origins
+            | Top Origins
           ol.airport-list
             each topOrigins
               li #{name}: {{toFixed value 2}}

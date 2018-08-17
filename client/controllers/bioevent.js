@@ -12,8 +12,18 @@ import displayLayers from '/imports/displayLayers';
 const mapTypes = [
   { name: "originThreatLevel", label: "Threat Level by Origin" },
   { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected by Origin" },
-  { name: "destinationThreatExposure", label: "Threat Exposure by Destination" }
-]
+  { name: "destinationThreatExposure", label: "Threat Exposure by Destination" },
+  { name: "topOrigins", label: "Top Origins" },
+  { name: "topDestinations", label: "Top Destinations" }
+];
+
+const getRamp = (mapType)=>{
+  if(mapType.startsWith('origin') || mapType.endsWith('Origins')) {
+    return OUTBOUND_RAMP;
+  } else {
+    return INBOUND_RAMP;
+  }
+};
 
 Template.bioevent.onCreated(function() {
   this.ramp = OUTBOUND_RAMP;
@@ -27,7 +37,6 @@ Template.bioevent.onCreated(function() {
   this.countryValues = new ReactiveVar();
   this.autorun(()=>{
     const bioeventId = FlowRouter.getParam('bioeventId');
-    const metric = this.mapType.get();
     Promise.all([
       new Promise((resolve, reject) =>{
         HTTP.get('/api/bioevents/' + bioeventId, (err, resp)=> {
@@ -40,7 +49,7 @@ Template.bioevent.onCreated(function() {
       const USAirportIds = bioeventData.USAirportIds;
       this.countryValues.set(bioeventData.countryValues);
       this.resolvedBioevent.set(bioeventData.resolvedBioevent);
-      this.locations.set(_.map(locationGeoJson, (location, locationId)=>{
+      const locations = _.map(locationGeoJson, (location, locationId)=>{
         let locationName;
         location = Object.create(location);
         ["destinationThreatExposure", "originThreatLevel", "originProbabilityPassengerInfected"].forEach((metric)=>{
@@ -52,20 +61,38 @@ Template.bioevent.onCreated(function() {
         location._id = locationId;
         [location.type, locationName] = locationId.split(':');
         if(location.type == "airport") {
-          location.USAirport = USAirportIds.indexOf(locationName) >= 0
+          location.USAirport = USAirportIds.indexOf(locationName) >= 0;
         }
         return location;
-      }));
+      });
+      _.sortBy(locations.filter(x=>x.type == "airport"), (loc)=>{
+        return -loc.destinationThreatExposure;
+      }).map((x, idx)=>{
+        x.globalDestRank = idx;
+        return x;
+      }).filter((loc)=>loc.USAirport).map((x, idx)=>{
+        x.USDestRank = idx;
+        return x;
+      });
+      _.sortBy(locations.filter(x=>x.type == "airport"), (loc)=>{
+        return -loc.originThreatLevel;
+      }).map((x, idx)=>{
+        x.globalOriginRank = idx;
+        return x;
+      });
+      this.locations.set(locations);
     });
   });
   const endDate = new Date();
-  const dateRange = this.dateRange = {
+  this.dateRange = {
     start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
     end: endDate
   };
 });
 
 Template.bioevent.onRendered(function() {
+  this.$('.show-origins').css({color: getColor(1, OUTBOUND_RAMP)});
+  this.$('.show-destinations').css({color: getColor(1, INBOUND_RAMP)});
   const map = L.map('map');
   map.setView([40.077946, -95.989253], 4);
   let geoJsonLayer = null;
@@ -106,11 +133,7 @@ Template.bioevent.onRendered(function() {
   let locationLayer = null;
   this.autorun(()=>{
     const mapType = this.mapType.get();
-    if(mapType == "destinationThreatExposure") {
-      this.ramp = INBOUND_RAMP;
-    } else {
-      this.ramp = OUTBOUND_RAMP;
-    }
+    this.ramp = getRamp(mapType);
     const displayLayersVal = displayLayers.get();
     const showBubbles = _.findWhere(displayLayersVal, {
       name: 'bubbles'
@@ -125,16 +148,31 @@ Template.bioevent.onRendered(function() {
     let locations = this.locations.get();
     let airportMax = 0;
     let stateMax = 0;
+    const USOnly = Template.instance().USOnly.get();
+    const values = {};
+    locations.forEach((location)=>{
+      if(mapType === 'topDestinations') {
+        if(USOnly) {
+          values[location._id] = location.USDestRank < 10;
+        } else {
+          values[location._id] = location.globalDestRank < 10;
+        }
+      } else if( mapType === 'topOrigins') {
+        values[location._id] = location.globalOriginRank < 10;
+      } else {
+        values[location._id] = location[mapType];
+      }
+    });
     locations.map((location)=>{
-      let value = location[mapType];
+      let value = values[location._id];
       if(location.type === 'state' && value > stateMax) stateMax = value;
       if(location.type === 'airport' && value > airportMax) airportMax = value;
     });
-    locations.forEach((location)=>{
+    _.sortBy(locations, (x)=>x.type == 'airport').forEach((location)=>{
       if(!showBubbles && location.type == 'airport') return;
       if(!location.displayGeoJSON) return;
-      if(location.type == 'airport' && !location[mapType]) return;
-      const value = location[mapType];
+      if(location.type == 'airport' && !values[location._id]) return;
+      const value = values[location._id];
       var geojsonMarkerOptions = {
         // The radius is a squre root so that the marker's volume is directly
         // proprotional to the value.
@@ -159,14 +197,28 @@ Template.bioevent.onRendered(function() {
           layer.on({
             click: (event)=>{
               const popupElement = $('<div>').get(0);
+              const properties = [
+                { name: "originThreatLevel", label: "Threat Level Posed" },
+                { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected" },
+                { name: "destinationThreatExposure", label: "Threat Exposure" }
+              ].map((t)=>{
+                return {
+                  value: location[t.name],
+                  label: t.label
+                };
+              }).concat([{
+                label: "Threat Level Global Rank",
+                value: "" + location["globalOriginRank"]
+              }, {
+                label: "Threat Exposure Global Rank",
+                value: "" + location["globalDestRank"]
+              }, {
+                label: "Threat Exposure US Rank",
+                value: "" + location["USDestRank"]
+              }]);
               Blaze.renderWithData(Template.locationPopup, {
                 location: location,
-                properties: mapTypes.map((t)=>{
-                  return {
-                    value: location[t.name],
-                    label: t.label
-                  };
-                })
+                properties: properties
               }, popupElement);
               layer.bindPopup(popupElement)
                 .openPopup()
@@ -204,32 +256,31 @@ Template.bioevent.onRendered(function() {
 
 Template.bioevent.helpers({
   legendTitle: () => typeToTitle[Template.instance().mapType.get()],
-  legendRamp: () => (Template.instance().mapType.get() || "").startsWith("origin") ? OUTBOUND_RAMP : INBOUND_RAMP,
+  legendRamp: () => getRamp(Template.instance().mapType.get()),
   toFixed: (x, y) => x ? x.toFixed(y) : x,
   USOnly: () => Template.instance().USOnly.get(),
   topDestinations: () => {
     const USOnly = Template.instance().USOnly.get();
-    return _.sortBy(Template.instance().locations.get().map((loc)=>{
-      let type, name;
-      [type, name] = loc._id.split(':');
-      if(type != "airport") return;
-      if(USOnly && !loc.USAirport) return;
-      return {
-        name: name,
-        value: loc.destinationThreatExposure
-      };
-    }).filter(x=>x), x=>-x.value).slice(0, 10);
+    return _.chain(Template.instance().locations.get())
+      .filter(x=>(USOnly ? x.USDestRank : x.globalDestRank) < 10)
+      .map((loc)=>{
+        const [type, name] = loc._id.split(':');
+        return {
+          name: name,
+          value: loc.destinationThreatExposure
+        };
+      }).sortBy(x=>-x.value).value();
   },
   topOrigins: () => {
-    return _.sortBy(Template.instance().locations.get().map((loc)=>{
-      let type, name;
-      [type, name] = loc._id.split(':');
-      if(type != "airport") return;
-      return {
-        name: name,
-        value: loc.originThreatLevel
-      };
-    }).filter(x=>x), x=>-x.value).slice(0, 10);
+    return _.chain(Template.instance().locations.get())
+      .filter(x=>x.globalOriginRank < 10)
+      .map((loc)=>{
+        const [type, name] = loc._id.split(':');
+        return {
+          name: name,
+          value: loc.originThreatLevel
+        };
+      }).sortBy(x=>-x.value).value();
   },
   dateRange: () => Template.instance().dateRange,
   mapTypes: ()=>{
@@ -247,9 +298,15 @@ Template.bioevent.helpers({
 
 Template.bioevent.events({
   'change #map-type': (event, instance)=>{
-    FlowRouter.setQueryParams({"mapType": event.target.value})
+    FlowRouter.setQueryParams({"mapType": event.target.value});
   },
   'click .us-only-checkbox': (event, instance)=>{
-    instance.USOnly.set(!instance.USOnly.get())
+    instance.USOnly.set(!instance.USOnly.get());
+  },
+  'click .show-origins': (event, instance)=>{
+    FlowRouter.setQueryParams({"mapType": 'topOrigins'});
+  },
+  'click .show-destinations': (event, instance)=>{
+    FlowRouter.setQueryParams({"mapType": 'topDestinations'});
   }
 });

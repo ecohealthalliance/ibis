@@ -1,7 +1,6 @@
-import Constants from '/imports/constants';
 module.exports = {
-    OUTBOUND_RAMP: chroma.scale(["#ffffff", Constants.PRIMARY_COLOR]).colors(10),
-    INBOUND_RAMP: chroma.scale(["#ffffff", "#0000ff"]).colors(10),
+    OUTBOUND_RAMP: chroma.brewer.Reds,
+    INBOUND_RAMP: chroma.brewer.Blues,
     getColor: (val, ramp) => {
       //return a color from the ramp based on a 0 to 1 value.
       //If the value exceeds one the last stop is used.

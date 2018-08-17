@@ -67,7 +67,7 @@ Template.splash.onRendered(function() {
         return {
           fillColor: value ? getColor(0.8 * value / maxValue, INBOUND_RAMP) : '#FFFFFF',
           weight: 1,
-          color: INBOUND_RAMP[9],
+          color: getColor(1, INBOUND_RAMP),
           // Hide the US since it will be shown in the states layer.
           fillOpacity: feature.properties.iso_a2 == 'US' ? 0.0 : 1.0
         };
@@ -123,7 +123,7 @@ Template.splash.onRendered(function() {
           return {
             fillColor: value && (location.type === 'airport' || showChoropleth) ? getColor(0.8 * value / maxValue, INBOUND_RAMP) : '#FFFFFF',
             weight: 1,
-            color: INBOUND_RAMP[9],
+            color: getColor(1, INBOUND_RAMP),
             fillOpacity: 1.0
           };
         },
@@ -156,7 +156,7 @@ Template.splash.onRendered(function() {
               }).addTo(map);
               layer.setStyle({
                 weight: 2,
-                color: Constants.PRIMARY_COLOR
+                color: getColor(1, OUTBOUND_RAMP),
               });
               window.setTimeout(()=>{
                 marker.resetStyle(layer);

@@ -4,12 +4,19 @@ import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import { Blaze } from 'meteor/blaze';
 import { ReactiveVar } from 'meteor/reactive-var';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
+import { constrainMaps } from '/imports/configuration';
 
 Template.bioeventItem.onRendered(function() {
   const map = L.map(this.$('.minimap')[0], {
     zoomControl: false,
     attributionControl: false
   });
+  if(constrainMaps.get()) {
+    map.dragging.disable();
+    map.doubleClickZoom.disable();
+    map.scrollWheelZoom.disable();
+    map.touchZoom.disable();
+  }
   const locationMap = this.data.bioevent.event.locations;
   const maxCasesForLocation = this.data.maxCasesForLocation;
   const geoJsonLayer = L.geoJson(WorldGeoJSON, {

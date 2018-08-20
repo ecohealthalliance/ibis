@@ -3,6 +3,7 @@ import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
+import Constants from '/imports/constants';
 import { _ } from 'meteor/underscore';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
@@ -52,7 +53,7 @@ Template.location.onCreated(function() {
 Template.location.onRendered(function() {
   let marker = null;
   const map = L.map('map');
-  map.setView([40.077946, -95.989253], 4);
+  map.setView(Constants.INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = L.layerGroup([]).addTo(map);
   const renderGeoJSON = (mapData, units = "") => {
     const maxValue = _.max(_.values(_.omit(mapData, "US")));

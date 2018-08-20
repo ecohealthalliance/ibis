@@ -94,7 +94,7 @@ Template.bioevent.onRendered(function() {
   this.$('.show-origins').css({color: getColor(1, OUTBOUND_RAMP)});
   this.$('.show-destinations').css({color: getColor(1, INBOUND_RAMP)});
   const map = L.map('map');
-  map.setView([40.077946, -95.989253], 4);
+  map.setView(Constants.INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = null;
   let hoverMarker = null;
   const renderGeoJSON = (mapData, units="")=>{

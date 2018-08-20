@@ -53,7 +53,7 @@ Template.splash.onCreated(function() {
  
 Template.splash.onRendered(function() {
   const map = L.map('map');
-  map.setView([40.077946, -95.989253], 4);
+  map.setView(Constants.INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = null;
   let hoverMarker = null;
   const renderGeoJSON = (mapData, units="")=>{

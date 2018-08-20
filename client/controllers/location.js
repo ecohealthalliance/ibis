@@ -128,7 +128,7 @@ Template.location.onRendered(function() {
       },
       style: (feature) => {
         return {
-          fillColor: INBOUND_RAMP[5],
+          fillColor: getColor(0.5, INBOUND_RAMP),
           weight: 1,
           color: INBOUND_LINE,
           fillOpacity: 1

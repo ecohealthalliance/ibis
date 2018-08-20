@@ -1,4 +1,4 @@
-/* global L, FlowRouter */
+/* global L, FlowRouter, $ */
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
@@ -276,10 +276,13 @@ Template.bioevent.helpers({
     return _.chain(Template.instance().locations.get())
       .filter(x=>(USOnly ? x.USDestRank : x.globalDestRank) < 10)
       .map((loc)=>{
-        const [type, name] = loc._id.split(':');
+        const [type, codeName] = loc._id.split(':');
         return {
-          name: name,
-          value: loc.destinationThreatExposure
+          name: `${loc.displayName} (${codeName})`,
+          value: loc.destinationThreatExposure,
+          USDestRank: loc.USDestRank + 1,
+          globalDestRank: loc.globalDestRank + 1,
+          link: `/locations/${loc._id}`
         };
       }).sortBy(x=>-x.value).value();
   },
@@ -287,10 +290,11 @@ Template.bioevent.helpers({
     return _.chain(Template.instance().locations.get())
       .filter(x=>x.globalOriginRank < 10)
       .map((loc)=>{
-        const [type, name] = loc._id.split(':');
+        const [type, codeName] = loc._id.split(':');
         return {
-          name: name,
-          value: loc.originThreatLevel
+          name: `${loc.displayName} (${codeName})`,
+          value: loc.originThreatLevel,
+          link: `/locations/${loc._id}`
         };
       }).sortBy(x=>-x.value).value();
   },

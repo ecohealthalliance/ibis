@@ -33,7 +33,13 @@ template(name='bioevent')
               | US Only
           ol.airport-list
             each topDestinations
-              li #{name}: {{formatNumber value}}
+              li 
+                if USOnly
+                  span.other-rank (Global rank: {{globalDestRank}})
+                else if USDestRank
+                  span.other-rank (US Airport)
+                a(href=link) #{name}:
+                .value {{formatNumber value}}
         .summary-section
           .section-head
             span.show-origins
@@ -44,7 +50,9 @@ template(name='bioevent')
             | Top Origins
           ol.airport-list
             each topOrigins
-              li #{name}: {{formatNumber value}}
+              li
+                a(href=link) #{name}:
+                .value {{formatNumber value}}
         .summary-section
           .section-head
             a(href="https://eidr-connect.eha.io/events/auto-events/#{resolvedBioevent.eventId}") EIDR-Connect Data

@@ -4,4 +4,8 @@ template(name="header")
       .navbar-header
         a(href="/").navbar-brand IBIS
       +searchBar
-      a(href="/about").about About
+      .links
+        .btn-group
+          a(href="/about").about.btn About
+          a(href="/configure").configure.btn
+            i.fa.fa-cog

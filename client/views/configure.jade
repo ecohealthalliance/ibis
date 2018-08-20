@@ -1,0 +1,10 @@
+template(name="configure")
+  .configuration-container
+    h4 Configuration
+    .configuration
+      label Log-scale timelines:
+      .value
+        +onOffBtns state=states.logTimeline
+      label Use consistent scale for all timelines:
+      .value
+        +onOffBtns state=states.globalScale

@@ -1,4 +1,4 @@
-/* global L, FlowRouter */
+/* global L, FlowRouter, $ */
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
@@ -61,9 +61,9 @@ Template.location.onRendered(function() {
       style: (feature) => {
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP) : '#FFFFFF',
+          fillColor: value ? getColor(.7 * value / maxValue, OUTBOUND_RAMP) : '#FFFFFF',
           weight: 1,
-          color: getColor(1, OUTBOUND_RAMP),
+          color: OUTBOUND_RAMP[9],
           fillOpacity: 1
         };
       },
@@ -127,9 +127,9 @@ Template.location.onRendered(function() {
       },
       style: (feature) => {
         return {
-          fillColor: getColor(0.5, INBOUND_RAMP),
+          fillColor: INBOUND_RAMP[5],
           weight: 1,
-          color: getColor(1, INBOUND_RAMP),
+          color: INBOUND_RAMP[9],
           fillOpacity: 1
         };
       },
@@ -160,9 +160,9 @@ Template.location.onRendered(function() {
       style: (feature) => {
         let value = feature.properties[mapTypeValue];
         return {
-          fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
+          fillColor: value ? getColor(.7 * value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
           weight: 1,
-          color: getColor(1, OUTBOUND_RAMP),
+          color: OUTBOUND_RAMP[9],
           fillOpacity: 1
         };
       },

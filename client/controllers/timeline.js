@@ -1,5 +1,7 @@
 import { ReactiveVar } from 'meteor/reactive-var';
 import utils from '/imports/utils';
+import { _ } from 'meteor/underscore';
+import { logTimeline, globalScale } from '/imports/configuration';
 
 Template.timeline.onCreated(function() {
   this.timelineType = new ReactiveVar({activeCases: true});
@@ -11,7 +13,7 @@ Template.timeline.onRendered(function() {
     const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
     const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
     var timeseries = this.data.resolvedBioevent.timeseries;
-    const timelineMax = this.data.max || _.max(timeseries.map((x) => x[1]));
+    const timelineMax = (globalScale.get() ? this.data.max : 0) || _.max(timeseries.map((x) => x[1]));
     if(curTimelineType.newCases) {
       timeseries = this.data.resolvedBioevent.dailyRateTimeseries.reduce((sofar, [date, value]) => {
         if(sofar.length > 0) {
@@ -33,13 +35,15 @@ Template.timeline.onRendered(function() {
         value: value
       };
     });
+    const logTimelineValue = logTimeline.get();
     const formatNumber = (x) => {
-      const value = Math.pow(10, x) - 1;
+      const value = logTimelineValue ? Math.pow(10, x) - 1 : x;
       return utils.formatNumber(value);
     };
     const dayBeforeEndStr = new Date(
       new Date(this.data.dateRange.end).setDate(this.data.dateRange.end.getDate() - 1)
     ).toISOString().split('T')[0];
+    const scaledTimelineMax = logTimelineValue ? Math.log10(timelineMax) : timelineMax;
     const chart = c3.generate({
       bindto: this.$('.timeline')[0],
       padding: {
@@ -50,7 +54,9 @@ Template.timeline.onRendered(function() {
       data: {
         json: formattedTimeseries.map((x) => {
           x = Object.create(x);
-          x.value = Math.log10(1 + x.value);
+          if(logTimelineValue) {
+            x.value = Math.log10(1 + x.value);
+          }
           return x;
         }),
         keys: {
@@ -81,9 +87,9 @@ Template.timeline.onRendered(function() {
         },
         y: {
           min: 0,
-          max: Math.log10(timelineMax),
+          max: scaledTimelineMax,
           tick: {
-            values: [0, Math.log10(timelineMax) / 2, Math.log10(timelineMax)],
+            values: [0, scaledTimelineMax / 2, scaledTimelineMax],
             format: formatNumber
           },
           show: true

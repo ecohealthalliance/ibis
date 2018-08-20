@@ -21,3 +21,9 @@ FlowRouter.route('/about', {
     BlazeLayout.render('layout', {main: 'about'});
   }
 });
+
+FlowRouter.route('/configure', {
+  action: function(params, queryParams) {
+    BlazeLayout.render('layout', {main: 'configure'});
+  }
+});

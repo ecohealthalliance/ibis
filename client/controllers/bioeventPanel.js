@@ -23,14 +23,14 @@ Template.bioeventPanel.onCreated(function() {
     };
     let url = "/api/bioevents";
     if (locationId) {
-      url = `/api/locations/${locationId}/bioevents`
+      url = `/api/locations/${locationId}/bioevents`;
     }
     HTTP.get(url, requestParams, (err, resp) => {
       if (err) return console.error(err);
       const respResults = EJSON.parse(resp.content).results;
       bioevents.set(respResults);
       let endDate = new Date(respResults[0].event.timeseries.slice(-1)[0][0]);
-      let startDate = new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY)
+      let startDate = new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY);
       dateRange.set({
         start: startDate,
         end: endDate

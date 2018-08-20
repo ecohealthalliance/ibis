@@ -4,7 +4,7 @@ import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import Constants from '/imports/constants';
-import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
+import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } from '/imports/ramps';
 import { _ } from 'meteor/underscore';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
@@ -25,8 +25,17 @@ const getRamp = (mapType)=>{
   }
 };
 
+const getLine = (mapType)=>{
+  if(mapType.startsWith('origin') || mapType.endsWith('Origins')) {
+    return OUTBOUND_LINE;
+  } else {
+    return INBOUND_LINE;
+  }
+};
+
 Template.bioevent.onCreated(function() {
   this.ramp = OUTBOUND_RAMP;
+  this.line = OUTBOUND_LINE;
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
     this.mapType.set(FlowRouter.getQueryParam("mapType") || "destinationThreatExposure");
@@ -91,8 +100,8 @@ Template.bioevent.onCreated(function() {
 });
 
 Template.bioevent.onRendered(function() {
-  this.$('.show-origins').css({color: getColor(1, OUTBOUND_RAMP)});
-  this.$('.show-destinations').css({color: getColor(1, INBOUND_RAMP)});
+  this.$('.show-origins').css({color: OUTBOUND_LINE});
+  this.$('.show-destinations').css({color: INBOUND_LINE});
   const map = L.map('map');
   map.setView(Constants.INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = null;
@@ -108,7 +117,7 @@ Template.bioevent.onRendered(function() {
         return {
           fillColor: value ? getColor(value / maxValue, this.ramp) : '#FFFFFF',
           weight: 1,
-          color: getColor(1, this.ramp),
+          color: this.line,
           // Hide the US since it will be shown in the states layer.
           fillOpacity: feature.properties.iso_a2 == 'US' ? 0.0 : 1.0
         };
@@ -134,6 +143,7 @@ Template.bioevent.onRendered(function() {
   this.autorun(()=>{
     const mapType = this.mapType.get();
     this.ramp = getRamp(mapType);
+    this.line = getLine(mapType);
     const displayLayersVal = displayLayers.get();
     const showBubbles = _.findWhere(displayLayersVal, {
       name: 'bubbles'
@@ -189,7 +199,7 @@ Template.bioevent.onRendered(function() {
           return {
             fillColor: value && (location.type === 'airport' || showChoropleth) ? getColor(value / maxValue, this.ramp) : '#FFFFFF',
             weight: 1,
-            color: getColor(1, this.ramp),
+            color: this.line,
             fillOpacity: 1.0
           };
         },
@@ -239,7 +249,7 @@ Template.bioevent.onRendered(function() {
               }).addTo(map);
               layer.setStyle({
                 weight: 2,
-                color: getColor(1, this.ramp),
+                color: this.line,
               });
               window.setTimeout(()=>{
                 marker.resetStyle(layer);

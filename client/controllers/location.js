@@ -5,7 +5,7 @@ import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import Constants from '/imports/constants';
 import { _ } from 'meteor/underscore';
-import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
+import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
 
@@ -62,9 +62,9 @@ Template.location.onRendered(function() {
       style: (feature) => {
         let value = mapData[feature.properties.iso_a2];
         return {
-          fillColor: value ? getColor(.7 * value / maxValue, OUTBOUND_RAMP) : '#FFFFFF',
+          fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP) : '#FFFFFF',
           weight: 1,
-          color: OUTBOUND_RAMP[9],
+          color: OUTBOUND_LINE,
           fillOpacity: 1
         };
       },
@@ -130,7 +130,7 @@ Template.location.onRendered(function() {
         return {
           fillColor: INBOUND_RAMP[5],
           weight: 1,
-          color: INBOUND_RAMP[9],
+          color: INBOUND_LINE,
           fillOpacity: 1
         };
       },
@@ -161,9 +161,9 @@ Template.location.onRendered(function() {
       style: (feature) => {
         let value = feature.properties[mapTypeValue];
         return {
-          fillColor: value ? getColor(.7 * value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
+          fillColor: value ? getColor(value / maxValue, OUTBOUND_RAMP): '#FFFFFF',
           weight: 1,
-          color: OUTBOUND_RAMP[9],
+          color: OUTBOUND_LINE,
           fillOpacity: 1
         };
       },

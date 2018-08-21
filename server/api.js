@@ -237,13 +237,13 @@ api.addRoute('locations/:locationId/inboundFlights', {
 });
 
 /*
-@api {get} locations/:locationId/inboundTraffic Get inbound traffic stats
-@apiName inboundTraffic
+@api {get} locations/:locationId/directSeats Get inbound traffic stats
+@apiName directSeats
 @apiGroup locations
 @apiParam {ISODateString} arrivesAfter
 @apiParam {ISODateString} arrivesBefore
 */
-api.addRoute('locations/:locationId/inboundTraffic', {
+api.addRoute('locations/:locationId/directSeats', {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
     const arrivesBefore = new Date(this.queryParams.arrivesBefore || new Date());
@@ -299,12 +299,12 @@ api.addRoute('locations/:locationId/inboundTraffic', {
 });
 
 /*
-@api {get} locations/:locationId/passengerFlows Get estimates of the
+@api {get} locations/:locationId/passengerFlow Get estimates of the
   total number of passengers arriving from each country.
-@apiName passengerFlows
+@apiName passengerFlow
 @apiGroup locations
 */
-api.addRoute('locations/:locationId/passengerFlows', {
+api.addRoute('locations/:locationId/passengerFlow', {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
     const periodDays = 14;
@@ -372,7 +372,8 @@ api.addRoute('locations/:locationId/threatLevel', {
     });
     return {
       countryGroups: statsByCountry,
-      allAirports: results.filter((x)=>x.threatLevel >= 0.0000001)
+      allAirports: results.filter((x)=>x.threatLevel >= 0.0000001),
+      USAirportIds: USAirportIds
     };
   }
 });

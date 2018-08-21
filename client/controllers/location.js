@@ -12,7 +12,8 @@ import displayLayers from '/imports/displayLayers';
 const mapTypes = [
   { name: "directSeats", label: "Direct Seats by Origin" },
   { name: "passengerFlow", label: "Estimated Passenger Flow by Origin" },
-  { name: "threatLevel", label: "Threat Level by Origin" }
+  { name: "threatLevel", label: "Threat Level by Origin" },
+  { name: "threatLevelExUS", label: "Threat Level by Origin (Ex. US)" }
 ];
 
 Template.location.onCreated(function() {
@@ -32,17 +33,9 @@ Template.location.onCreated(function() {
         type: locationId.startsWith("airport") ? "airport" : "state",
         displayName: location.displayName
       });
-      let route;
-      const mapTypeValue = this.mapType.get();
+      const mapTypeValue = this.mapType.get().replace("ExUS", "");
       if (!location) return;
-      if (mapTypeValue === "passengerFlow") {
-        route = "passengerFlows";
-      } else if (mapTypeValue === "threatLevel") {
-        route = "threatLevel";
-      } else {
-        route = "inboundTraffic";
-      }
-      HTTP.get(`/api/locations/${locationId}/${route}`, {}, (err, resp) => {
+      HTTP.get(`/api/locations/${locationId}/${mapTypeValue}`, {}, (err, resp) => {
         if (err) return console.error(err);
         this.locationData.set(resp.data);
       });
@@ -90,7 +83,8 @@ Template.location.onRendered(function() {
     const data = this.locationData.get();
     const locationId = FlowRouter.getParam('locationId');
     if (!data) return;
-    const mapTypeValue = this.mapType.curValue;
+    const mapTypeValue = this.mapType.curValue.replace("ExUS", "");
+    const exUS = this.mapType.curValue.endsWith("ExUS");
     let units;
     if (mapTypeValue === "passengerFlow") {
       units = "passengers per day";
@@ -107,7 +101,7 @@ Template.location.onRendered(function() {
       name: 'choropleth'
     }).active;
     let result = {};
-    const countryGroups = data.countryGroups;
+    const countryGroups = exUS ? _.omit(data.countryGroups, "US") : data.countryGroups;
     for (let id in countryGroups) {
       result[id] = countryGroups[id][mapTypeValue];
     }
@@ -136,9 +130,14 @@ Template.location.onRendered(function() {
       },
     }));
     if(!showBubbles) return;
-    let maxValue = _.max(data.allAirports.map((x) => x[mapTypeValue]));
+    let allAirports = data.allAirports;
+    if(exUS) {
+      const USAirportIdSet = new Set(data.USAirportIds);
+      allAirports = allAirports.filter(x=>!USAirportIdSet.has(x._id));
+    }
+    let maxValue = _.max(allAirports.map((x) => x[mapTypeValue]));
     geoJsonLayer.addLayer(L.geoJson({
-      features: data.allAirports.map((x)=>{
+      features: allAirports.map((x)=>{
         const key = 'airport:' + x._id;
         if(!(key in this.locations)) return;
         const location = _.extend({}, this.locations[key], x, {_id: key});

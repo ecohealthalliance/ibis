@@ -8,6 +8,7 @@ import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
+import { airportCutoffPercentage } from '/imports/configuration';
 
 const mapTypes = [
   {name:"threatLevelExUS", label:"Threat Level Exposure (Ex. US)"},
@@ -103,10 +104,12 @@ Template.splash.onRendered(function() {
       if(location.type === 'state' && value > stateMax) stateMax = value;
       if(location.type === 'airport' && value > airportMax) airportMax = value;
     });
+    const airportCutoffMultiple = 0.01 * airportCutoffPercentage.get();
     locations.forEach((location)=>{
       if(!showBubbles && location.type == 'airport') return;
       if(!location.displayGeoJSON) return;
       let value = location[this.mapType.curValue];
+      if(value < (airportCutoffMultiple * airportMax) && location.type == 'airport') return;
       var geojsonMarkerOptions = {
         // The radius is a squre root so that the marker's volume is directly
         // proprotional to the value.

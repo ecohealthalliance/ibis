@@ -14,3 +14,6 @@ template(name="configure")
       label Display active case timeseries by default:
       .value
         +onOffBtns state=states.defaultActiveCaseTimeseries
+      label Hide airport bubbles below this percentage of the maximum value bubble:
+      .value
+        +inputBox type="number" state=states.airportCutoffPercentage

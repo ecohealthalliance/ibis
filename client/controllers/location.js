@@ -8,6 +8,7 @@ import { _ } from 'meteor/underscore';
 import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
+import { airportCutoffPercentage } from '/imports/configuration';
 
 const mapTypes = [
   { name: "directSeats", label: "Direct Seats by Origin" },
@@ -136,11 +137,13 @@ Template.location.onRendered(function() {
       allAirports = allAirports.filter(x=>!USAirportIdSet.has(x._id));
     }
     let maxValue = _.max(allAirports.map((x) => x[mapTypeValue]));
+    const airportCutoffMultiple = 0.01 * airportCutoffPercentage.get();
     geoJsonLayer.addLayer(L.geoJson({
       features: allAirports.map((x)=>{
         const key = 'airport:' + x._id;
         if(!(key in this.locations)) return;
         const location = _.extend({}, this.locations[key], x, {_id: key});
+        if(location[mapTypeValue] < (airportCutoffMultiple * maxValue)) return;
         return {
           "type": "Feature",
           "geometry": this.locations[key].displayGeoJSON[0],

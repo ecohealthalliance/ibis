@@ -8,6 +8,7 @@ import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } fr
 import { _ } from 'meteor/underscore';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
+import { airportCutoffPercentage } from '/imports/configuration';
 
 const mapTypes = [
   { name: "originThreatLevel", label: "Threat Level by Origin" },
@@ -74,7 +75,8 @@ Template.bioevent.onCreated(function() {
         }
         return location;
       });
-      _.sortBy(locations.filter(x=>x.type == "airport"), (loc)=>{
+      const airportLocations = locations.filter(x=>x.type === "airport");
+      _.sortBy(airportLocations, (loc)=>{
         return -loc.destinationThreatExposure;
       }).map((x, idx)=>{
         x.globalDestRank = idx;
@@ -83,7 +85,7 @@ Template.bioevent.onCreated(function() {
         x.USDestRank = idx;
         return x;
       });
-      _.sortBy(locations.filter(x=>x.type == "airport"), (loc)=>{
+      _.sortBy(airportLocations, (loc)=>{
         return -loc.originThreatLevel;
       }).map((x, idx)=>{
         x.globalOriginRank = idx;
@@ -178,11 +180,13 @@ Template.bioevent.onRendered(function() {
       if(location.type === 'state' && value > stateMax) stateMax = value;
       if(location.type === 'airport' && value > airportMax) airportMax = value;
     });
+    const airportCutoffMultiple = 0.01 * airportCutoffPercentage.get();
     _.sortBy(locations, (x)=>x.type == 'airport').forEach((location)=>{
       if(!showBubbles && location.type == 'airport') return;
       if(!location.displayGeoJSON) return;
       if(location.type == 'airport' && !values[location._id]) return;
       const value = values[location._id];
+      if(value < (airportCutoffMultiple * airportMax) && location.type == 'airport') return;
       var geojsonMarkerOptions = {
         // The radius is a squre root so that the marker's volume is directly
         // proprotional to the value.

@@ -52,7 +52,7 @@ Template.location.onCreated(function() {
 
 Template.location.onRendered(function() {
   let marker = null;
-  const map = L.map('map');
+  const map = L.map('map', Constants.LEAFLET_MAP_CONFIG);
   map.setView(Constants.INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = L.layerGroup([]).addTo(map);
   const renderGeoJSON = (mapData, units = "") => {

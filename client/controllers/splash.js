@@ -52,7 +52,7 @@ Template.splash.onCreated(function() {
 });
  
 Template.splash.onRendered(function() {
-  const map = L.map('map');
+  const map = L.map('map', Constants.LEAFLET_MAP_CONFIG);
   map.setView(Constants.INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = null;
   let hoverMarker = null;

@@ -102,7 +102,7 @@ Template.bioevent.onCreated(function() {
 Template.bioevent.onRendered(function() {
   this.$('.show-origins').css({color: OUTBOUND_LINE});
   this.$('.show-destinations').css({color: INBOUND_LINE});
-  const map = L.map('map');
+  const map = L.map('map', Constants.LEAFLET_MAP_CONFIG);
   map.setView(Constants.INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = null;
   let hoverMarker = null;

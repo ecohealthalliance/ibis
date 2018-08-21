@@ -1,10 +1,13 @@
 import { ReactiveVar } from 'meteor/reactive-var';
 import utils from '/imports/utils';
 import { _ } from 'meteor/underscore';
-import { logTimeline, globalScale } from '/imports/configuration';
+import { logTimeline, globalScale, defaultActiveCaseTimeseries } from '/imports/configuration';
 
 Template.timeline.onCreated(function() {
-  this.timelineType = new ReactiveVar({activeCases: true});
+  this.timelineType = new ReactiveVar({
+    activeCases: defaultActiveCaseTimeseries.get(),
+    newCases: !defaultActiveCaseTimeseries.get()
+  });
 });
 
 Template.timeline.onRendered(function() {

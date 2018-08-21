@@ -1,7 +1,8 @@
 module.exports = _.chain({
     logTimeline: false,
     globalScale: false,
-    constrainMaps: true
+    constrainMaps: true,
+    defaultActiveCaseTimeseries: true
   })
   .map((defaultValue, key)=>{
     const value = window.localStorage.getItem(key);

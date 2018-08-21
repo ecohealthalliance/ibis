@@ -13,6 +13,8 @@ template(name='location')
           data-tooltip="Click here for descriptions of the map layers.")
           i.fa.fa-question-circle
     #map
+      .help-panel
+        +Template.dynamic template=helpSection
     +legend title=legendTitle ramp=legendRamp layers=layers
     +bioeventPanel
   +tooltips

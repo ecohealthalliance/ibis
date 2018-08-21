@@ -36,25 +36,18 @@ template(name="about")
       
       # Domestic
 
-      ## Threat Exposure
-      The overall levels of risk all bioevents throughout the world pose to
-      U.S. destinations.
+    +threatLevelAbout
 
-      ## Estimated Inbound Passenger Flow
-      The total number of passengers estimated to arrive at each U.S. destination.
+    +passengerFlowAbout
 
+    +markdown
       # International
 
-      ## Estimated Passenger Flow by Origin
-      The approximate number of people from each country of origin that arrive at the target
-      location as their terminal destination.
-      
-      ## Direct Flow by Origin
-      The number of seats available on direct flights arriving at the target location.
+    +originPassengerFlowAbout
+    
+    +directSeatsAbout
 
-      ## Threat Level by Origin
-      The esimated risk of any bioevent spreading from each country of origin
-      to the target location.
+    +threatLevelByOriginAbout
 
   .about-content
     +markdown
@@ -85,3 +78,56 @@ template(name="about")
       
       The Ex. US versions of rank metrics exclude the United States as a source
       of incoming threats.
+
+template(name="threatLevelAbout")
+  +markdown
+    ## Threat Exposure
+      The overall levels of risk all bioevents throughout the world pose to
+      U.S. destinations.
+      
+template(name="passengerFlowAbout")
+  +markdown
+    ## Estimated Inbound Passenger Flow
+    The total number of passengers estimated to arrive at each U.S. destination.
+
+template(name="originPassengerFlowAbout")
+  +markdown
+    ## Estimated Passenger Flow by Origin
+    The approximate number of people from each country of origin that arrive at the target
+    location as their terminal destination.
+
+template(name="directSeatsAbout")
+  +markdown
+    ## Direct Flow by Origin
+    The number of seats available on direct flights arriving at the target location.
+
+template(name="threatLevelByOriginAbout")
+  +markdown
+    ## Threat Level by Origin
+    The esimated risk of any bioevent spreading from each country of origin
+    to the target location.
+
+template(name="originThreatLevelAbout")
+  +markdown
+    ## Threat Level by Origin
+    The esimated risk of any bioevent spreading from each country of origin.
+
+template(name="originProbabilityPassengerInfectedAbout")
+  +markdown
+    ## Probability Passenger Infected by Origin
+    The estimated probability that a passenger at the origin airport has the target disease.
+
+template(name="destinationThreatExposureAbout")
+  +markdown
+    ## Threat Exposure
+    The overall levels of risk that the target bioevent poses to each location.
+
+template(name="topOriginsAbout")
+  +markdown
+    ## Top Origins
+    The locations that pose the greatest outbound threat level.
+
+template(name="topDestinationsAbout")
+  +markdown
+    ## Top Destinations
+    The locations that are exposed to the greatest inbound risk.

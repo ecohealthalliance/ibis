@@ -1,7 +1,7 @@
 template(name='splash')
   .map-page-container
     nav.subheader
-      h5.title Inbound BioEvent Risk Index
+      h5.title All US Locations
       .map-controls
         select#map-type
           each mapTypes
@@ -13,6 +13,8 @@ template(name='splash')
           data-tooltip="Click here for descriptions of the map layers.")
           i.fa.fa-question-circle
     #map
+      .help-panel
+        +Template.dynamic template=helpSection
     +legend title=legendTitle ramp=legendRamp layers=layers
     +bioeventPanel
   +tooltips

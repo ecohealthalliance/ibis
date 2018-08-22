@@ -213,6 +213,7 @@ Template.location.helpers({
       return type;
     });
   },
+  mapType: ()=> Template.instance().mapType,
   selectedLocationName: () => {
     const selectedLocation = Template.instance().selectedLocation.get();
     if (selectedLocation) {

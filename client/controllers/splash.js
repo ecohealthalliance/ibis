@@ -187,6 +187,7 @@ Template.splash.helpers({
       return type;
     });
   },
+  mapType: ()=> Template.instance().mapType,
   layers: () => displayLayers
 });
 

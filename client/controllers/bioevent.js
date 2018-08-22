@@ -310,6 +310,7 @@ Template.bioevent.helpers({
       return type;
     });
   },
+  mapType: ()=> Template.instance().mapType,
   showingTopOrigins: ()=>Template.instance().mapType.get() == 'topOrigins',
   showingTopDestinations: ()=>Template.instance().mapType.get() == 'topDestinations',
   resolvedBioevent: ()=>{

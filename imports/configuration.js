@@ -3,6 +3,7 @@ module.exports = _.chain({
     globalScale: false,
     constrainMaps: true,
     defaultActiveCaseTimeseries: true,
+    showHelpPanel: true,
     airportCutoffPercentage: 0.5
   })
   .map((defaultValue, key)=>{

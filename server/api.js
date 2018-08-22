@@ -501,7 +501,7 @@ api.addRoute('bioevents/:bioeventId', {
         }]
       }
     }]);
-    airportValues = {
+    const airportValues = {
       destinationThreatExposure: _.object(result[0].destination.map((x)=>[x._id, x.rank])),
       originThreatLevel: _.object(result[0].origin.map((x)=>[x._id, x.rank])),
       originProbabilityPassengerInfected: _.object(result[0].origin.map((x)=>[x._id, x.probabilityPassengerInfected]))

@@ -209,6 +209,31 @@ else:
 print("\tDone.")
 
 print("Computing disease severity coefficients...")
+CLASSIFICATION_COEFFICIENT_MAP = {
+    'low': 0.25,
+    'medium': 0.5,
+    'high': 0.75,
+    'very high': 1.0,
+}
+def get_classification_coefficient(classification):
+    classification = classification.lower()
+    partial_coefficients = []
+    for partial_classification in classification.split('to'):
+        for possible_classification in ['very high', 'high', 'medium', 'low']:
+            if possible_classification in partial_classification:
+                partial_coefficients.append(CLASSIFICATION_COEFFICIENT_MAP[possible_classification])
+                break
+    if partial_coefficients:
+        return sum(partial_coefficients) / len(partial_coefficients)
+    else:
+        return 0
+df = pd.read_csv("curated-disease-data.csv")
+disease_uri_to_classification_coefficient = {}
+for idx, row in df.iterrows():
+    if not pd.isnull(row['uri']) and not pd.isnull(row['Classification']):
+        classification = row['Classification']
+        disease_uri_to_classification_coefficient[row['uri']] = get_classification_coefficient(classification)
+
 # Determine DALYs Per case using GBD data.
 # Citation:
 # Global Burden of Disease Collaborative Network.
@@ -284,6 +309,9 @@ def gen_ranks():
         DALYs_per_case = disease_uri_to_DALYs_per_case.get(
             event['diseases'][0]['id'],
             average_DALYs_per_case)
+        threat_coefficient = disease_uri_to_classification_coefficient.get(
+            event['diseases'][0]['id'],
+            0.5)
         for arrival_airport, arrival_country_code in airport_to_country_code.items():
             if arrival_airport not in airport_to_idx:
                 continue
@@ -301,7 +329,7 @@ def gen_ranks():
                 else:
                     probability_passenger_infected =\
                         float(cases_in_catchment) / catchment_population
-                rank_score = probability_passenger_infected * passenger_flow * DALYs_per_case
+                rank_score = probability_passenger_infected * passenger_flow * threat_coefficient
                 if not(rank_score > 0):
                     rank_score = 0
                 if not(passenger_flow > 0):
@@ -313,7 +341,8 @@ def gen_ranks():
                     'catchmentPopulation': catchment_population,
                     'probabilityPassengerInfected': probability_passenger_infected,
                     'passengerFlow': passenger_flow,
-                    'threatCoefficient': DALYs_per_case,
+                    'threatCoefficient': threat_coefficient,
+                    'DALYsPerCase': DALYs_per_case,
                     'rank': rank_score
                 }
 

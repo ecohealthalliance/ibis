@@ -52,18 +52,20 @@ var cached = function(func) {
   };
 };
 
-var topLocations = cached((metric)=>{
+var topLocations = cached((metric, bioeventId=null)=>{
   if(metric.startsWith("threatLevel")) {
     const exUS = metric == "threatLevelExUS";
-    let arrivalAirportToRankScore = _.object(aggregate(EventAirportRanks, [{
-      $match: {
-        departureAirportId: {
-          $nin: exUS ? USAirportIds : []
-        },
-        arrivalAirportId: {
-          $in: USAirportIds
-        }
+    let matchQuery = {
+      departureAirportId: {
+        $nin: exUS ? USAirportIds : []
+      },
+      arrivalAirportId: {
+        $in: USAirportIds
       }
+    };
+    if(bioeventId) matchQuery.eventId = bioeventId;
+    let arrivalAirportToRankScore = _.object(aggregate(EventAirportRanks, [{
+      $match: matchQuery
     }, {
       $group: {
         _id: "$arrivalAirportId",
@@ -196,7 +198,7 @@ setInterval(updateCache, 1000 * 60 * 60);
 */
 api.addRoute('topLocations', {
   get: function() {
-    return topLocations(this.queryParams.metric);
+    return topLocations(this.queryParams.metric, (this.queryParams || {}).bioeventId);
   }
 });
 
@@ -347,12 +349,15 @@ api.addRoute('locations/:locationId/passengerFlow', {
 api.addRoute('locations/:locationId/threatLevel', {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
-    const results = aggregate(EventAirportRanks, [{
-      $match: {
-        arrivalAirportId: {
-          $in: location.airportIds
-        }
+    const bioeventId = (this.queryParams || {}).bioeventId;
+    let matchQuery = {
+      arrivalAirportId: {
+        $in: location.airportIds
       }
+    };
+    if(bioeventId) matchQuery.eventId = bioeventId;
+    const results = aggregate(EventAirportRanks, [{
+      $match: matchQuery
     }, {
       $group: {
         _id: "$departureAirportId",

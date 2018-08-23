@@ -24,11 +24,13 @@ Template.splash.onCreated(function() {
   this.locations = new ReactiveVar([]);
   this.autorun(()=>{
     const metric = this.mapType.get();
+    const bioeventId = FlowRouter.getQueryParam('bioeventId') || null;
     Promise.all([
       new Promise((resolve, reject) =>{
         HTTP.get('/api/topLocations', {
           params: {
-            metric: metric
+            metric: metric,
+            bioeventId: bioeventId
           }
         }, (err, resp)=> {
           if(err) return reject(err);
@@ -43,11 +45,10 @@ Template.splash.onCreated(function() {
         location.airportIds.forEach((airportId)=>{
           location[metric] += airportValues[airportId] || 0;
         });
-        if(location[metric] == 0) return;
         location._id = locationId;
         location.type = locationId.split(':')[0];
         return location;
-      }).filter(x=>x));
+      }));
     });
   });
 });
@@ -109,7 +110,7 @@ Template.splash.onRendered(function() {
       if(!showBubbles && location.type == 'airport') return;
       if(!location.displayGeoJSON) return;
       let value = location[this.mapType.curValue];
-      if(value < (airportCutoffMultiple * airportMax) && location.type == 'airport') return;
+      if(value <= (airportCutoffMultiple * airportMax) && location.type == 'airport') return;
       var geojsonMarkerOptions = {
         // The radius is a squre root so that the marker's volume is directly
         // proprotional to the value.

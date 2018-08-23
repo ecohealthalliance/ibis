@@ -20,7 +20,7 @@ Template.bioeventItem.onRendered(function() {
   const locationMap = this.data.bioevent.event.locations;
   const maxCasesForLocation = this.data.maxCasesForLocation;
   const geoJsonLayer = L.geoJson(WorldGeoJSON, {
-    style: (feature) => {
+    style: (feature)=>{
       const value = locationMap[feature.properties.iso_a2];
       return {
         fillColor: value ? getColor(Math.log10(1 + value) / Math.log10(1 + maxCasesForLocation), OUTBOUND_RAMP) : '#FFFFFF',
@@ -33,8 +33,12 @@ Template.bioeventItem.onRendered(function() {
   map.setView([30, 10], 0.25);
 });
 
+Template.bioeventItem.helpers({
+  bioeventFilterActive: ()=>FlowRouter.getQueryParam('bioeventId') === Template.instance().data.bioevent.event.eventId
+})
+
 Template.bioeventItem.events({
-  'click .rank-score': (event, instance) => {
+  'click .rank-score': (event, instance)=>{
     let bioevent = instance.data.bioevent;
     $('#rank-info-modal').modal('show');
     $('#rank-info-modal .content').replaceWith('<div class="content modal-body">');
@@ -42,5 +46,16 @@ Template.bioeventItem.events({
       locationId: FlowRouter.getParam('locationId'),
       eventId: bioevent.event._id
     }, $('#rank-info-modal .content')[0]);
+  },
+  'click .filter-map': (event, instance)=>{
+    if(FlowRouter.getQueryParam('bioeventId') === instance.data.bioevent.event.eventId) {
+      FlowRouter.setQueryParams({
+        'bioeventId': null
+      });
+    } else {
+      FlowRouter.setQueryParams({
+        'bioeventId': instance.data.bioevent.event.eventId
+      });
+    }
   }
 });

@@ -1,6 +1,13 @@
 template(name='bioeventItem')
   li.bioevent-item
     h6
+      span.filter-map(
+        data-tooltip-direction="w"
+        data-tooltip="Only show threat from this bioevent.")
+        if bioeventFilterActive
+          i.fa.fa-map
+        else
+          i.fa.fa-map-o
       a(href="/bioevents/#{bioevent.event.eventId}")=bioevent.event.name
       if bioevent.rank
         .rank-score.rank-data Rank Score: {{formatNumber bioevent.rank}}

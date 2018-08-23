@@ -29,6 +29,7 @@ Template.location.onCreated(function() {
     this.locations = locations;
     this.autorun(() => {
       const locationId = FlowRouter.getParam('locationId');
+      const bioeventId = FlowRouter.getQueryParam('bioeventId') || null;
       const location = locations[locationId];
       this.selectedLocation.set({
         type: locationId.startsWith("airport") ? "airport" : "state",
@@ -36,7 +37,11 @@ Template.location.onCreated(function() {
       });
       const mapTypeValue = this.mapType.get().replace("ExUS", "");
       if (!location) return;
-      HTTP.get(`/api/locations/${locationId}/${mapTypeValue}`, {}, (err, resp) => {
+      HTTP.get(`/api/locations/${locationId}/${mapTypeValue}`, {
+        params: {
+          bioeventId: bioeventId
+        }
+      }, (err, resp) => {
         if (err) return console.error(err);
         this.locationData.set(resp.data);
       });

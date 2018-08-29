@@ -11,10 +11,10 @@ import displayLayers from '/imports/displayLayers';
 import { airportCutoffPercentage } from '/imports/configuration';
 
 const mapTypes = [
-  { name: "directSeats", label: "Origin Airports for Incoming Direct Flights" },
-  { name: "passengerFlow", label: "Estimated Origins for Arriving Passengers" },
-  { name: "threatLevel", label: "Origins for Inbound Threat" },
-  { name: "threatLevelExUS", label: "Origins for Inbound Threat (Excluding US Origins)" }
+  { name: "directSeats", label: "Direct Flights by Origin" },
+  { name: "passengerFlow", label: "Estimated Inbound Passengers by Origin" },
+  { name: "threatLevel", label: "Threat Level by Origin" },
+  { name: "threatLevelExUS", label: "Threat Level by Origin (Excluding US Origins)" }
 ];
 
 Template.location.onCreated(function() {

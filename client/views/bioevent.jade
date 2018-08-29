@@ -56,5 +56,6 @@ template(name='bioevent')
                 .value {{formatNumber value}}
         .summary-section
           .section-head
-            a(href="https://eidr-connect.eha.io/events/auto-events/#{resolvedBioevent.eventId}") EIDR-Connect Data
+            | View and edit detailed bioevent info in 
+            | <a href="https://eidr-connect.eha.io/events/auto-events/#{resolvedBioevent.eventId}">EIDR Connect</a>.
   +tooltips

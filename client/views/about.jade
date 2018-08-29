@@ -47,7 +47,7 @@ template(name="about")
     
     +directSeatsAbout
 
-    +threatLevelByOriginAbout
+    +originThreatLevelAbout
 
   .about-content
     +markdown
@@ -81,18 +81,17 @@ template(name="about")
 
 template(name="threatLevelAbout")
   +markdown
-    ## Threat Exposure
-      The overall levels of risk all bioevents throughout the world pose to
-      U.S. destinations.
+    ## Inbound Threat Exposure
+    Threat Level is an overall measure of the risk posed by incoming bioevents. Threat level is calculated by combining known cases of bioevents, commercial air travel patterns, and the potential severity of the disease-causing agent.
       
 template(name="passengerFlowAbout")
   +markdown
-    ## Estimated Inbound Passenger Flow
+    ## Estimated Passenger Flow to Destinations
     The total number of passengers estimated to arrive at each U.S. destination.
 
 template(name="originPassengerFlowAbout")
   +markdown
-    ## Estimated Passenger Flow by Origin
+    ## Estimated Passenger Flow from Origin
     The approximate number of people from each country of origin that arrive at the target
     location as their terminal destination.
 
@@ -101,16 +100,10 @@ template(name="directSeatsAbout")
     ## Direct Flow by Origin
     The number of seats available on direct flights arriving at the target location.
 
-template(name="threatLevelByOriginAbout")
-  +markdown
-    ## Threat Level by Origin
-    The esimated risk of any bioevent spreading from each country of origin
-    to the target location.
-
 template(name="originThreatLevelAbout")
   +markdown
-    ## Threat Level by Origin
-    The esimated risk of any bioevent spreading from each country of origin.
+    ## Origin Threat Level
+    The estimated risk of any bioevent spreading from each country of origin.
 
 template(name="originProbabilityPassengerInfectedAbout")
   +markdown
@@ -119,7 +112,7 @@ template(name="originProbabilityPassengerInfectedAbout")
 
 template(name="destinationThreatExposureAbout")
   +markdown
-    ## Threat Exposure
+    ## Destination Threat Exposure
     The overall levels of risk that the target bioevent poses to each location.
 
 template(name="topOriginsAbout")

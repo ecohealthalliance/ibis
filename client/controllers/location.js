@@ -11,10 +11,10 @@ import displayLayers from '/imports/displayLayers';
 import { airportCutoffPercentage } from '/imports/configuration';
 
 const mapTypes = [
-  { name: "directSeats", label: "Direct Seats by Origin" },
-  { name: "passengerFlow", label: "Estimated Passenger Flow by Origin" },
-  { name: "threatLevel", label: "Threat Level by Origin" },
-  { name: "threatLevelExUS", label: "Threat Level by Origin (Ex. US)" }
+  { name: "directSeats", label: "Origin Airports for Incoming Direct Flights" },
+  { name: "passengerFlow", label: "Estimated Origins for Arriving Passengers" },
+  { name: "threatLevel", label: "Origins for Inbound Threat" },
+  { name: "threatLevelExUS", label: "Origins for Inbound Threat (Excluding US Origins)" }
 ];
 
 Template.location.onCreated(function() {
@@ -209,7 +209,7 @@ Template.location.onRendered(function() {
 });
 
 Template.location.helpers({
-  legendTitle: x => "Outbound " + typeToTitle[Template.instance().mapType.get()],
+  legendTitle: x => typeToTitle[Template.instance().mapType.get()],
   legendRamp: () => OUTBOUND_RAMP,
   mapTypes: () => {
     const selectedType = Template.instance().mapType.get();

@@ -1,5 +1,6 @@
 template(name="helpPanel")
   .help-panel(hidden=hidden)
-    .btn.close
-      i.fa.fa-times
+    unless hidden
+      .btn.close
+        i.fa.fa-times
     +Template.dynamic template=helpSection

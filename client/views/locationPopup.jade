@@ -12,5 +12,5 @@ template(name="locationPopup")
     dl.threat-level-by-disease
       each threatLevelByDisease
         dt
-          a(href="/bioevents/#{event.eventId}")=event.eventName
+          a(href="/bioevents/#{event.eventId}")=event.name
         dd {{formatNumber threatLevel}}

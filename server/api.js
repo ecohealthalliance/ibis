@@ -113,6 +113,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
   if(mostRecent) {
     return {
       results: _.sortBy(resolvedEventsCollection.find(query).map((event)=>{
+        event.name = event.name.replace("Human ", "");
         return {
           _id: event._id,
           event: event,
@@ -126,6 +127,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
   } else if(activeCases) {
     return {
       results: _.sortBy(resolvedEventsCollection.find(query).map((event)=>{
+        event.name = event.name.replace("Human ", "");
         return {
           _id: event._id,
           event: event,
@@ -177,7 +179,10 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
       } : {}
     }]);
     return {
-      results: results
+      results: results.map((x)=>{
+        x.event.name = x.event.name.replace("Human ", "");
+        return x;
+      })
     };
   }
 });
@@ -414,7 +419,10 @@ api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
     }, {
       $unwind: "$event"
     }]);
-    return results;
+    return results.map((x)=>{
+      x.event.name = x.event.name.replace("Human ", "");
+      return x;
+    });
   }
 });
 
@@ -560,10 +568,12 @@ api.addRoute('bioevents/:bioeventId', {
       countryValues.originThreatLevel[country] = (
         countryValues.originThreatLevel[country] || 0) + value;
     });
+    let resolvedBioevent = resolvedEventsCollection.findOne(query);
+    resolvedBioevent.name = resolvedBioevent.name.replace("Human ", "");
     return {
       airportValues: airportValues,
       countryValues: countryValues,
-      resolvedBioevent: resolvedEventsCollection.findOne(query),
+      resolvedBioevent: resolvedBioevent,
       USAirportIds: USAirportIds
     };
   }
@@ -588,8 +598,14 @@ api.addRoute('bioeventLastUpdate', {
 /*
 @api {get} typeaheadData
 */
-const diseaseNames = ResolvedEvents.find({}, {eventId: 1, name: 1}).map((x)=>{
-  return {id: 'bioevents/' + x.eventId, name: x.name};
+const diseaseNames = ResolvedEvents.find({}, {
+  eventId: 1,
+  name: 1
+}).map((x)=>{
+  return {
+    id: 'bioevents/' + x.eventId,
+    name: x.name.replace("Human ", "")
+  };
 });
 api.addRoute('bioeventNames', {
   get: function() {

@@ -15,8 +15,8 @@ Template.timeline.onRendered(function() {
     const curTimelineType = this.timelineType.get();
     const startDateStr = this.data.dateRange.start.toISOString().split('T')[0];
     const endDateStr = this.data.dateRange.end.toISOString().split('T')[0];
-    var timeseries = this.data.resolvedBioevent.timeseries;
-    const timelineMax = (globalScale.get() ? this.data.max : 0) || _.max(timeseries.map((x) => x[1]));
+    let timeseries = this.data.resolvedBioevent.timeseries;
+    let timelineMax = globalScale.get() ? this.data.max : 0;
     if(curTimelineType.newCases) {
       timeseries = this.data.resolvedBioevent.dailyRateTimeseries.reduce((sofar, [date, value]) => {
         if(sofar.length > 0) {
@@ -30,6 +30,7 @@ Template.timeline.onRendered(function() {
         }
       }, []);
     }
+    if(!timelineMax) timelineMax = _.max(timeseries.map((x) => x[1]));
     let formattedTimeseries = timeseries.map(([date, value], idx) => {
       // The date is slightly perturbed to ensure that it always increasing.
       // Equal dates can cause errors in the plot.

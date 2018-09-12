@@ -7,23 +7,22 @@ Template.rankInfo.onCreated(function() {
   const locationId = this.data.locationId;
   const eventId = this.data.eventId;
   const rankedOrigins = this.rankedOrigins = new ReactiveVar([]);
+  const combinedValues = this.combinedValues = new ReactiveVar({});
   const threatCoefficient = this.threatCoefficient = new ReactiveVar(null);
   HTTP.get('/api/rankData', {
     params: {
       locationId: locationId,
       eventId: eventId
     }
-  }, (err, resp) => {
+  }, (err, resp)=>{
     if (err) return console.error(err);
-    const results = resp.data.results;
-    rankedOrigins.set(results);
-    if(results.length > 0) threatCoefficient.set(results[0].threatCoefficient);
+    rankedOrigins.set(resp.data.results);
+    combinedValues.set(resp.data.combinedValues);
   });
 });
 
 Template.rankInfo.helpers({
-  threatCoefficient: () => Template.instance().threatCoefficient.get(),
-  rankedOrigins: () => Template.instance().rankedOrigins.get(),
-  toPrecision: (number, precision)=> number.toPrecision(precision)
+  combinedValues: () => Template.instance().combinedValues.get(),
+  rankedOrigins: () => Template.instance().rankedOrigins.get()
 });
 

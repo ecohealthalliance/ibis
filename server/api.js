@@ -439,7 +439,7 @@ api.addRoute('locations/:locationId/bioevents', {
 });
 
 /*
-@api {get} rankData Get all the rank data for the bioevent and optional locaiton.
+@api {get} rankData Get all the rank data for the bioevent and optional location.
 */
 api.addRoute('rankData', {
   get: function() {
@@ -460,6 +460,30 @@ api.addRoute('rankData', {
       };
     }
     return {
+      combinedValues: aggregate(EventAirportRanks, [{
+        $match: matchQuery
+      }, {
+        $group: {
+          _id: null,
+          passengerFlow: {
+            $sum: "$passengerFlow"
+          },
+          infectedPassengers: {
+            $sum: {
+              $multiply: [
+                "$probabilityPassengerInfected",
+                "$passengerFlow"
+              ]
+            }
+          },
+          rank: {
+            $sum: "$rank"
+          },
+          threatCoefficient: {
+            $first: "$threatCoefficient"
+          }
+        }
+      }])[0],
       results: aggregate(EventAirportRanks, [{
         $match: matchQuery
       }, {
@@ -478,9 +502,6 @@ api.addRoute('rankData', {
           },
           rank: {
             $sum: "$rank"
-          },
-          threatCoefficient: {
-            $first: "$threatCoefficient"
           }
         }
       }, {

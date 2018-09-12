@@ -5,3 +5,12 @@ template(name="locationPopup")
     each properties
       dt=label
       dd {{formatNumber value}}
+  if loading
+    p Loading...
+  else if threatLevelByDisease
+    h6 Threat Level Posed By Disease
+    dl.threat-level-by-disease
+      each threatLevelByDisease
+        dt
+          a(href="/bioevents/#{event.eventId}")=event.eventName
+        dd {{formatNumber threatLevel}}

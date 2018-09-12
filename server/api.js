@@ -384,6 +384,41 @@ api.addRoute('locations/:locationId/threatLevel', {
 });
 
 /*
+@api {get} locations/:locationId/threatLevelPosedByDisease
+@apiName threatLevelPosedByDisease
+*/
+api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
+  get: function() {
+    const location = locationData.locations[this.urlParams.locationId];
+    const rankGroup = this.queryParams.rankGroup;
+    const results = aggregate(EventAirportRanks, [{
+      $match: {
+        departureAirportId: {
+          $in: location.airportIds
+        }
+      }
+    }, {
+      $group: {
+        _id: "$eventId",
+        threatLevel: {
+          $sum: "$rank"
+        }
+      }
+    }, {
+      $lookup: {
+        from: rankGroup ? "pastResolvedEvents" : "resolvedEvents",
+        localField: "_id",
+        foreignField: "eventId",
+        as: "event"
+      }
+    }, {
+      $unwind: "$event"
+    }]);
+    return results;
+  }
+});
+
+/*
 @api {get} locations/:locationId/bioevents Get a list of bioevents ranked by their relevance to the given location.
 */
 api.addRoute('locations/:locationId/bioevents', {

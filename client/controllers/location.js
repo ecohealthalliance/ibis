@@ -183,7 +183,8 @@ Template.location.onRendered(function() {
               properties: [{
                 value: feature.properties[mapTypeValue],
                 label: _.findWhere(mapTypes, {name: mapTypeValue}).label
-              }]
+              }],
+              showThreatLevelByDisease: true
             }, popupElement);
             layer.bindPopup(popupElement)
               .openPopup()

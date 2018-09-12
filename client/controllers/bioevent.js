@@ -79,16 +79,16 @@ Template.bioevent.onCreated(function() {
       _.sortBy(airportLocations, (loc)=>{
         return -loc.destinationThreatExposure;
       }).map((x, idx)=>{
-        x.globalDestRank = idx;
+        x.globalDestRank = idx + 1;
         return x;
       }).filter((loc)=>loc.USAirport).map((x, idx)=>{
-        x.USDestRank = idx;
+        x.USDestRank = idx + 1;
         return x;
       });
       _.sortBy(airportLocations, (loc)=>{
         return -loc.originThreatLevel;
       }).map((x, idx)=>{
-        x.globalOriginRank = idx;
+        x.globalOriginRank = idx + 1;
         return x;
       });
       this.locations.set(locations);
@@ -165,12 +165,12 @@ Template.bioevent.onRendered(function() {
     locations.forEach((location)=>{
       if(mapType === 'topDestinations') {
         if(USOnly) {
-          values[location._id] = location.USDestRank < 10;
+          values[location._id] = location.USDestRank <= 10 ? 11 - location.USDestRank : 0;
         } else {
-          values[location._id] = location.globalDestRank < 10;
+          values[location._id] = location.globalDestRank <= 10 ? 11 - location.globalDestRank : 0;
         }
       } else if( mapType === 'topOrigins') {
-        values[location._id] = location.globalOriginRank < 10;
+        values[location._id] = location.globalOriginRank <= 10 ? 11 - location.globalOriginRank : 0;
       } else {
         values[location._id] = location[mapType];
       }
@@ -228,10 +228,13 @@ Template.bioevent.onRendered(function() {
                 }, {
                   label: "Threat Exposure Global Rank",
                   value: "" + location["globalDestRank"]
-                }, {
-                  label: "Threat Exposure US Rank",
-                  value: "" + location["USDestRank"]
                 }]);
+                if(location["USDestRank"]){
+                  properties.push({
+                    label: "Threat Exposure US Rank",
+                    value: "" + location["USDestRank"]
+                  });
+                }
               }
               Blaze.renderWithData(Template.locationPopup, {
                 location: location,
@@ -278,21 +281,21 @@ Template.bioevent.helpers({
   topDestinations: ()=>{
     const USOnly = Template.instance().USOnly.get();
     return _.chain(Template.instance().locations.get())
-      .filter(x=>(USOnly ? x.USDestRank : x.globalDestRank) < 10)
+      .filter(x=>(USOnly ? x.USDestRank : x.globalDestRank) <= 10)
       .map((loc)=>{
         const [type, codeName] = loc._id.split(':');
         return {
           name: `${loc.displayName} (${codeName})`,
           value: loc.destinationThreatExposure,
-          USDestRank: loc.USDestRank + 1,
-          globalDestRank: loc.globalDestRank + 1,
+          USDestRank: loc.USDestRank,
+          globalDestRank: loc.globalDestRank,
           link: `/locations/${loc._id}`
         };
       }).sortBy(x=>-x.value).value();
   },
   topOrigins: ()=>{
     return _.chain(Template.instance().locations.get())
-      .filter(x=>x.globalOriginRank < 10)
+      .filter(x=>x.globalOriginRank <= 10)
       .map((loc)=>{
         const [type, codeName] = loc._id.split(':');
         return {

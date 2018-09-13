@@ -459,6 +459,11 @@ api.addRoute('rankData', {
         $in: location.airportIds
       };
     }
+    if("" + this.queryParams.exUS == "true") {
+      matchQuery.departureAirportId = {
+        $nin: USAirportIds
+      };
+    }
     return {
       combinedValues: aggregate(EventAirportRanks, [{
         $match: matchQuery

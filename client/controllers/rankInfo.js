@@ -8,13 +8,15 @@ Template.rankInfo.onCreated(function() {
   const eventId = this.data.eventId;
   const rankedOrigins = this.rankedOrigins = new ReactiveVar([]);
   const combinedValues = this.combinedValues = new ReactiveVar({});
-  const threatCoefficient = this.threatCoefficient = new ReactiveVar(null);
+  const loading = this.loading = new ReactiveVar(true);
   HTTP.get('/api/rankData', {
     params: {
       locationId: locationId,
-      eventId: eventId
+      eventId: eventId,
+      exUS: FlowRouter.getQueryParam('rankMetric') == 'threatLevelExUS'
     }
   }, (err, resp)=>{
+    loading.set(false);
     if (err) return console.error(err);
     rankedOrigins.set(resp.data.results);
     combinedValues.set(resp.data.combinedValues);
@@ -23,6 +25,7 @@ Template.rankInfo.onCreated(function() {
 
 Template.rankInfo.helpers({
   combinedValues: () => Template.instance().combinedValues.get(),
-  rankedOrigins: () => Template.instance().rankedOrigins.get()
+  rankedOrigins: () => Template.instance().rankedOrigins.get(),
+  loading: () => Template.instance().loading.get()
 });
 

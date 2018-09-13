@@ -9,6 +9,7 @@ import { _ } from 'meteor/underscore';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
 import { airportCutoffPercentage } from '/imports/configuration';
+import showLoadingIndicator from '/imports/showLoadingIndicator';
 
 const mapTypes = [
   { name: "originThreatLevel", label: "Threat Level by Origin" },
@@ -47,6 +48,7 @@ Template.bioevent.onCreated(function() {
   this.countryValues = new ReactiveVar();
   this.autorun(()=>{
     const bioeventId = FlowRouter.getParam('bioeventId');
+    showLoadingIndicator.set(true);
     Promise.all([
       new Promise((resolve, reject) =>{
         HTTP.get('/api/bioevents/' + bioeventId, (err, resp)=> {
@@ -55,6 +57,7 @@ Template.bioevent.onCreated(function() {
         });
       }), locationGeoJsonPromise
     ]).then(([bioeventData, locationGeoJson])=>{
+      showLoadingIndicator.set(false);
       const airportValues = bioeventData.airportValues;
       const USAirportIds = bioeventData.USAirportIds;
       this.countryValues.set(bioeventData.countryValues);

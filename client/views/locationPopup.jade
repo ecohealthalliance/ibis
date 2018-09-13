@@ -7,10 +7,13 @@ template(name="locationPopup")
       dd {{formatNumber value}}
   if loading
     p Loading...
-  else if threatLevelByDisease
+  else if threatByDisease
     h6 Threat Level Posed By Disease
     dl.threat-level-by-disease
-      each threatLevelByDisease
+      each threatByDisease
         dt
-          a(href="/bioevents/#{event.eventId}")=event.name
-        dd {{formatNumber threatLevel}}
+          if event
+            a(href="/bioevents/#{event.eventId}")=event.name
+          else
+            | Other Diseases
+        dd {{formatNumber value}}%

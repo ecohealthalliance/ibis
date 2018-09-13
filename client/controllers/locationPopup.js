@@ -1,7 +1,11 @@
 import { _ } from 'meteor/underscore';
 
+let sum = (arr, iteratee) => {
+  return arr.map(iteratee).reduce((sofar, value)=>sofar + value, 0);
+};
+
 Template.locationPopup.onCreated(function () {
-  this.threatLevelByDisease = new ReactiveVar([]);
+  this.threatByDisease = new ReactiveVar([]);
   this.loading = new ReactiveVar(false);
 });
 
@@ -12,12 +16,19 @@ Template.locationPopup.onRendered(function() {
     HTTP.get(`/api/locations/${locationId}/threatLevelPosedByDisease`, (err, resp) => {
       this.loading.set(false);
       if (err) return console.error(err);
-      this.threatLevelByDisease.set(_.sortBy(resp.data, x=>-x.threatLevel));
+      let totalThreatLevel = sum(resp.data, x=>x.threatLevel);
+      resp.data.forEach((x)=>{
+        x.value = 100 * x.threatLevel / totalThreatLevel;
+      });
+      let sortedData = _.sortBy(resp.data, x=>-x.value);
+      this.threatByDisease.set(sortedData.slice(0, 3).concat([{
+        value: sum(sortedData.slice(3), x=>x.value)
+      }]));
     });
   }
 });
 
 Template.locationPopup.helpers({
   loading: ()=>Template.instance().loading.get(),
-  threatLevelByDisease: ()=>Template.instance().threatLevelByDisease.get()
+  threatByDisease: ()=>Template.instance().threatByDisease.get()
 });

@@ -5,6 +5,6 @@ export default new ReactiveVar([{
   active: true
 }, {
   name: "choropleth",
-  label: "Choropleth",
+  label: "Shaded Regions",
   active: false
 }]);

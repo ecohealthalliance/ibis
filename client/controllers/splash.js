@@ -12,9 +12,9 @@ import { airportCutoffPercentage } from '/imports/configuration';
 import showLoadingIndicator from '/imports/showLoadingIndicator';
 
 const mapTypes = [
-  {name:"threatLevelExUS", label:"Threat Level Exposure (Ex. US)"},
-  {name:"threatLevel", label:"Threat Level Exposure"},
-  {name:"passengerFlow", label:"Estimated Inbound Passenger Flow"},
+  {name:"threatLevelExUS", label:"Inbound Threat Exposure (Excluding US Sources)"},
+  {name:"threatLevel", label:"Inbound Threat Exposure (Including US Sources)"},
+  {name:"passengerFlow", label:"Inbound Passenger Flow"},
 ];
 
 Template.splash.onCreated(function() {
@@ -182,7 +182,7 @@ Template.splash.onRendered(function() {
 });
  
 Template.splash.helpers({
-  legendTitle: () => "Incoming " + typeToTitle[Template.instance().mapType.get()],
+  legendTitle: () => typeToTitle[Template.instance().mapType.get()],
   legendRamp: () => INBOUND_RAMP,
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();

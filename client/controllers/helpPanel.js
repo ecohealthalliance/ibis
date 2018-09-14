@@ -9,9 +9,6 @@ Template.helpPanel.helpers({
 });
 
 Template.helpPanel.events({
-  'click .open': (event, instance)=>{
-  	showHelpPanel.set(true);
-  },
   'click .close': (event, instance)=>{
     showHelpPanel.set(false);
   },

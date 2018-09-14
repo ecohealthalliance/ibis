@@ -8,9 +8,8 @@ template(name='splash')
             option(value=name selected=selected)=label
         a.tooltip-btn(
           target="_blank"
-          href="/about#maptypes"
           data-tooltip-direction="w"
-          data-tooltip="Click here for descriptions of the map layers.")
+          data-tooltip="Click to show map info.")
           i.fa.fa-question-circle
     #map
       +helpPanel mapType=mapType

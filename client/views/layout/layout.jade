@@ -11,3 +11,8 @@ template(name="layout")
     .content-wrapper
       +Template.dynamic template=main
     +footer
+  if showLoadingIndicator
+    .loading-overlay
+      .loading-dialog
+        .loading-indicator
+        .message Loading...

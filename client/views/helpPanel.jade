@@ -1,9 +1,6 @@
 template(name="helpPanel")
-  .help-panel(shown=shown)
-    if shown
-      .btn.close
-        i.fa.fa-chevron-circle-up
-      +Template.dynamic template=helpSection
-    else
-      .btn.open
-        i.fa.fa-chevron-circle-down
+  if shown
+    .help-panel
+        .btn.close
+          i.fa.fa-chevron-circle-up
+        +Template.dynamic template=helpSection

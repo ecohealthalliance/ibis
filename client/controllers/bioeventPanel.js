@@ -4,6 +4,7 @@ import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Constants from '/imports/constants';
+import showLoadingIndicator from '/imports/showLoadingIndicator';
 
 Template.bioeventPanel.onCreated(function() {
   const dateRange = this.dateRange = new ReactiveVar({start: new Date(), end: new Date()});
@@ -25,7 +26,9 @@ Template.bioeventPanel.onCreated(function() {
     if (locationId) {
       url = `/api/locations/${locationId}/bioevents`;
     }
+    showLoadingIndicator.set(true);
     HTTP.get(url, requestParams, (err, resp) => {
+      showLoadingIndicator.set(false);
       if (err) return console.error(err);
       const respResults = EJSON.parse(resp.content).results;
       bioevents.set(respResults);

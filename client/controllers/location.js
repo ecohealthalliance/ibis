@@ -9,6 +9,7 @@ import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } fr
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
 import { airportCutoffPercentage } from '/imports/configuration';
+import showLoadingIndicator from '/imports/showLoadingIndicator';
 
 const mapTypes = [
   { name: "directSeats", label: "Direct Flights by Origin" },
@@ -37,11 +38,13 @@ Template.location.onCreated(function() {
       });
       const mapTypeValue = this.mapType.get().replace("ExUS", "");
       if (!location) return;
+      showLoadingIndicator.set(true);
       HTTP.get(`/api/locations/${locationId}/${mapTypeValue}`, {
         params: {
           bioeventId: bioeventId
         }
       }, (err, resp) => {
+        showLoadingIndicator.set(false);
         if (err) return console.error(err);
         this.locationData.set(resp.data);
       });
@@ -183,7 +186,8 @@ Template.location.onRendered(function() {
               properties: [{
                 value: feature.properties[mapTypeValue],
                 label: _.findWhere(mapTypes, {name: mapTypeValue}).label
-              }]
+              }],
+              showThreatLevelByDisease: true
             }, popupElement);
             layer.bindPopup(popupElement)
               .openPopup()

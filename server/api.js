@@ -113,6 +113,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
   if(mostRecent) {
     return {
       results: _.sortBy(resolvedEventsCollection.find(query).map((event)=>{
+        event.name = event.name.replace("Human ", "");
         return {
           _id: event._id,
           event: event,
@@ -126,6 +127,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
   } else if(activeCases) {
     return {
       results: _.sortBy(resolvedEventsCollection.find(query).map((event)=>{
+        event.name = event.name.replace("Human ", "");
         return {
           _id: event._id,
           event: event,
@@ -177,7 +179,10 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
       } : {}
     }]);
     return {
-      results: results
+      results: results.map((x)=>{
+        x.event.name = x.event.name.replace("Human ", "");
+        return x;
+      })
     };
   }
 });
@@ -384,6 +389,44 @@ api.addRoute('locations/:locationId/threatLevel', {
 });
 
 /*
+@api {get} locations/:locationId/threatLevelPosedByDisease
+@apiName threatLevelPosedByDisease
+*/
+api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
+  get: function() {
+    const location = locationData.locations[this.urlParams.locationId];
+    const rankGroup = this.queryParams.rankGroup;
+    const results = aggregate(EventAirportRanks, [{
+      $match: {
+        departureAirportId: {
+          $in: location.airportIds
+        }
+      }
+    }, {
+      $group: {
+        _id: "$eventId",
+        threatLevel: {
+          $sum: "$rank"
+        }
+      }
+    }, {
+      $lookup: {
+        from: rankGroup ? "pastResolvedEvents" : "resolvedEvents",
+        localField: "_id",
+        foreignField: "eventId",
+        as: "event"
+      }
+    }, {
+      $unwind: "$event"
+    }]);
+    return results.map((x)=>{
+      x.event.name = x.event.name.replace("Human ", "");
+      return x;
+    });
+  }
+});
+
+/*
 @api {get} locations/:locationId/bioevents Get a list of bioevents ranked by their relevance to the given location.
 */
 api.addRoute('locations/:locationId/bioevents', {
@@ -396,7 +439,7 @@ api.addRoute('locations/:locationId/bioevents', {
 });
 
 /*
-@api {get} rankData Get all the rank data for the bioevent and optional locaiton.
+@api {get} rankData Get all the rank data for the bioevent and optional location.
 */
 api.addRoute('rankData', {
   get: function() {
@@ -416,7 +459,36 @@ api.addRoute('rankData', {
         $in: location.airportIds
       };
     }
+    if("" + this.queryParams.exUS == "true") {
+      matchQuery.departureAirportId = {
+        $nin: USAirportIds
+      };
+    }
     return {
+      combinedValues: aggregate(EventAirportRanks, [{
+        $match: matchQuery
+      }, {
+        $group: {
+          _id: null,
+          passengerFlow: {
+            $sum: "$passengerFlow"
+          },
+          infectedPassengers: {
+            $sum: {
+              $multiply: [
+                "$probabilityPassengerInfected",
+                "$passengerFlow"
+              ]
+            }
+          },
+          rank: {
+            $sum: "$rank"
+          },
+          threatCoefficient: {
+            $first: "$threatCoefficient"
+          }
+        }
+      }])[0],
       results: aggregate(EventAirportRanks, [{
         $match: matchQuery
       }, {
@@ -435,9 +507,6 @@ api.addRoute('rankData', {
           },
           rank: {
             $sum: "$rank"
-          },
-          threatCoefficient: {
-            $first: "$threatCoefficient"
           }
         }
       }, {
@@ -525,10 +594,12 @@ api.addRoute('bioevents/:bioeventId', {
       countryValues.originThreatLevel[country] = (
         countryValues.originThreatLevel[country] || 0) + value;
     });
+    let resolvedBioevent = resolvedEventsCollection.findOne(query);
+    resolvedBioevent.name = resolvedBioevent.name.replace("Human ", "");
     return {
       airportValues: airportValues,
       countryValues: countryValues,
-      resolvedBioevent: resolvedEventsCollection.findOne(query),
+      resolvedBioevent: resolvedBioevent,
       USAirportIds: USAirportIds
     };
   }
@@ -553,8 +624,14 @@ api.addRoute('bioeventLastUpdate', {
 /*
 @api {get} typeaheadData
 */
-const diseaseNames = ResolvedEvents.find({}, {eventId: 1, name: 1}).map((x)=>{
-  return {id: 'bioevents/' + x.eventId, name: x.name};
+const diseaseNames = ResolvedEvents.find({}, {
+  eventId: 1,
+  name: 1
+}).map((x)=>{
+  return {
+    id: 'bioevents/' + x.eventId,
+    name: x.name.replace("Human ", "")
+  };
 });
 api.addRoute('bioeventNames', {
   get: function() {

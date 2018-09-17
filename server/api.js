@@ -12,6 +12,15 @@ import locationData from '/server/locationData';
 import { airportToCountryCode, USAirportIds } from '/imports/geoJSON/indecies';
 import { Promise } from "meteor/promise";
 
+const autoeventResp = HTTP.get('https://eidr-connect.eha.io/api/auto-events', {
+  params: {
+    limit: 20000,
+    query: JSON.stringify({
+      parentDiseases: null
+    })
+  }
+});
+const topLevelBioEvents = JSON.parse(autoeventResp.content).map(x=>x._id);
 
 let api = new Restivus({
   useDefaultAuth: true,
@@ -360,7 +369,15 @@ api.addRoute('locations/:locationId/threatLevel', {
         $in: location.airportIds
       }
     };
-    if(bioeventId) matchQuery.eventId = bioeventId;
+    if(bioeventId) {
+      matchQuery.eventId = bioeventId;
+    } else {
+      // Prevent threat from overlapping bioevents from being double counted
+      // by only counting the bioevents without parents.
+      matchQuery.eventId = {
+        $in: topLevelBioEvents
+      };
+    }
     const results = aggregate(EventAirportRanks, [{
       $match: matchQuery
     }, {

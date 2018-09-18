@@ -1,4 +1,4 @@
-import { _ } from 'meteor/underscore';
+/* global FlowRouter */
 import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';

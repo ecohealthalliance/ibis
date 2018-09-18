@@ -1,8 +1,7 @@
-/* global L, chroma, c3, FlowRouter, $ */
+/* global L, FlowRouter, $ */
 import { _ } from 'meteor/underscore';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import { Blaze } from 'meteor/blaze';
-import { ReactiveVar } from 'meteor/reactive-var';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';
 import { constrainMaps } from '/imports/configuration';
 

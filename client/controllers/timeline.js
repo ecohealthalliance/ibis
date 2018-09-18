@@ -1,3 +1,4 @@
+/* global c3, $ */
 import { ReactiveVar } from 'meteor/reactive-var';
 import utils from '/imports/utils';
 import { _ } from 'meteor/underscore';

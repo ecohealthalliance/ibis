@@ -21,7 +21,7 @@ const mapTypes = [
 Template.location.onCreated(function() {
   this.mapType = new ReactiveVar();
   this.locationData = new ReactiveVar();
-  this.autorun(()=>{
+  this.autorun(() => {
     this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevel");
   });
   this.selectedLocation = new ReactiveVar();

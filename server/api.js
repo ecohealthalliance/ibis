@@ -1,3 +1,4 @@
+/* global Restivus */
 import { _ } from 'meteor/underscore';
 import {
   Flights,
@@ -28,7 +29,7 @@ let api = new Restivus({
 });
 
 var aggregate = (collection, pipeline) => {
-  return Promise.await(collection.aggregate(pipeline).toArray())
+  return Promise.await(collection.aggregate(pipeline).toArray());
 };
 
 var cached = function(func) {
@@ -121,7 +122,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
   }
   if(mostRecent) {
     return {
-      results: _.sortBy(resolvedEventsCollection.find(query).map((event)=>{
+      results: _.sortBy(resolvedEventsCollection.find(query, {fullLocations: -1}).map((event)=>{
         event.name = event.name.replace("Human ", "");
         return {
           _id: event._id,
@@ -135,7 +136,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
     };
   } else if(activeCases) {
     return {
-      results: _.sortBy(resolvedEventsCollection.find(query).map((event)=>{
+      results: _.sortBy(resolvedEventsCollection.find(query, {fullLocations: -1}).map((event)=>{
         event.name = event.name.replace("Human ", "");
         return {
           _id: event._id,
@@ -156,6 +157,10 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
       };
       query.arrivalAirportId = {
         $in: location.airportIds
+      };
+    } else {
+      query.arrivalAirportId = {
+        $in: USAirportIds
       };
     }
     const results = aggregate(eventAirportRanksCollection, [{
@@ -190,6 +195,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
     return {
       results: results.map((x)=>{
         x.event.name = x.event.name.replace("Human ", "");
+        delete x.event.fullLocations;
         return x;
       })
     };
@@ -212,7 +218,14 @@ setInterval(updateCache, 1000 * 60 * 60);
 */
 api.addRoute('topLocations', {
   get: function() {
-    return topLocations(this.queryParams.metric, (this.queryParams || {}).bioeventId);
+    if(this.queryParams && this.queryParams.metric){
+      return topLocations(this.queryParams.metric, this.queryParams.bioeventId);
+    } else {
+      return {
+        statusCode: 400,
+        body: 'A metric query parameter is required.'
+      };
+    }
   }
 });
 
@@ -468,6 +481,9 @@ api.addRoute('rankData', {
       eventId: this.queryParams.eventId,
       rank: {
         $gt: 0
+      },
+      arrivalAirportId: {
+        $in: USAirportIds
       }
     };
     if(this.queryParams.locationId && this.queryParams.locationId !== "undefined") {
@@ -611,7 +627,7 @@ api.addRoute('bioevents/:bioeventId', {
       countryValues.originThreatLevel[country] = (
         countryValues.originThreatLevel[country] || 0) + value;
     });
-    let resolvedBioevent = resolvedEventsCollection.findOne(query);
+    let resolvedBioevent = resolvedEventsCollection.findOne(query, {fullLocations: -1});
     resolvedBioevent.name = resolvedBioevent.name.replace("Human ", "");
     return {
       airportValues: airportValues,
@@ -638,9 +654,6 @@ api.addRoute('bioeventLastUpdate', {
   }
 });
 
-/*
-@api {get} typeaheadData
-*/
 const diseaseNames = ResolvedEvents.find({}, {
   eventId: 1,
   name: 1
@@ -650,6 +663,9 @@ const diseaseNames = ResolvedEvents.find({}, {
     name: x.name.replace("Human ", "")
   };
 });
+/*
+@api {get} typeaheadData
+*/
 api.addRoute('bioeventNames', {
   get: function() {
     return diseaseNames;

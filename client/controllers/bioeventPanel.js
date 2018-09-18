@@ -10,10 +10,9 @@ Template.bioeventPanel.onCreated(function() {
   const dateRange = this.dateRange = new ReactiveVar({start: new Date(), end: new Date()});
   const bioevents = this.bioevents = new ReactiveVar([]);
   const rankMetric = this.rankMetric = new ReactiveVar();
-  this.autorun(()=>{
+  this.autorun(() => {
     rankMetric.set(FlowRouter.getQueryParam("rankMetric") || "threatLevelExUS");
   });
-
   this.autorun(() => {
     const locationId = FlowRouter.getParam('locationId');
     const requestParams = {

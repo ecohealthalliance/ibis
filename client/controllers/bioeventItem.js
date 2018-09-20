@@ -1,5 +1,5 @@
-/* global L, FlowRouter, $ */
-import { _ } from 'meteor/underscore';
+/* global L, $ */
+import { FlowRouter } from 'meteor/kadira:flow-router';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import { Blaze } from 'meteor/blaze';
 import { INBOUND_RAMP, OUTBOUND_RAMP, getColor } from '/imports/ramps';

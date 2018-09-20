@@ -32,6 +32,9 @@ var aggregate = (collection, pipeline) => {
   return Promise.await(collection.aggregate(pipeline).toArray());
 };
 
+var clearCacheFunctions = [];
+var clearCaches = ()=>clearCacheFunctions.forEach(x=>x());
+
 var cached = function(func) {
   let cache = {};
   let cacheDate = {};
@@ -39,6 +42,11 @@ var cached = function(func) {
   // grows too large.
   let lru = [];
   let that = this;
+  clearCacheFunctions.push(()=>{
+    lru = [];
+    cache = {};
+    cacheDate = {};
+  });
   return function(...args) {
     let strArgs = "" + args;
     if(strArgs in cache) {
@@ -53,7 +61,7 @@ var cached = function(func) {
     cacheDate[strArgs] = new Date();
     lru = _.without(lru, strArgs);
     lru.push(strArgs);
-    if(lru.length > 4) {
+    if(lru.length > 10) {
       delete cache[lru[0]];
       delete cacheDate[lru[0]];
       lru = lru.slice(1);
@@ -62,9 +70,9 @@ var cached = function(func) {
   };
 };
 
-var topLocations = cached((metric, bioeventId=null)=>{
-  if(metric.startsWith("threatLevel")) {
-    const exUS = metric == "threatLevelExUS";
+var topLocations = cached((metric, bioeventId)=>{
+  if(metric.startsWith("threatLevelExposure")) {
+    const exUS = metric.endsWith("ExUS");
     let matchQuery = {
       departureAirportId: {
         $nin: exUS ? USAirportIds : []
@@ -87,7 +95,7 @@ var topLocations = cached((metric, bioeventId=null)=>{
     return {
       airportValues: arrivalAirportToRankScore
     };
-  } else {
+  } else if(metric === "passengerFlow") {
     // Only return locations with incoming passengers
     let arrivalAirportToPassengers = _.object(aggregate(PassengerFlows, [{
       $match: {
@@ -105,11 +113,16 @@ var topLocations = cached((metric, bioeventId=null)=>{
     return {
       airportValues: arrivalAirportToPassengers
     };
+  } else {
+    return {
+      statusCode: 404,
+      body: 'Unknown metric'
+    };
   }
 });
 
 var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
-  const exUS = metric == "threatLevelExUS";
+  const exUS = metric.endsWith("ExUS");
   const mostRecent = metric == "mostRecent";
   const activeCases = metric == "activeCases";
   let resolvedEventsCollection = ResolvedEvents;
@@ -152,7 +165,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
     if(locationId) {
       const location = locationData.locations[locationId];
       if(!location) return {
-        statusCode: 404,
+        statusCode: 400,
         body: 'Location not found'
       };
       query.arrivalAirportId = {
@@ -203,10 +216,11 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
 });
 
 var updateCache = ()=>{
-  ['threatLevel', 'threatLevelExUS', 'passengerFlow'].map((metric)=>{
-    topLocations(metric);
+  ['threatLevelExposure', 'threatLevelExposureExUS', 'passengerFlow'].map((metric)=>{
+    topLocations(metric, null);
   });
-  rankedBioevents('threatLevel');
+  rankedBioevents('threatLevel', null, null);
+  rankedBioevents('threatLevelExUS', null, null);
 };
 updateCache();
 setInterval(updateCache, 1000 * 60 * 60);
@@ -219,7 +233,7 @@ setInterval(updateCache, 1000 * 60 * 60);
 api.addRoute('topLocations', {
   get: function() {
     if(this.queryParams && this.queryParams.metric){
-      return topLocations(this.queryParams.metric, this.queryParams.bioeventId);
+      return topLocations(this.queryParams.metric, this.queryParams.bioeventId || null);
     } else {
       return {
         statusCode: 400,
@@ -562,7 +576,7 @@ api.addRoute('bioevents', {
     return rankedBioevents(
       this.queryParams.metric,
       null,
-      rankGroup=this.queryParams.rankGroup);
+      this.queryParams.rankGroup || null);
   }
 });
 
@@ -592,6 +606,13 @@ api.addRoute('bioevents/:bioeventId', {
             _id: "$arrivalAirportId",
             rank: {
               $sum: "$rank"
+            },
+            rankExUS: {
+              $sum: {
+                $cond: [{
+                  $in: ["$departureAirportId", USAirportIds]
+                }, 0, "$rank"]
+              }
             }
           }
         }],
@@ -609,23 +630,22 @@ api.addRoute('bioevents/:bioeventId', {
       }
     }]);
     const airportValues = {
-      destinationThreatExposure: _.object(result[0].destination.map((x)=>[x._id, x.rank])),
+      threatLevelExposure: _.object(result[0].destination.map((x)=>[x._id, x.rank])),
+      threatLevelExposureExUS: _.object(result[0].destination.map((x)=>[x._id, x.rankExUS])),
       originThreatLevel: _.object(result[0].origin.map((x)=>[x._id, x.rank])),
       originProbabilityPassengerInfected: _.object(result[0].origin.map((x)=>[x._id, x.probabilityPassengerInfected]))
     };
     let countryValues = {
       originThreatLevel: {},
-      destinationThreatExposure: {}
+      threatLevelExposure: {},
+      threatLevelExposureExUS: {}
     };
-    _.map(airportValues.destinationThreatExposure, (value, id) => {
-      const country = airportToCountryCode[id];
-      countryValues.destinationThreatExposure[country] = (
-        countryValues.destinationThreatExposure[country] || 0) + value;
-    });
-    _.map(airportValues.originThreatLevel, (value, id) => {
-      const country = airportToCountryCode[id];
-      countryValues.originThreatLevel[country] = (
-        countryValues.originThreatLevel[country] || 0) + value;
+    Object.keys(countryValues).forEach((key)=>{
+      _.map(airportValues[key], (value, id) => {
+        const country = airportToCountryCode[id];
+        countryValues[key][country] = (
+          countryValues[key][country] || 0) + value;
+      });
     });
     let resolvedBioevent = resolvedEventsCollection.findOne(query, {fullLocations: -1});
     resolvedBioevent.name = resolvedBioevent.name.replace("Human ", "");
@@ -664,10 +684,30 @@ const diseaseNames = ResolvedEvents.find({}, {
   };
 });
 /*
-@api {get} typeaheadData
+@api {get} bioeventNames Return the names of all bioevents for the search type-ahead.
 */
 api.addRoute('bioeventNames', {
   get: function() {
     return diseaseNames;
+  }
+});
+
+var cacheLastCleared = new Date(0);
+/*
+@api {get} clearCaches Delete all cached data.
+*/
+api.addRoute('clearCaches', {
+  get: function() {
+    let cacheClearableDate = new Date(cacheLastCleared);
+    cacheClearableDate.setHours(cacheClearableDate.getHours() + 1);
+    if(new Date() < cacheClearableDate) {
+      return {
+        statusCode: 400,
+        body: 'Cache was already cleared in the past hour, please wait.'
+      };
+    }
+    clearCaches();
+    cacheLastCleared = new Date();
+    return "Success";
   }
 });

@@ -1,4 +1,4 @@
-/* global FlowRouter */
+import { FlowRouter } from 'meteor/kadira:flow-router';
 import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';

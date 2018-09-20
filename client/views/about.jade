@@ -36,6 +36,8 @@ template(name="about")
       
       ## Domestic
 
+    +threatLevelExposureAbout
+
     +threatLevelAbout
 
     +passengerFlowAbout
@@ -79,11 +81,20 @@ template(name="about")
       Where noted, it is possible to exclude cases of bioevents occurring in the United States from threat level threat
       level calculations, in
 
+template(name="threatLevelExposureAbout")
+  +markdown
+    ### Threat Exposure
+    An overall measure of the risk posed to a given destination by incoming bioevents.
+    Threat level is calculated by combining known cases of bioevents, commercial air travel patterns,
+    and the potential severity of the disease-causing agent.
+
 template(name="threatLevelAbout")
   +markdown
     ### Threat Level
-    Threat Level is an overall measure of the risk posed by incoming bioevents. Threat level is calculated by combining known cases of bioevents, commercial air travel patterns, and the potential severity of the disease-causing agent.
-      
+    Threat Level is an overall measure of the risk posed by bioevents.
+    Threat level is calculated by combining known cases of bioevents, commercial air travel patterns,
+    and the potential severity of the disease-causing agent.
+
 template(name="passengerFlowAbout")
   +markdown
     ### Estimated Passenger Flow to Destinations
@@ -109,11 +120,6 @@ template(name="originProbabilityPassengerInfectedAbout")
   +markdown
     ### Probability Passenger Infected by Origin
     The estimated probability that a passenger at the origin airport has the target disease.
-
-template(name="destinationThreatExposureAbout")
-  +markdown
-    ### Destination Threat Exposure
-    The overall levels of risk that the target bioevent poses to each location.
 
 template(name="topOriginsAbout")
   +markdown

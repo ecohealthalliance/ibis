@@ -1,4 +1,5 @@
-/* global L, FlowRouter, $ */
+/* global L, $ */
+import { FlowRouter } from 'meteor/kadira:flow-router';
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
@@ -12,7 +13,7 @@ import { airportCutoffPercentage } from '/imports/configuration';
 import showLoadingIndicator from '/imports/showLoadingIndicator';
 
 const mapTypes = [
-  { name: "directSeats", label: "Direct Flights by Origin" },
+  { name: "directSeats", label: "Direct Seats by Origin" },
   { name: "passengerFlow", label: "Estimated Inbound Passengers by Origin" },
   { name: "threatLevel", label: "Threat Level by Origin" },
   { name: "threatLevelExUS", label: "Threat Level by Origin (Excluding US Origins)" }

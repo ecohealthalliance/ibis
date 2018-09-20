@@ -1,4 +1,5 @@
-/* global L, FlowRouter, $ */
+/* global L, $ */
+import { FlowRouter } from 'meteor/kadira:flow-router';
 import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
@@ -14,7 +15,8 @@ import showLoadingIndicator from '/imports/showLoadingIndicator';
 const mapTypes = [
   { name: "originThreatLevel", label: "Threat Level by Origin" },
   { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected by Origin" },
-  { name: "destinationThreatExposure", label: "Threat Exposure by Destination" },
+  { name: "threatLevelExposure", label: "Threat Exposure by Destination (Including US Sources)" },
+  { name: "threatLevelExposureExUS", label: "Threat Exposure by Destination (Excluding US Sources)" },
   { name: "topOrigins", label: "Top Origins" },
   { name: "topDestinations", label: "Top Destinations" }
 ];
@@ -40,7 +42,7 @@ Template.bioevent.onCreated(function() {
   this.line = OUTBOUND_LINE;
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
-    this.mapType.set(FlowRouter.getQueryParam("mapType") || "destinationThreatExposure");
+    this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevelExposure");
   });
   this.USOnly = new ReactiveVar(true);
   this.locations = new ReactiveVar([]);
@@ -65,7 +67,12 @@ Template.bioevent.onCreated(function() {
       const locations = _.map(locationGeoJson, (location, locationId)=>{
         let locationName;
         location = Object.create(location);
-        ["destinationThreatExposure", "originThreatLevel", "originProbabilityPassengerInfected"].forEach((metric)=>{
+        [
+          "threatLevelExposure",
+          "threatLevelExposureExUS",
+          "originThreatLevel",
+          "originProbabilityPassengerInfected"
+        ].forEach((metric)=>{
           location[metric] = 0;
           location.airportIds.forEach((airportId)=>{
             location[metric] += airportValues[metric][airportId] || 0;
@@ -80,7 +87,7 @@ Template.bioevent.onCreated(function() {
       });
       const airportLocations = locations.filter(x=>x.type === "airport");
       _.sortBy(airportLocations, (loc)=>{
-        return -loc.destinationThreatExposure;
+        return -loc.threatLevelExposure;
       }).map((x, idx)=>{
         x.globalDestRank = idx + 1;
         return x;
@@ -215,13 +222,13 @@ Template.bioevent.onRendered(function() {
             click: (event)=>{
               const popupElement = $('<div>').get(0);
               let properties = [
-                { name: "originThreatLevel", label: "Threat Level Posed" },
-                { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected" },
-                { name: "destinationThreatExposure", label: "Threat Exposure" }
+                { name: "originThreatLevel" },
+                { name: "originProbabilityPassengerInfected" },
+                { name: "threatLevelExposure" }
               ].map((t)=>{
                 return {
                   value: location[t.name],
-                  label: t.label
+                  label: typeToTitle[t.name]
                 };
               });
               if(location.type === 'airport') {
@@ -289,7 +296,7 @@ Template.bioevent.helpers({
         const [type, codeName] = loc._id.split(':');
         return {
           name: `${loc.displayName} (${codeName})`,
-          value: loc.destinationThreatExposure,
+          value: loc.threatLevelExposure,
           USDestRank: loc.USDestRank,
           globalDestRank: loc.globalDestRank,
           link: `/locations/${loc._id}`

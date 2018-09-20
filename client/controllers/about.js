@@ -1,7 +1,7 @@
 Template.about.onCreated(function() {
   this.bioeventLastUpdate = new ReactiveVar();
   HTTP.get("/api/bioeventLastUpdate", {}, (err, resp) => {
-    console.error(err);
+    if(err) return console.error(err);
     this.bioeventLastUpdate.set(resp.data.value);
   });
 });

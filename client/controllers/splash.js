@@ -1,4 +1,6 @@
-/* global L, _, chroma, FlowRouter */
+/* global $, L */
+import { FlowRouter } from 'meteor/kadira:flow-router';
+import { _ } from 'meteor/underscore';
 import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
@@ -12,15 +14,15 @@ import { airportCutoffPercentage } from '/imports/configuration';
 import showLoadingIndicator from '/imports/showLoadingIndicator';
 
 const mapTypes = [
-  {name:"threatLevelExUS", label:"Inbound Threat Exposure (Excluding US Sources)"},
-  {name:"threatLevel", label:"Inbound Threat Exposure (Including US Sources)"},
+  {name:"threatLevelExposureExUS", label:"Inbound Threat Exposure (Excluding US Sources)"},
+  {name:"threatLevelExposure", label:"Inbound Threat Exposure (Including US Sources)"},
   {name:"passengerFlow", label:"Inbound Passenger Flow"},
 ];
 
 Template.splash.onCreated(function() {
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
-    this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevelExUS");
+    this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevelExposureExUS");
   });
   this.locations = new ReactiveVar([]);
   this.autorun(()=>{

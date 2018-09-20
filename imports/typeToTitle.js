@@ -1,9 +1,10 @@
 export default {
-  "destinationThreatExposure": "Destination Threat Exposure",
   "originThreatLevel": "Origin Threat Level",
   "threatLevelExUS": "Threat Level",
   "threatLevel": "Threat Level",
-  "passengerFlow": "Passengers",
+  "passengerFlow": "Inbound Passenger Flow",
   "directSeats": "Direct Seats",
-  "originProbabilityPassengerInfected": "Estimated Probability Passenger Infected"
+  "originProbabilityPassengerInfected": "Estimated Probability Passenger Infected",
+  "threatLevelExposureExUS": "Inbound Threat Exposure",
+  "threatLevelExposure": "Inbound Threat Exposure"
 };

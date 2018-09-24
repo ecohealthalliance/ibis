@@ -17,10 +17,29 @@ const autoeventResp = HTTP.get('https://eidr-connect.eha.io/api/auto-events', {
   params: {
     limit: 20000,
     query: JSON.stringify({
-      parentDiseases: null
+      // "Viral infectious disease" and "disease by infectious agent" are omitted
+      // because they are so broad that they will always be ranked as top bioevents.
+      "diseases.id": {
+        $nin: [
+          "http://purl.obolibrary.org/obo/DOID_934",
+          "http://purl.obolibrary.org/obo/DOID_0050117"
+        ]
+      },
+      $or: [{
+        parentDiseases: [
+          "http://purl.obolibrary.org/obo/DOID_934",
+          "http://purl.obolibrary.org/obo/DOID_0050117"
+        ]
+      }, {
+        parentDiseases: ["http://purl.obolibrary.org/obo/DOID_0050117"]
+      }, {
+        parentDiseases: null
+      }]
     })
   }
 });
+// Only top level bioevents are summed over to determine location ranks
+// to prevent threat from overlapping bioevents from being double counted.
 const topLevelBioEvents = JSON.parse(autoeventResp.content).map(x=>x._id);
 
 let api = new Restivus({
@@ -81,7 +100,13 @@ var topLocations = cached((metric, bioeventId)=>{
         $in: USAirportIds
       }
     };
-    if(bioeventId) matchQuery.eventId = bioeventId;
+    if(bioeventId) {
+      matchQuery.eventId = bioeventId;
+    } else {
+      matchQuery.eventId = {
+        $in: topLevelBioEvents
+      };
+    }
     let arrivalAirportToRankScore = _.object(aggregate(EventAirportRanks, [{
       $match: matchQuery
     }, {
@@ -134,6 +159,9 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
     query.rankGroup = rankGroup;
   }
   if(mostRecent) {
+    query._id = {
+      $in: topLevelBioEvents
+    };
     return {
       results: _.sortBy(resolvedEventsCollection.find(query, {fullLocations: -1}).map((event)=>{
         event.name = event.name.replace("Human ", "");
@@ -148,6 +176,9 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
       }), (event) => event.lastIncident).slice(-15).reverse()
     };
   } else if(activeCases) {
+    query._id = {
+      $in: topLevelBioEvents
+    };
     return {
       results: _.sortBy(resolvedEventsCollection.find(query, {fullLocations: -1}).map((event)=>{
         event.name = event.name.replace("Human ", "");
@@ -176,6 +207,9 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
         $in: USAirportIds
       };
     }
+    query.eventId = {
+      $in: topLevelBioEvents
+    };
     const results = aggregate(eventAirportRanksCollection, [{
       $match: query
     }, {
@@ -399,8 +433,6 @@ api.addRoute('locations/:locationId/threatLevel', {
     if(bioeventId) {
       matchQuery.eventId = bioeventId;
     } else {
-      // Prevent threat from overlapping bioevents from being double counted
-      // by only counting the bioevents without parents.
       matchQuery.eventId = {
         $in: topLevelBioEvents
       };

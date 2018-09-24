@@ -147,6 +147,12 @@ var topLocations = cached((metric, bioeventId)=>{
 });
 
 var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
+  if(!metric) {
+    return {
+      statusCode: 404,
+      body: 'Unspecified metric.'
+    };
+  }
   const exUS = metric.endsWith("ExUS");
   const mostRecent = metric == "mostRecent";
   const activeCases = metric == "activeCases";

@@ -5,14 +5,14 @@ import datetime
 import os
 
 
-IBIS_URL = os.environ.get("IBIS_URL", "http://localhost:3000")
+IBIS_URL = os.environ.get("IBIS_URL", "http://ibis.eha.io")
 
 
 def logged_request(url, **kwargs):
-    print("Making request to " + url)
+    print("\tMaking request to " + url)
     start_time = datetime.datetime.now() 
     resp = requests.get(IBIS_URL + url, **kwargs)
-    print("Finished in ", datetime.datetime.now() - start_time)
+    print("\tFinished in ", datetime.datetime.now() - start_time)
     resp.raise_for_status()
     return resp.json()
 
@@ -26,7 +26,7 @@ def assert_in(a, b):
         raise Exception("%s is not in %s" % (a, b,))
 
 all_locations = logged_request('/api/topLocations', params={
-    'metric': 'threatLevel'
+    'metric': 'threatLevelExposure'
 })
 bioevents = logged_request('/api/bioevents', params={
     'metric': 'threatLevel'
@@ -38,13 +38,17 @@ print(combined_airport_rank, combined_bioevent_rank)
 assert combined_bioevent_rank < combined_airport_rank
 assert combined_bioevent_rank > 0.7 * combined_airport_rank
 top_bioevent = bioevents['results'][0]
-top_bioevent_data = logged_request('/api/bioevents/' + top_bioevent['_id'])
+top_bioevent_data = logged_request('/api/bioevents/' + top_bioevent['_id'], params={
+    'metric': 'threatLevelExposure'
+})
 print("Top bioevent:", top_bioevent['event']['name'])
-top_airport, value = sorted(top_bioevent_data['airportValues']['destinationThreatExposure'].items(), key=lambda x: x[1])[-1]
+top_airport, value = sorted(top_bioevent_data['airportValues']['threatLevelExposure'].items(), key=lambda x: x[1])[-1]
 print("Top airport for top bioevent:", top_airport)
 print("""Verifying that the global top bioevent also appears as one of the top bioevents for the
-location with the greatest threat expose from it...""")
-bioevents_for_location = logged_request('/api/locations/airport:' + top_airport + '/bioevents', params={})['results']
+location with the greatest threat exposure from it...""")
+bioevents_for_location = logged_request('/api/locations/airport:' + top_airport + '/bioevents', params={
+    'metric': 'threatLevel'
+})['results']
 assert_in(top_bioevent['_id'], [x['_id'] for x in bioevents_for_location])
 print("Verifying that the timeseries is non-zero for the top bioevent...")
 assert any(value > 0 for date, value in top_bioevent_data['resolvedBioevent']['timeseries'])

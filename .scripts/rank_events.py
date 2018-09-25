@@ -204,8 +204,6 @@ else:
             _id=event['_id'],
             name=event['eventName'],
             timestamp=datetime.datetime.now()))
-    db.resolvedEvents_create.rename("resolvedEvents", dropTarget=True)
-    db.resolvedEvents.create_index("eventId")
 print("\tDone.")
 
 print("Computing disease severity coefficients...")
@@ -381,6 +379,10 @@ else:
     print(first_rank)
     db.eventAirportRanks.create_index("eventId")
 
+print("Replace old resolved events collection")
+db.resolvedEvents_create.rename("resolvedEvents", dropTarget=True)
+db.resolvedEvents.create_index("eventId")
+
 db.rankEvaluationMetadata.insert_one({
     'start': processing_start_date,
     'finish': datetime.datetime.now(),
@@ -389,3 +391,7 @@ db.rankEvaluationMetadata.insert_one({
 })
 
 print("Finished at: " + str(datetime.datetime.now()))
+
+# Tell IBIS to update its caches since the data has been updated.
+resp = requests.get("http://ibis.eha.io/api/clearCaches")
+resp.raise_for_status()

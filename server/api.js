@@ -17,10 +17,18 @@ const autoeventResp = HTTP.get('https://eidr-connect.eha.io/api/auto-events', {
   params: {
     limit: 20000,
     query: JSON.stringify({
-      // "Viral infectious disease" and "disease by infectious agent" are omitted
-      // because they are so broad that they will always be ranked as top bioevents.
+      // "disease by infectious agent" and it's immediate sub-categories are
+      // omitted because they are always ranked as top bioevents hiding
+      // trends in specific diseases.
       "diseases.id": {
         $nin: [
+          // parasitic infectious disease
+          "http://purl.obolibrary.org/obo/DOID_1398",
+          // fungal infectious disease
+          "http://purl.obolibrary.org/obo/DOID_1564",
+          // bacterial infectious disease
+          "http://purl.obolibrary.org/obo/DOID_104",
+          // viral infectious disease
           "http://purl.obolibrary.org/obo/DOID_934",
           "http://purl.obolibrary.org/obo/DOID_0050117"
         ]
@@ -28,6 +36,21 @@ const autoeventResp = HTTP.get('https://eidr-connect.eha.io/api/auto-events', {
       $or: [{
         parentDiseases: [
           "http://purl.obolibrary.org/obo/DOID_934",
+          "http://purl.obolibrary.org/obo/DOID_0050117"
+        ]
+      }, {
+        parentDiseases: [
+          "http://purl.obolibrary.org/obo/DOID_104",
+          "http://purl.obolibrary.org/obo/DOID_0050117"
+        ]
+      }, {
+        parentDiseases: [
+          "http://purl.obolibrary.org/obo/DOID_1564",
+          "http://purl.obolibrary.org/obo/DOID_0050117"
+        ]
+      }, {
+        parentDiseases: [
+          "http://purl.obolibrary.org/obo/DOID_1398",
           "http://purl.obolibrary.org/obo/DOID_0050117"
         ]
       }, {
@@ -255,15 +278,16 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
   }
 });
 
-var updateCache = ()=>{
+var precacheFrequentValues = ()=>{
   ['threatLevelExposure', 'threatLevelExposureExUS', 'passengerFlow'].map((metric)=>{
     topLocations(metric, null);
   });
   rankedBioevents('threatLevel', null, null);
   rankedBioevents('threatLevelExUS', null, null);
 };
-updateCache();
-setInterval(updateCache, 1000 * 60 * 60);
+precacheFrequentValues();
+// Periodically run this to prevent the caches from holding expired values.
+setInterval(precacheFrequentValues, 1000 * 60 * 60);
 
 /*
 @api {get} topLocations
@@ -482,6 +506,9 @@ api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
       $match: {
         departureAirportId: {
           $in: location.airportIds
+        },
+        eventId: {
+          $in: topLevelBioEvents
         }
       }
     }, {
@@ -745,6 +772,7 @@ api.addRoute('clearCaches', {
       };
     }
     clearCaches();
+    precacheFrequentValues();
     cacheLastCleared = new Date();
     return "Success";
   }

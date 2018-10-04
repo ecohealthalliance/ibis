@@ -118,9 +118,6 @@ var topLocations = cached((metric, bioeventId)=>{
     let matchQuery = {
       departureAirportId: {
         $nin: exUS ? USAirportIds : []
-      },
-      arrivalAirportId: {
-        $in: USAirportIds
       }
     };
     if(bioeventId) {
@@ -147,10 +144,7 @@ var topLocations = cached((metric, bioeventId)=>{
     // Only return locations with incoming passengers
     let arrivalAirportToPassengers = _.object(aggregate(PassengerFlows, [{
       $match: {
-        simGroup: 'ibis14day',
-        arrivalAirport: {
-          $in: USAirportIds
-        }
+        simGroup: 'ibis14day'
       }
     }, {
       $group: {
@@ -488,8 +482,7 @@ api.addRoute('locations/:locationId/threatLevel', {
     });
     return {
       countryGroups: statsByCountry,
-      allAirports: results.filter((x)=>x.threatLevel >= 0.0000001),
-      USAirportIds: USAirportIds
+      allAirports: results.filter((x)=>x.threatLevel >= 0.0000001)
     };
   }
 });
@@ -717,8 +710,7 @@ api.addRoute('bioevents/:bioeventId', {
     return {
       airportValues: airportValues,
       countryValues: countryValues,
-      resolvedBioevent: resolvedBioevent,
-      USAirportIds: USAirportIds
+      resolvedBioevent: resolvedBioevent
     };
   }
 });

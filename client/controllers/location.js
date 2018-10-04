@@ -15,13 +15,14 @@ import showLoadingIndicator from '/imports/showLoadingIndicator';
 const mapTypes = [
   { name: "directSeats", label: "Direct Seats by Origin" },
   { name: "passengerFlow", label: "Estimated Inbound Passengers by Origin" },
-  { name: "threatLevel", label: "Threat Level by Origin" },
-  { name: "threatLevelExUS", label: "Threat Level by Origin (Excluding US Origins)" }
+  { name: "threatLevel", label: "Threat Level by Origin" }
+  //{ name: "threatLevelExUS", label: "Threat Level by Origin (Excluding US Origins)" }
 ];
 
 Template.location.onCreated(function() {
   this.mapType = new ReactiveVar();
   this.locationData = new ReactiveVar();
+  this.airportType = new ReactiveVar("all");
   this.autorun(() => {
     this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevel");
   });
@@ -47,7 +48,12 @@ Template.location.onCreated(function() {
       }, (err, resp) => {
         showLoadingIndicator.set(false);
         if (err) return console.error(err);
-        this.locationData.set(resp.data);
+        const locationData = resp.data;
+        const USAirportIds = _.pairs(locations)
+          .filter(([k,v])=>v.inUS)
+          .map(([k,v])=>v.airportIds[0]);
+        locationData.USAirportIds = USAirportIds;
+        this.locationData.set(locationData);
       });
     });
   });
@@ -141,9 +147,12 @@ Template.location.onRendered(function() {
     }));
     if(!showBubbles) return;
     let allAirports = data.allAirports;
-    if(exUS) {
-      const USAirportIdSet = new Set(data.USAirportIds);
+    const USAirportIdSet = new Set(data.USAirportIds);
+    const airportTypeVal = this.airportType.get();
+    if(exUS || airportTypeVal == "international") {
       allAirports = allAirports.filter(x=>!USAirportIdSet.has(x._id));
+    } else if(airportTypeVal == "domestic") {
+      allAirports = allAirports.filter(x=>USAirportIdSet.has(x._id));
     }
     let maxValue = _.max(allAirports.map((x) => x[mapTypeValue]));
     const airportCutoffMultiple = 0.01 * airportCutoffPercentage.get();
@@ -230,7 +239,8 @@ Template.location.helpers({
       return selectedLocation.displayName + (selectedLocation.type === "airport" ? " Airport" : "");
     }
   },
-  layers: () => displayLayers
+  layers: () => displayLayers,
+  airportType: () => Template.instance().airportType
 });
 
 Template.location.events({

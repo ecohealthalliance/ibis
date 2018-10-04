@@ -7,6 +7,12 @@ template(name="legend")
     hr
     .layers
       each layers
-        .layer
-          input(type="checkbox" name=name checked=active)
-          | #{label}
+        .layer.form-check
+          input.form-check-input(type="checkbox" name=name checked=active)
+          label.form-check-label=label
+    hr
+    .airport-types
+      each airportTypes
+        .form-check
+          input.form-check-input(type="radio" name="airportType" value=name checked=checked)
+          label.form-check-label(for=name)=label

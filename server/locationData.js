@@ -11,7 +11,18 @@ StateGeoJSON.features.forEach((stateF)=>{
 let locations = {};
 
 Airports.find().map((airport)=> {
+  locations['airport:' + airport._id] = {
+    airportIds: [airport._id],
+    displayName: airport.name,
+    displayGeoJSON: [
+      {
+        "type": "Point", 
+        "coordinates": airport.loc.coordinates
+      }
+    ]
+  };
   if(airport.countryName == "United States") {
+    locations['airport:' + airport._id]['inUS'] = true;
     const stateData = locations['state:' + airport.state];
     if(stateData) {
       stateData.airportIds.push(airport._id);
@@ -23,16 +34,6 @@ Airports.find().map((airport)=> {
       };
     }
   }
-  locations['airport:' + airport._id] = {
-    airportIds: [airport._id],
-    displayName: airport.name,
-    displayGeoJSON: [
-      {
-        "type": "Point", 
-        "coordinates": airport.loc.coordinates
-      }
-    ]
-  };
 });
 
 module.exports = {

@@ -38,6 +38,7 @@ const getLine = (mapType)=>{
 };
 
 Template.bioevent.onCreated(function() {
+  this.airportType = new ReactiveVar("all");
   this.ramp = OUTBOUND_RAMP;
   this.line = OUTBOUND_LINE;
   this.mapType = new ReactiveVar();
@@ -61,7 +62,6 @@ Template.bioevent.onCreated(function() {
     ]).then(([bioeventData, locationGeoJson])=>{
       showLoadingIndicator.set(false);
       const airportValues = bioeventData.airportValues;
-      const USAirportIds = bioeventData.USAirportIds;
       this.countryValues.set(bioeventData.countryValues);
       this.resolvedBioevent.set(bioeventData.resolvedBioevent);
       const locations = _.map(locationGeoJson, (location, locationId)=>{
@@ -80,26 +80,7 @@ Template.bioevent.onCreated(function() {
         });
         location._id = locationId;
         [location.type, locationName] = locationId.split(':');
-        if(location.type == "airport") {
-          location.USAirport = USAirportIds.indexOf(locationName) >= 0;
-        }
         return location;
-      });
-      const airportLocations = locations.filter(x=>x.type === "airport");
-      _.sortBy(airportLocations, (loc)=>{
-        return -loc.threatLevelExposure;
-      }).map((x, idx)=>{
-        x.globalDestRank = idx + 1;
-        return x;
-      }).filter((loc)=>loc.USAirport).map((x, idx)=>{
-        x.USDestRank = idx + 1;
-        return x;
-      });
-      _.sortBy(airportLocations, (loc)=>{
-        return -loc.originThreatLevel;
-      }).map((x, idx)=>{
-        x.globalOriginRank = idx + 1;
-        return x;
       });
       this.locations.set(locations);
     });
@@ -168,6 +149,28 @@ Template.bioevent.onRendered(function() {
     renderGeoJSON(showChoropleth ? countryValuesForType || {} : {});
     let layers = [];
     let locations = this.locations.get();
+    const airportTypeVal = this.airportType.get();
+    if(airportTypeVal == "international") {
+      locations = locations.filter(x=>x.type != 'airport' || !x.inUS);
+    } else if(airportTypeVal == "domestic") {
+      locations = locations.filter(x=>x.type != 'airport' || x.inUS);
+    }
+    const airportLocations = locations.filter(x=>x.type === "airport");
+    _.sortBy(airportLocations, (loc)=>{
+      return -loc.threatLevelExposure;
+    }).map((x, idx)=>{
+      x.globalDestRank = idx + 1;
+      return x;
+    }).filter((loc)=>loc.inUS).map((x, idx)=>{
+      x.USDestRank = idx + 1;
+      return x;
+    });
+    _.sortBy(airportLocations, (loc)=>{
+      return -loc.originThreatLevel;
+    }).map((x, idx)=>{
+      x.globalOriginRank = idx + 1;
+      return x;
+    });
     let airportMax = 0;
     let stateMax = 0;
     const USOnly = Template.instance().USOnly.get();
@@ -329,7 +332,8 @@ Template.bioevent.helpers({
   resolvedBioevent: ()=>{
     return Template.instance().resolvedBioevent.get();
   },
-  layers: ()=>displayLayers
+  layers: ()=>displayLayers,
+  airportType: ()=>Template.instance().airportType
 });
 
 Template.bioevent.events({

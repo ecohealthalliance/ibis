@@ -20,6 +20,7 @@ const mapTypes = [
 ];
 
 Template.splash.onCreated(function() {
+  this.airportType = new ReactiveVar("domestic");
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
     this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevelExposureExUS");
@@ -100,6 +101,12 @@ Template.splash.onRendered(function() {
   this.autorun(()=> {
     let layers = [];
     let locations = this.locations.get();
+    const airportTypeVal = this.airportType.get();
+    if(airportTypeVal == "international") {
+      locations = locations.filter(x=>x.type != 'airport' || !x.inUS);
+    } else if(airportTypeVal == "domestic") {
+      locations = locations.filter(x=>x.type != 'airport' || x.inUS);
+    }
     let airportMax = 0;
     let stateMax = 0;
     const displayLayersVal = displayLayers.get();
@@ -194,7 +201,8 @@ Template.splash.helpers({
     });
   },
   mapType: ()=> Template.instance().mapType,
-  layers: () => displayLayers
+  layers: () => displayLayers,
+  airportType: () => Template.instance().airportType
 });
 
 Template.splash.events({

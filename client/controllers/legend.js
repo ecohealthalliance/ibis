@@ -8,7 +8,19 @@ Template.legend.helpers({
     });
     return ramp;
   },
-  layers: () => Template.instance().data.layers.get()
+  layers: () => Template.instance().data.layers.get(),
+  airportTypes: () => {
+    const airportTypeRV = Template.instance().data.airportType;
+    const airportType = airportTypeRV ? airportTypeRV.get() : "all";
+    return [
+      { name: "domestic", label: "Domestic Airports" },
+      { name: "international", label: "International Airports" },
+      { name: "all", label: "All Airports" },
+    ].map((x) => {
+      x.checked = x.name == airportType;
+      return x;
+    });
+  }
 });
 
 Template.legend.events({
@@ -21,4 +33,8 @@ Template.legend.events({
       };
     }));
   },
+  'click .airport-types input': (event, instance)=>{
+    const airportTypeRV = Template.instance().data.airportType;
+    airportTypeRV.set($(event.target).val());
+  }
 });

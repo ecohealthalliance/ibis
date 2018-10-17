@@ -87,7 +87,10 @@ def resolved_event_iter(events):
             'eventType': 'auto',
             'fullLocations': True,
             'activeCases': True
-        })
+        }, headers={
+            # For unknown reasons, using the accept encoding header causes proxy errors
+            # when the API takes a long time to respond.
+            'Accept-Encoding': None})
         request_result.raise_for_status()
         try:
             results = request_result.json()['events']

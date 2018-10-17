@@ -78,7 +78,7 @@ print("Resolving events...")
 resolved_events = []
 
 def resolved_event_iter(events):
-    for event_batch in batched(events, 5):
+    for event_batch in batched(events, 1):
         url = 'https://eidr-connect.eha.io/api/events-with-resolved-data'
         request_result = requests.get(url, params={
             'ids': [event['_id'] for event in event_batch],

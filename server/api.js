@@ -538,10 +538,10 @@ api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
 */
 api.addRoute('locations/:locationId/bioevents', {
   get: function() {
-    let resp = rankedBioevents(
+    let resp = _.clone(rankedBioevents(
       this.queryParams.metric,
       this.urlParams.locationId,
-      rankGroup=this.queryParams.rankGroup);
+      rankGroup=this.queryParams.rankGroup));
     const minSeverity = parseFloat(this.queryParams.minDiseaseSeverity);
     resp.results = resp.results.filter((result)=>{
       if(!('threatCoefficient' in result)) return true;
@@ -648,10 +648,10 @@ api.addRoute('rankData', {
 */
 api.addRoute('bioevents', {
   get: function() {
-    let resp = rankedBioevents(
+    let resp = _.clone(rankedBioevents(
       this.queryParams.metric,
       null,
-      this.queryParams.rankGroup || null);
+      this.queryParams.rankGroup || null));
     const minSeverity = parseFloat(this.queryParams.minDiseaseSeverity);
     resp.results = resp.results.filter((result)=>{
       if(!('threatCoefficient' in result)) return true;

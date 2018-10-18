@@ -365,6 +365,8 @@ if args.rank_group:
     })
     assert first_rank
     print(first_rank)
+    db.pastEventAirportRanks.create_index("rankGroup")
+    db.pastEventAirportRanks.create_index("eventId")
 else:
     # Drop collection in case it still exists from a failed prior run.
     db.eventAirportRanks_create.drop()

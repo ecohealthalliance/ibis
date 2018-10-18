@@ -4,7 +4,8 @@ module.exports = _.chain({
     constrainMaps: true,
     defaultActiveCaseTimeseries: true,
     showHelpPanel: true,
-    airportCutoffPercentage: 0.5
+    airportCutoffPercentage: 0.5,
+    minDiseaseSeverity: 0.0
   })
   .map((defaultValue, key)=>{
     const value = window.localStorage.getItem(key);

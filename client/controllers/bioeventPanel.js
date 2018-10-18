@@ -5,6 +5,7 @@ import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Constants from '/imports/constants';
 import showLoadingIndicator from '/imports/showLoadingIndicator';
+import { minDiseaseSeverity } from '/imports/configuration';
 
 Template.bioeventPanel.onCreated(function() {
   const dateRange = this.dateRange = new ReactiveVar({start: new Date(), end: new Date()});
@@ -18,7 +19,8 @@ Template.bioeventPanel.onCreated(function() {
     const requestParams = {
       params: {
         metric: rankMetric.get(),
-        rankGroup: FlowRouter.getQueryParam('rankGroup') || null
+        rankGroup: FlowRouter.getQueryParam('rankGroup') || null,
+        minDiseaseSeverity: minDiseaseSeverity.get()
       }
     };
     let url = "/api/bioevents";

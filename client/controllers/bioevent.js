@@ -54,7 +54,9 @@ Template.bioevent.onCreated(function() {
     showLoadingIndicator.set(true);
     Promise.all([
       new Promise((resolve, reject) =>{
-        HTTP.get('/api/bioevents/' + bioeventId, (err, resp)=> {
+        HTTP.get('/api/bioevents/' + bioeventId, {
+          rankGroup: FlowRouter.getQueryParam('rankGroup') || null
+        }, (err, resp)=> {
           if(err) return reject(err);
           resolve(resp.data);
         });

@@ -20,3 +20,7 @@ template(name="configure")
       label Hide airport bubbles below this percentage of the maximum value bubble:
       .value
         +inputBox type="number" state=states.airportCutoffPercentage
+
+      label Hide diseases with a severity coefficient below this level (1.0 is the highest severity):
+      .value
+        +inputBox type="number" state=states.minDiseaseSeverity

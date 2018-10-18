@@ -13,7 +13,8 @@ Template.rankInfo.onCreated(function() {
     params: {
       locationId: locationId,
       eventId: eventId,
-      exUS: FlowRouter.getQueryParam('rankMetric') == 'threatLevelExUS'
+      exUS: FlowRouter.getQueryParam('rankMetric') == 'threatLevelExUS',
+      rankGroup: FlowRouter.getQueryParam('rankGroup') || null
     }
   }, (err, resp)=>{
     loading.set(false);

@@ -196,21 +196,23 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
             .max()
             .value()
         };
-      }), (event) => event.lastIncident).slice(-15).reverse()
+      }), (event) => event.lastIncident).slice(-80).reverse()
     };
   } else if(activeCases) {
     query._id = {
       $in: topLevelBioEvents
     };
     return {
-      results: _.sortBy(resolvedEventsCollection.find(query, {fullLocations: -1}).map((event)=>{
+      results: _.sortBy(resolvedEventsCollection.find(query, {
+        fullLocations: -1
+      }).map((event)=>{
         event.name = event.name.replace("Human ", "");
         return {
           _id: event._id,
           event: event,
           activeCases: _.last(event.timeseries)[1]
         };
-      }), (event) => event.activeCases).slice(-15).reverse()
+      }), (event) => event.activeCases).slice(-80).reverse()
     };
   } else {
     query.departureAirportId = {
@@ -240,6 +242,9 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
         _id: "$eventId",
         rank: {
           $sum: "$rank"
+        },
+        threatCoefficient: {
+          $first: "$threatCoefficient"
         }
       }
     }, {
@@ -247,7 +252,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
         rank: -1
       }
     }, {
-      $limit: 10
+      $limit: 80
     }, {
       $lookup: {
         from: rankGroup ? "pastResolvedEvents" : "resolvedEvents",
@@ -533,10 +538,16 @@ api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
 */
 api.addRoute('locations/:locationId/bioevents', {
   get: function() {
-    return rankedBioevents(
+    let resp = rankedBioevents(
       this.queryParams.metric,
       this.urlParams.locationId,
       rankGroup=this.queryParams.rankGroup);
+    const minSeverity = parseFloat(this.queryParams.minDiseaseSeverity);
+    resp.results = resp.results.filter((result)=>{
+      if(!('threatCoefficient' in result)) return true;
+      return result.threatCoefficient >= minSeverity;
+    }).slice(0, 10);
+    return resp;
   }
 });
 
@@ -558,6 +569,12 @@ api.addRoute('rankData', {
         $in: USAirportIds
       }
     };
+    const rankGroup = this.queryParams.rankGroup;
+    let eventAirportRanksCollection = EventAirportRanks;
+    if(rankGroup) {
+      eventAirportRanksCollection = PastEventAirportRanks;
+      matchQuery.rankGroup = rankGroup;
+    }
     if(this.queryParams.locationId && this.queryParams.locationId !== "undefined") {
       const location = locationData.locations[this.queryParams.locationId];
       matchQuery.arrivalAirportId = {
@@ -570,7 +587,7 @@ api.addRoute('rankData', {
       };
     }
     return {
-      combinedValues: aggregate(EventAirportRanks, [{
+      combinedValues: aggregate(eventAirportRanksCollection, [{
         $match: matchQuery
       }, {
         $group: {
@@ -594,7 +611,7 @@ api.addRoute('rankData', {
           }
         }
       }])[0],
-      results: aggregate(EventAirportRanks, [{
+      results: aggregate(eventAirportRanksCollection, [{
         $match: matchQuery
       }, {
         $group: {
@@ -631,10 +648,16 @@ api.addRoute('rankData', {
 */
 api.addRoute('bioevents', {
   get: function() {
-    return rankedBioevents(
+    let resp = rankedBioevents(
       this.queryParams.metric,
       null,
       this.queryParams.rankGroup || null);
+    const minSeverity = parseFloat(this.queryParams.minDiseaseSeverity);
+    resp.results = resp.results.filter((result)=>{
+      if(!('threatCoefficient' in result)) return true;
+      return result.threatCoefficient >= minSeverity;
+    }).slice(0, 10);
+    return resp;
   }
 });
 

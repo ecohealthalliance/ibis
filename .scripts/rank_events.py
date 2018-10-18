@@ -381,10 +381,9 @@ else:
     assert first_rank
     print(first_rank)
     db.eventAirportRanks.create_index("eventId")
-
-print("Replace old resolved events collection")
-db.resolvedEvents_create.rename("resolvedEvents", dropTarget=True)
-db.resolvedEvents.create_index("eventId")
+    print("Replace old resolved events collection")
+    db.resolvedEvents_create.rename("resolvedEvents", dropTarget=True)
+    db.resolvedEvents.create_index("eventId")
 
 db.rankEvaluationMetadata.insert_one({
     'start': processing_start_date,

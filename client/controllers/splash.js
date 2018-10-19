@@ -11,7 +11,7 @@ import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } fr
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
 import { airportCutoffPercentage } from '/imports/configuration';
-import showLoadingIndicator from '/imports/showLoadingIndicator';
+import loadingIndicator from '/imports/loadingIndicator';
 
 const mapTypes = [
   {name:"threatLevelExposureExUS", label:"Inbound Threat Exposure (Excluding US Sources)"},
@@ -29,7 +29,7 @@ Template.splash.onCreated(function() {
   this.autorun(()=>{
     const metric = this.mapType.get();
     const bioeventId = FlowRouter.getQueryParam('bioeventId') || null;
-    showLoadingIndicator.set(true);
+    const loadingIndicatorSemaphore = loadingIndicator.show();
     Promise.all([
       new Promise((resolve, reject) =>{
         HTTP.get('/api/topLocations', {
@@ -43,7 +43,7 @@ Template.splash.onCreated(function() {
         });
       }), locationGeoJsonPromise
     ]).then(([topLocations, locationGeoJson])=>{
-      showLoadingIndicator.set(false);
+      loadingIndicator.hide(loadingIndicatorSemaphore);
       const airportValues = topLocations.airportValues;
       this.locations.set(_.map(locationGeoJson, (location, locationId)=>{
         location = Object.create(location);

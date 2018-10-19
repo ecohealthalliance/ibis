@@ -1,8 +1,8 @@
-import showLoadingIndicator from '/imports/showLoadingIndicator';
+import loadingIndicator from '/imports/loadingIndicator';
 import { showHelpPanel } from '/imports/configuration';
 
 Template.layout.helpers({
-  showLoadingIndicator: () => showLoadingIndicator.get()
+  showLoadingIndicator: () => loadingIndicator.showing()
 });
 
 Template.layout.events({

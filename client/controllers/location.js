@@ -10,7 +10,7 @@ import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } fr
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
 import { airportCutoffPercentage } from '/imports/configuration';
-import showLoadingIndicator from '/imports/showLoadingIndicator';
+import loadingIndicator from '/imports/loadingIndicator';
 
 const mapTypes = [
   { name: "directSeats", label: "Direct Seats by Origin" },
@@ -40,13 +40,13 @@ Template.location.onCreated(function() {
       });
       const mapTypeValue = this.mapType.get().replace("ExUS", "");
       if (!location) return;
-      showLoadingIndicator.set(true);
+      const loadingIndicatorSemaphore = loadingIndicator.show();
       HTTP.get(`/api/locations/${locationId}/${mapTypeValue}`, {
         params: {
           bioeventId: bioeventId
         }
       }, (err, resp) => {
-        showLoadingIndicator.set(false);
+        loadingIndicator.hide(loadingIndicatorSemaphore);
         if (err) return console.error(err);
         const locationData = resp.data;
         const USAirportIds = _.pairs(locations)

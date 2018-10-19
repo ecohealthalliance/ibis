@@ -4,7 +4,7 @@ import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Constants from '/imports/constants';
-import showLoadingIndicator from '/imports/showLoadingIndicator';
+import loadingIndicator from '/imports/loadingIndicator';
 import { minDiseaseSeverity } from '/imports/configuration';
 
 Template.bioeventPanel.onCreated(function() {
@@ -27,9 +27,9 @@ Template.bioeventPanel.onCreated(function() {
     if (locationId) {
       url = `/api/locations/${locationId}/bioevents`;
     }
-    showLoadingIndicator.set(true);
+    const loadingIndicatorSemaphore = loadingIndicator.show();
     HTTP.get(url, requestParams, (err, resp) => {
-      showLoadingIndicator.set(false);
+      loadingIndicator.hide(loadingIndicatorSemaphore);
       if (err) return console.error(err);
       const respResults = EJSON.parse(resp.content).results;
       bioevents.set(respResults);

@@ -185,30 +185,6 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
     assert not(len(resolved_ccs) == 0 and len(resolved_event_data['fullLocations']['children']) > 0)
 print("\tDone.")
 
-print("Storing resolved event data...")
-if args.rank_group:
-    db.pastResolvedEvents.delete_many({
-        'rankGroup': args.rank_group
-    })
-    for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
-        db.pastResolvedEvents.insert_one(dict(
-            resolved_event,
-            rankGroup=args.rank_group,
-            eventId=event['_id'],
-            name=event['eventName'],
-            timestamp=datetime.datetime.now()))
-    db.pastResolvedEvents.create_index("eventId")
-else:
-    # Drop collection in case it still exists from a failed prior run.
-    db.resolvedEvents_create.drop()
-    for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
-        db.resolvedEvents_create.insert_one(dict(
-            resolved_event,
-            _id=event['_id'],
-            name=event['eventName'],
-            timestamp=datetime.datetime.now()))
-print("\tDone.")
-
 print("Computing disease severity coefficients...")
 CLASSIFICATION_COEFFICIENT_MAP = {
     'low': 0.25,
@@ -234,6 +210,36 @@ for idx, row in df.iterrows():
     if not pd.isnull(row['uri']) and not pd.isnull(row['Classification']):
         classification = row['Classification']
         disease_uri_to_classification_coefficient[row['uri']] = get_classification_coefficient(classification)
+
+print("Storing resolved event data...")
+if args.rank_group:
+    db.pastResolvedEvents.delete_many({
+        'rankGroup': args.rank_group
+    })
+    for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
+        db.pastResolvedEvents.insert_one(dict(
+            resolved_event,
+            threatCoefficient=disease_uri_to_classification_coefficient.get(
+                event['diseases'][0]['id'],
+                0.5),
+            rankGroup=args.rank_group,
+            eventId=event['_id'],
+            name=event['eventName'],
+            timestamp=datetime.datetime.now()))
+    db.pastResolvedEvents.create_index("eventId")
+else:
+    # Drop collection in case it still exists from a failed prior run.
+    db.resolvedEvents_create.drop()
+    for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
+        db.resolvedEvents_create.insert_one(dict(
+            resolved_event,
+            threatCoefficient=disease_uri_to_classification_coefficient.get(
+                event['diseases'][0]['id'],
+                0.5),
+            _id=event['_id'],
+            name=event['eventName'],
+            timestamp=datetime.datetime.now()))
+print("\tDone.")
 
 # Determine DALYs Per case using GBD data.
 # Citation:

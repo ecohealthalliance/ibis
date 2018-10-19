@@ -10,7 +10,7 @@ import { _ } from 'meteor/underscore';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
 import { airportCutoffPercentage } from '/imports/configuration';
-import showLoadingIndicator from '/imports/showLoadingIndicator';
+import loadingIndicator from '/imports/loadingIndicator';
 
 const mapTypes = [
   { name: "originThreatLevel", label: "Threat Level by Origin" },
@@ -49,23 +49,35 @@ Template.bioevent.onCreated(function() {
   this.locations = new ReactiveVar([]);
   this.resolvedBioevent = new ReactiveVar();
   this.countryValues = new ReactiveVar();
+  const endDate = new Date();
+  this.dateRange = new ReactiveVar({
+    start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
+    end: endDate
+  });
   this.autorun(()=>{
     const bioeventId = FlowRouter.getParam('bioeventId');
-    showLoadingIndicator.set(true);
+    const loadingIndicatorSemaphore = loadingIndicator.show();
     Promise.all([
       new Promise((resolve, reject) =>{
         HTTP.get('/api/bioevents/' + bioeventId, {
-          rankGroup: FlowRouter.getQueryParam('rankGroup') || null
+          params: {
+            rankGroup: FlowRouter.getQueryParam('rankGroup') || null
+          }
         }, (err, resp)=> {
           if(err) return reject(err);
           resolve(resp.data);
         });
       }), locationGeoJsonPromise
     ]).then(([bioeventData, locationGeoJson])=>{
-      showLoadingIndicator.set(false);
+      loadingIndicator.hide(loadingIndicatorSemaphore);
       const airportValues = bioeventData.airportValues;
       this.countryValues.set(bioeventData.countryValues);
       this.resolvedBioevent.set(bioeventData.resolvedBioevent);
+      let endDate = new Date(bioeventData.resolvedBioevent.timeseries.slice(-1)[0][0]);
+      this.dateRange.set({
+        start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
+        end: endDate
+      });
       const locations = _.map(locationGeoJson, (location, locationId)=>{
         let locationName;
         location = Object.create(location);
@@ -87,11 +99,6 @@ Template.bioevent.onCreated(function() {
       this.locations.set(locations);
     });
   });
-  const endDate = new Date();
-  this.dateRange = {
-    start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
-    end: endDate
-  };
 });
 
 Template.bioevent.onRendered(function() {
@@ -320,7 +327,7 @@ Template.bioevent.helpers({
         };
       }).sortBy(x=>-x.value).value();
   },
-  dateRange: ()=>Template.instance().dateRange,
+  dateRange: ()=>Template.instance().dateRange.get(),
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
     return mapTypes.map((type)=>{

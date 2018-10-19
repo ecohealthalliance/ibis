@@ -43,7 +43,7 @@ Template.bioeventItem.events({
     $('#rank-info-modal .content').replaceWith('<div class="content modal-body">');
     Blaze.renderWithData(Template.rankInfo, {
       locationId: FlowRouter.getParam('locationId'),
-      eventId: bioevent.event._id
+      eventId: bioevent.event.eventId
     }, $('#rank-info-modal .content')[0]);
   },
   'click .filter-map': (event, instance)=>{

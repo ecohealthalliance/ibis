@@ -5,6 +5,7 @@ import pandas as pd
 import numpy
 import datetime
 import os
+import sys
 from compute_case_raster import compute_case_raster, plot_airport, compute_outflows, get_airport_to_country_code
 import rasterio
 import numpy as np
@@ -31,7 +32,12 @@ parser.add_argument("--start_date", default=None)
 parser.add_argument("--end_date", default=None)
 parser.add_argument("--sim_group", default="ibis14day")
 parser.add_argument("--rank_group", default=None)
+parser.add_argument("--event_id", default=None)
 args = parser.parse_args()
+
+if args.event_id and args.rank_group:
+    print("The event id and rank group parameters cannot be used together")
+    sys.exit(0)
 
 if args.end_date:
     end_date = date_parser.parse(args.end_date)
@@ -48,9 +54,13 @@ processing_start_date = datetime.datetime.now()
 print("Evaluation Started: " + str(processing_start_date))
 
 print("Downloading Events...")
+query = '{}'
+if args.event_id:
+    query = '{ "_id": "' + args.event_id + '" }'
+print(query)
 events = requests.get('https://eidr-connect.eha.io/api/auto-events', params={
     'limit': 20000,
-    # 'query': '{}'
+    'query': query
 }).json()
 print("\t%s events found." % len(events))
 
@@ -227,6 +237,17 @@ if args.rank_group:
             name=event['eventName'],
             timestamp=datetime.datetime.now()))
     db.pastResolvedEvents.create_index("eventId")
+elif args.event_id:
+    db.resolvedEvents.delete_many({ 'eventId': args.event_id })
+    for idx, (event, resolved_event) in enumerate(events_with_resolved_data):
+        db.resolvedEvents.insert_one(dict(
+            resolved_event,
+            threatCoefficient=disease_uri_to_classification_coefficient.get(
+                event['diseases'][0]['id'],
+                0.5),
+            _id=event['_id'],
+            name=event['eventName'],
+            timestamp=datetime.datetime.now()))
 else:
     # Drop collection in case it still exists from a failed prior run.
     db.resolvedEvents_create.drop()
@@ -373,6 +394,13 @@ if args.rank_group:
     print(first_rank)
     db.pastEventAirportRanks.create_index("rankGroup")
     db.pastEventAirportRanks.create_index("eventId")
+elif args.event_id:
+    db.eventAirportRanks.delete_many({
+        'eventId': args.event_id
+    })
+    for ranks in batched(gen_ranks(), 50000):
+        result = db.eventAirportRanks.insert_many(ranks)
+        print(len(result.inserted_ids), '/', len(ranks), 'records inserted')
 else:
     # Drop collection in case it still exists from a failed prior run.
     db.eventAirportRanks_create.drop()
@@ -397,7 +425,8 @@ db.rankEvaluationMetadata.insert_one({
     'start': processing_start_date,
     'finish': datetime.datetime.now(),
     'numEvents': len(events),
-    'rankGroup': args.rank_group
+    'rankGroup': args.rank_group,
+    'eventId': args.event_id
 })
 
 print("Finished at: " + str(datetime.datetime.now()))

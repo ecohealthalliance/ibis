@@ -35,26 +35,20 @@ const autoeventResp = HTTP.get('https://eidr-connect.eha.io/api/auto-events', {
       },
       $or: [{
         parentDiseases: [
-          "http://purl.obolibrary.org/obo/DOID_934",
-          "http://purl.obolibrary.org/obo/DOID_0050117"
+          "http://purl.obolibrary.org/obo/DOID_934"
         ]
       }, {
         parentDiseases: [
-          "http://purl.obolibrary.org/obo/DOID_104",
-          "http://purl.obolibrary.org/obo/DOID_0050117"
+          "http://purl.obolibrary.org/obo/DOID_104"
         ]
       }, {
         parentDiseases: [
-          "http://purl.obolibrary.org/obo/DOID_1564",
-          "http://purl.obolibrary.org/obo/DOID_0050117"
+          "http://purl.obolibrary.org/obo/DOID_1564"
         ]
       }, {
         parentDiseases: [
-          "http://purl.obolibrary.org/obo/DOID_1398",
-          "http://purl.obolibrary.org/obo/DOID_0050117"
+          "http://purl.obolibrary.org/obo/DOID_1398"
         ]
-      }, {
-        parentDiseases: ["http://purl.obolibrary.org/obo/DOID_0050117"]
       }, {
         parentDiseases: null
       }]

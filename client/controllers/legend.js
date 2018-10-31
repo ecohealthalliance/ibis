@@ -1,3 +1,11 @@
+import { FlowRouter } from 'meteor/kadira:flow-router';
+import bioeventNamePromise from '/imports/bioeventNamePromise';
+
+let nameCollection = new Meteor.Collection(null);
+bioeventNamePromise.then((nameData)=>{
+  nameData.forEach(x => nameCollection.insert(x));
+});
+
 Template.legend.helpers({
   title: () => Template.instance().data.title,
   legendValues: () => {
@@ -20,6 +28,10 @@ Template.legend.helpers({
       x.checked = x.name == airportType;
       return x;
     });
+  },
+  bioeventFilter: () => {
+    let bioeventId = FlowRouter.getQueryParam('bioeventId');
+    return nameCollection.findOne({id: "bioevents/" + bioeventId});
   }
 });
 
@@ -35,6 +47,11 @@ Template.legend.events({
   },
   'click .airport-types input': (event, instance)=>{
     const airportTypeRV = Template.instance().data.airportType;
-    airportTypeRV.set($(event.target).val());
+    airportTypeRV.set(instance.$(event.target).val());
+  },
+  'click .cancel-filter': ()=>{
+    FlowRouter.setQueryParams({
+      'bioeventId': null
+    });
   }
 });

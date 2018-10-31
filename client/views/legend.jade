@@ -4,6 +4,11 @@ template(name="legend")
     .values
       each legendValues
         .value(style="background:#{color}")
+    if bioeventFilter
+      .bioevent-filter
+        span.cancel-filter
+          i.fa.fa-times
+        p *caused by #{bioeventFilter.name}
     hr
     .layers
       each layers

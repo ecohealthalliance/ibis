@@ -1,4 +1,5 @@
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
+import bioeventNamePromise from '/imports/bioeventNamePromise';
 import { ReactiveVar } from 'meteor/reactive-var';
 
 const regexEscape = (s)=>s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
@@ -7,12 +8,7 @@ Template.searchBar.onCreated(function() {
   this.searchResults = new ReactiveVar()
   this.typeaheadPromise = Promise.all([
     locationGeoJsonPromise, 
-    new Promise((resolve, reject)=>{
-      HTTP.get('/api/bioeventNames', (err, resp)=>{
-        if(err) return reject(err);
-        resolve(resp.data);
-      });
-    })
+    bioeventNamePromise
   ]).then(([locationGeoJson, bioeventNames])=>{
     return _.map(locationGeoJson, (x, id)=>{
       const [locationType, locationName] = id.split(':');
@@ -24,6 +20,7 @@ Template.searchBar.onCreated(function() {
         name: x.displayName + ` (${locationName})`
       };
     }).concat(bioeventNames.map((name)=>{
+      name = Object.create(name);
       name.type = {bioevent: true};
       return name;
     }));

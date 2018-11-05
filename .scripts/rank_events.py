@@ -192,7 +192,10 @@ for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
                 traverse_location_tree(child)
     traverse_location_tree(resolved_event_data['fullLocations'])
     resolved_event_data['locations'] = resolved_ccs
-    assert not(len(resolved_ccs) == 0 and len(resolved_event_data['fullLocations']['children']) > 0)
+    if len(resolved_ccs) == 0 and len(resolved_event_data['fullLocations']['children']) > 0:
+        print("Could not resolve country code.")
+        print(event['eventName'])
+        print(resolved_event_data)
 print("\tDone.")
 
 print("Computing disease severity coefficients...")

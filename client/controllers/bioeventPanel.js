@@ -1,13 +1,13 @@
-/* global FlowRouter */
+import { FlowRouter } from 'meteor/kadira:flow-router';
 import { _ } from 'meteor/underscore';
 import { HTTP } from 'meteor/http';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Constants from '/imports/constants';
 import loadingIndicator from '/imports/loadingIndicator';
-import { minDiseaseSeverity } from '/imports/configuration';
 
 Template.bioeventPanel.onCreated(function() {
+  const minDiseaseSeverity = this.minDiseaseSeverity = new ReactiveVar(0.0);
   const dateRange = this.dateRange = new ReactiveVar({start: new Date(), end: new Date()});
   const bioevents = this.bioevents = new ReactiveVar([]);
   const rankMetric = this.rankMetric = new ReactiveVar();
@@ -73,11 +73,18 @@ Template.bioeventPanel.helpers({
       type.selected = type.name == selectedType;
       return type;
     });
-  }
+  },
+  minDiseaseSeverity: () => Template.instance().minDiseaseSeverity.get()
 });
 
 Template.bioeventPanel.events({
   'change #rank-metric': (event, instance) => {
     FlowRouter.setQueryParams({"rankMetric": event.target.value});
-  }
+  },
+  'click .bioevent-filter': (event, instance)=>{
+    instance.$('#filter-modal').modal('show');
+  },
+  'click .set-filter': (event, instance)=>{
+    instance.minDiseaseSeverity.set(parseFloat(instance.$('#filter-modal .min-disease-severity').val()));
+  },
 });

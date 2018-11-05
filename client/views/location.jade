@@ -1,7 +1,6 @@
 template(name='location')
   .map-page-container
     nav.subheader
-      h5.title {{selectedLocationName}} Inbound
       .map-controls
         select#map-type
           each mapTypes
@@ -11,6 +10,7 @@ template(name='location')
           data-tooltip-direction="w"
           data-tooltip="Click to show map info.")
           i.fa.fa-question-circle
+      h5.title {{selectedLocationName}} Inbound
     #map
       +helpPanel mapType=mapType
     +legend title=legendTitle ramp=legendRamp layers=layers airportType=airportType

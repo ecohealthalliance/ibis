@@ -1,7 +1,6 @@
 template(name='splash')
   .map-page-container
     nav.subheader
-      h5.title All US Locations
       .map-controls
         select#map-type
           each mapTypes
@@ -11,6 +10,7 @@ template(name='splash')
           data-tooltip-direction="w"
           data-tooltip="Click to show map info.")
           i.fa.fa-question-circle
+      h5.title All US Locations
     #map
       +helpPanel mapType=mapType
     +legend title=legendTitle ramp=legendRamp layers=layers airportType=airportType

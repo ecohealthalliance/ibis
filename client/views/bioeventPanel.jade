@@ -7,7 +7,9 @@ template(name='bioeventPanel')
         select#rank-metric
           each rankMetrics
             option(value=name selected=selected)=label
-        a(href="/about#rankmetrics").tooltip-btn(
+        i.fa.fa-filter.bioevent-filter
+        a.tooltip-btn(
+          href="/about#rankmetrics"
           target="_blank"
           data-tooltip-top="-200"
           data-tooltip-direction="w"
@@ -27,3 +29,25 @@ template(name='bioeventPanel')
         .modal-body.content
         .modal-footer
           button.btn.btn-secondary(type='button', data-dismiss='modal') Close
+
+  .modal(tabindex='-1', role='dialog')#filter-modal
+    .modal-dialog(role='document')
+      .modal-content
+        .modal-header
+          h5.modal-title Filter Bioevents
+          button.close(type='button', data-dismiss='modal', aria-label='Close')
+            span(aria-hidden='true') ×
+        .modal-body.content
+          label Hide diseases with a severity coefficient below this level:
+          p
+            i (1.0 is the highest severity)
+          .value
+            input.form-control.input-box.min-disease-severity(
+              type="number"
+              value=minDiseaseSeverity
+              step="0.1"
+              max="1.0"
+              min="0")
+        .modal-footer
+          button.btn.btn-secondary(type='button', data-dismiss='modal') Close
+          button.btn.btn-primary.set-filter(type='button') Set Filter

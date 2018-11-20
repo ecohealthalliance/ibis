@@ -51,5 +51,6 @@ Template.userInfo.helpers({
 
 Template.userInfo.events({
   'click .make-admin': (event, template) => Meteor.call('makeAdmin', template.data._id),
-  'click .remove-admin': (event, template) => Meteor.call('removeAdmin', template.data._id)
+  'click .remove-admin': (event, template) => Meteor.call('removeAdmin', template.data._id),
+  'click .remove': (event, template) => Meteor.call('removeAccount', template.data._id)
 });

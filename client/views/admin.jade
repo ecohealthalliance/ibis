@@ -45,8 +45,12 @@ template(name="userInfo")
         if userInRole "admin"
           button.btn.btn-primary.remove-admin
             i.fa.fa-check(aria-hidden="true")
-            span Admin
+            span Disable Admin
         else
           button.btn.btn-default.make-admin
             i.fa.fa-plus(aria-hidden="true")
-            span Admin
+            span Make Admin
+        | &nbsp;
+        button.btn.btn-primary.remove
+          i.fa.fa-mius(aria-hidden="true")
+          span Remove User

@@ -1,6 +1,6 @@
 /* global L, $ */
 import { FlowRouter } from 'meteor/kadira:flow-router';
-import { HTTP } from 'meteor/http';
+import { HTTPAuthenticatedGet } from '/imports/utils';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
@@ -41,13 +41,13 @@ Template.location.onCreated(function() {
       const mapTypeValue = this.mapType.get().replace("ExUS", "");
       if (!location) return;
       const loadingIndicatorSemaphore = loadingIndicator.show();
-      HTTP.get(`/api/locations/${locationId}/${mapTypeValue}`, {
+      HTTPAuthenticatedGet(`/api/locations/${locationId}/${mapTypeValue}`, {
         params: {
           bioeventId: bioeventId
         }
-      }, (err, resp) => {
-        loadingIndicator.hide(loadingIndicatorSemaphore);
-        if (err) return console.error(err);
+      })
+      .finally(() => loadingIndicator.hide(loadingIndicatorSemaphore))
+      .then((resp) => {
         const locationData = resp.data;
         const USAirportIds = _.pairs(locations)
           .filter(([k,v])=>v.inUS)

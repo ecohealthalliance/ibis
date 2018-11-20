@@ -1,6 +1,5 @@
 /* global L, $ */
 import { FlowRouter } from 'meteor/kadira:flow-router';
-import { HTTP } from 'meteor/http';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
@@ -11,6 +10,7 @@ import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
 import { airportCutoffPercentage } from '/imports/configuration';
 import loadingIndicator from '/imports/loadingIndicator';
+import { HTTPAuthenticatedGet } from '/imports/utils';
 
 const mapTypes = [
   { name: "originThreatLevel", label: "Threat Level by Origin" },
@@ -58,18 +58,15 @@ Template.bioevent.onCreated(function() {
     const bioeventId = FlowRouter.getParam('bioeventId');
     const loadingIndicatorSemaphore = loadingIndicator.show();
     Promise.all([
-      new Promise((resolve, reject) =>{
-        HTTP.get('/api/bioevents/' + bioeventId, {
-          params: {
-            rankGroup: FlowRouter.getQueryParam('rankGroup') || null
-          }
-        }, (err, resp)=> {
-          if(err) return reject(err);
-          resolve(resp.data);
-        });
+      HTTPAuthenticatedGet('/api/bioevents/' + bioeventId, {
+        params: {
+          rankGroup: FlowRouter.getQueryParam('rankGroup') || null
+        }
       }), locationGeoJsonPromise
-    ]).then(([bioeventData, locationGeoJson])=>{
-      loadingIndicator.hide(loadingIndicatorSemaphore);
+    ])
+    .finally(()=>loadingIndicator.hide(loadingIndicatorSemaphore))
+    .then(([bioeventResp, locationGeoJson])=>{
+      const bioeventData = bioeventResp.data;
       const airportValues = bioeventData.airportValues;
       this.countryValues.set(bioeventData.countryValues);
       this.resolvedBioevent.set(bioeventData.resolvedBioevent);

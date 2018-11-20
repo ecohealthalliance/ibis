@@ -4,6 +4,10 @@ import { Accounts } from 'meteor/accounts-base';
 Accounts.emailTemplates.siteName = "IBIS";
 Accounts.emailTemplates.from = "IBIS <no-reply@eha.io>";
 
+Accounts.config({
+  forbidClientAccountCreation: true
+});
+
 Meteor.startup(function() {
   if (!Meteor.users.find().count()) {
     let userData = {
@@ -49,11 +53,11 @@ Meteor.methods({
       throw new Meteor.Error(403, "Not authorized");
     }
   },
-  removeCurator: function(userId) {
-    var currentUserId;
-    currentUserId = Meteor.userId();
-    if (Roles.userIsInRole(currentUserId, ['admin'])) {
-      return Roles.removeUsersFromRoles(userId, 'curator');
+  removeAccount: function(userId) {
+    var currentUserId = Meteor.userId();
+    if (Roles.userIsInRole(currentUserId, ['admin']) && _.isString(userId)) {
+      Roles.removeUsersFromRoles(userId, 'admin');
+      return Meteor.users.remove(userId)
     } else {
       throw new Meteor.Error(403, "Not authorized");
     }

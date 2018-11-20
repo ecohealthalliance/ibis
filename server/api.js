@@ -6,8 +6,7 @@ import {
   EventAirportRanks,
   ResolvedEvents,
   PastEventAirportRanks,
-  PastResolvedEvents,
-  PastPassengerFlows
+  PastResolvedEvents
 } from './FlightDB';
 import locationData from '/server/locationData';
 import { airportToCountryCode, USAirportIds } from '/imports/geoJSON/indecies';
@@ -288,6 +287,8 @@ setInterval(precacheFrequentValues, 1000 * 60 * 60);
 @apiGroup locations
 */
 api.addRoute('topLocations', {
+  authRequired: true
+}, {
   get: function() {
     if(this.queryParams && this.queryParams.metric){
       return topLocations(this.queryParams.metric, this.queryParams.bioeventId || null);
@@ -314,6 +315,8 @@ api.addRoute('locationGeoJson', {
 @apiParam {ISODateString} arrivesBefore
 */
 api.addRoute('locations/:locationId/inboundFlights', {
+  authRequired: true
+}, {
   get: function() {
     var location = locationData.locations[this.urlParams.locationId];
     var arrivesBefore = new Date(this.queryParams.arrivesBefore || new Date());
@@ -344,6 +347,8 @@ api.addRoute('locations/:locationId/inboundFlights', {
 @apiParam {ISODateString} arrivesBefore
 */
 api.addRoute('locations/:locationId/directSeats', {
+  authRequired: true
+}, {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
     const arrivesBefore = new Date(this.queryParams.arrivesBefore || new Date());
@@ -405,6 +410,8 @@ api.addRoute('locations/:locationId/directSeats', {
 @apiGroup locations
 */
 api.addRoute('locations/:locationId/passengerFlow', {
+  authRequired: true
+}, {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
     const periodDays = 14;
@@ -445,6 +452,8 @@ api.addRoute('locations/:locationId/passengerFlow', {
 @apiGroup locations
 */
 api.addRoute('locations/:locationId/threatLevel', {
+  authRequired: true
+}, {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
     const bioeventId = (this.queryParams || {}).bioeventId;
@@ -491,6 +500,8 @@ api.addRoute('locations/:locationId/threatLevel', {
 @apiName threatLevelPosedByDisease
 */
 api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
+  authRequired: true
+}, {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
     const rankGroup = this.queryParams.rankGroup;
@@ -531,6 +542,8 @@ api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
 @api {get} locations/:locationId/bioevents Get a list of bioevents ranked by their relevance to the given location.
 */
 api.addRoute('locations/:locationId/bioevents', {
+  authRequired: true
+}, {
   get: function() {
     let resp = _.clone(rankedBioevents(
       this.queryParams.metric,
@@ -549,6 +562,8 @@ api.addRoute('locations/:locationId/bioevents', {
 @api {get} rankData Get all the rank data for the bioevent and optional location.
 */
 api.addRoute('rankData', {
+  authRequired: true
+}, {
   get: function() {
     const exUS = this.queryParams.metric == "threatLevelExUS";
     var matchQuery = {
@@ -641,6 +656,8 @@ api.addRoute('rankData', {
 @apiParam {ISODateString} metric threatLevel/threatLevelExUS/mostRecent
 */
 api.addRoute('bioevents', {
+  authRequired: true
+}, {
   get: function() {
     let resp = _.clone(rankedBioevents(
       this.queryParams.metric,
@@ -660,6 +677,8 @@ api.addRoute('bioevents', {
 @apiName bioevents
 */
 api.addRoute('bioevents/:bioeventId', {
+  authRequired: true
+}, {
   get: function() {
     let resolvedEventsCollection = ResolvedEvents;
     let eventAirportRanksCollection = EventAirportRanks;

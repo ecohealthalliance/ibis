@@ -1,6 +1,6 @@
 import { FlowRouter } from 'meteor/kadira:flow-router';
 import { _ } from 'meteor/underscore';
-import { HTTP } from 'meteor/http';
+import { HTTPAuthenticatedGet } from '/imports/utils';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Constants from '/imports/constants';
@@ -28,9 +28,9 @@ Template.bioeventPanel.onCreated(function() {
       url = `/api/locations/${locationId}/bioevents`;
     }
     const loadingIndicatorSemaphore = loadingIndicator.show();
-    HTTP.get(url, requestParams, (err, resp) => {
-      loadingIndicator.hide(loadingIndicatorSemaphore);
-      if (err) return console.error(err);
+    HTTPAuthenticatedGet(url, requestParams)
+    .finally(() => loadingIndicator.hide(loadingIndicatorSemaphore))
+    .then((resp) => {
       const respResults = EJSON.parse(resp.content).results;
       bioevents.set(respResults);
       let endDate = new Date(respResults[0].event.timeseries.slice(-1)[0][0]);

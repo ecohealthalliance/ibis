@@ -12,6 +12,7 @@ import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
 import { airportCutoffPercentage } from '/imports/configuration';
 import loadingIndicator from '/imports/loadingIndicator';
+import { HTTPAuthenticatedGet } from '/imports/utils';
 
 const mapTypes = [
   {name:"threatLevelExposureExUS", label:"Inbound Threat Exposure (Excluding US Sources)"},
@@ -31,19 +32,16 @@ Template.splash.onCreated(function() {
     const bioeventId = FlowRouter.getQueryParam('bioeventId') || null;
     const loadingIndicatorSemaphore = loadingIndicator.show();
     Promise.all([
-      new Promise((resolve, reject) =>{
-        HTTP.get('/api/topLocations', {
-          params: {
-            metric: metric,
-            bioeventId: bioeventId
-          }
-        }, (err, resp)=> {
-          if(err) return reject(err);
-          resolve(resp.data);
-        });
+      HTTPAuthenticatedGet('/api/topLocations', {
+        params: {
+          metric: metric,
+          bioeventId: bioeventId
+        }
       }), locationGeoJsonPromise
-    ]).then(([topLocations, locationGeoJson])=>{
-      loadingIndicator.hide(loadingIndicatorSemaphore);
+    ])
+    .finally(()=>loadingIndicator.hide(loadingIndicatorSemaphore))
+    .then(([topLocationsResp, locationGeoJson])=>{
+      const topLocations = topLocationsResp.data;
       const airportValues = topLocations.airportValues;
       this.locations.set(_.map(locationGeoJson, (location, locationId)=>{
         location = Object.create(location);

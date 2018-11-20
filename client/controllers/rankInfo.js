@@ -1,5 +1,5 @@
 import { FlowRouter } from 'meteor/kadira:flow-router';
-import { HTTP } from 'meteor/http';
+import { HTTPAuthenticatedGet } from '/imports/utils';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 
@@ -9,16 +9,16 @@ Template.rankInfo.onCreated(function() {
   const rankedOrigins = this.rankedOrigins = new ReactiveVar([]);
   const combinedValues = this.combinedValues = new ReactiveVar({});
   const loading = this.loading = new ReactiveVar(true);
-  HTTP.get('/api/rankData', {
+  HTTPAuthenticatedGet('/api/rankData', {
     params: {
       locationId: locationId,
       eventId: eventId,
       exUS: FlowRouter.getQueryParam('rankMetric') == 'threatLevelExUS',
       rankGroup: FlowRouter.getQueryParam('rankGroup') || null
     }
-  }, (err, resp)=>{
-    loading.set(false);
-    if (err) return console.error(err);
+  })
+  .finally(()=>loading.set(false))
+  .then((resp)=>{
     rankedOrigins.set(resp.data.results);
     combinedValues.set(resp.data.combinedValues);
   });

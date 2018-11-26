@@ -9,7 +9,7 @@ let configuration = _.chain({
     showHelpPanel: true,
     airportCutoffPercentage: 0.5,
     minDiseaseSeverity: 0.0,
-    defaultMapType: 'threatLevelExUS',
+    defaultMapType: 'threatLevelExposureExUS',
     defaultRankMetric: 'threatLevelExposureExUS'
   })
   .map((defaultValue, key)=>{

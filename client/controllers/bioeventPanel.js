@@ -5,6 +5,7 @@ import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Constants from '/imports/constants';
 import loadingIndicator from '/imports/loadingIndicator';
+import { defaultRankMetric } from '/imports/configuration';
 
 Template.bioeventPanel.onCreated(function() {
   const minDiseaseSeverity = this.minDiseaseSeverity = new ReactiveVar(0.0);
@@ -12,7 +13,7 @@ Template.bioeventPanel.onCreated(function() {
   const bioevents = this.bioevents = new ReactiveVar([]);
   const rankMetric = this.rankMetric = new ReactiveVar();
   this.autorun(() => {
-    rankMetric.set(FlowRouter.getQueryParam("rankMetric") || "threatLevelExUS");
+    rankMetric.set(FlowRouter.getQueryParam("rankMetric") || defaultRankMetric.get());
   });
   this.autorun(() => {
     const locationId = FlowRouter.getParam('locationId');
@@ -64,12 +65,7 @@ Template.bioeventPanel.helpers({
   dateRange: () => Template.instance().dateRange.get(),
   rankMetrics: () => {
     const selectedType = Template.instance().rankMetric.get();
-    return [
-      { name: "threatLevelExUS", label: "Threat Level (Ex. US)" },
-      { name: "threatLevel", label: "Threat Level" },
-      { name: "mostRecent", label: "Latest Incident" },
-      { name: "activeCases", label: "Active Cases" }
-    ].map((type) => {
+    return Constants.rankMetrics.map((type) => {
       type.selected = type.name == selectedType;
       return type;
     });

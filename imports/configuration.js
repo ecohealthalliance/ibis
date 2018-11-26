@@ -8,7 +8,9 @@ let configuration = _.chain({
     defaultActiveCaseTimeseries: true,
     showHelpPanel: true,
     airportCutoffPercentage: 0.5,
-    minDiseaseSeverity: 0.0
+    minDiseaseSeverity: 0.0,
+    defaultMapType: 'threatLevelExUS',
+    defaultRankMetric: 'threatLevelExposureExUS'
   })
   .map((defaultValue, key)=>{
     const value = window.localStorage.getItem(key);

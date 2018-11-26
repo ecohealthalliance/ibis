@@ -6,5 +6,16 @@ module.exports = {
   	zoomSnap: 0.5,
   	minZoom: 1,
   	maxZoom: 8
-  }
+  },
+  rankMetrics: [
+    { name: "threatLevelExUS", label: "Threat Level (Ex. US)" },
+    { name: "threatLevel", label: "Threat Level" },
+    { name: "mostRecent", label: "Latest Incident" },
+    { name: "activeCases", label: "Active Cases" }
+  ],
+  mapTypes: [
+    { name:"threatLevelExposureExUS", label:"Inbound Threat Exposure (Excluding US Sources)" },
+    { name:"threatLevelExposure", label:"Inbound Threat Exposure (Including US Sources)" },
+    { name:"passengerFlow", label:"Inbound Passenger Flow" },
+  ]
 };

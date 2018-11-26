@@ -10,21 +10,16 @@ import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
-import { airportCutoffPercentage } from '/imports/configuration';
+import { airportCutoffPercentage, defaultMapType } from '/imports/configuration';
 import loadingIndicator from '/imports/loadingIndicator';
 import { HTTPAuthenticatedGet } from '/imports/utils';
-
-const mapTypes = [
-  {name:"threatLevelExposureExUS", label:"Inbound Threat Exposure (Excluding US Sources)"},
-  {name:"threatLevelExposure", label:"Inbound Threat Exposure (Including US Sources)"},
-  {name:"passengerFlow", label:"Inbound Passenger Flow"},
-];
+import { mapTypes } from '/imports/constants';
 
 Template.splash.onCreated(function() {
   this.airportType = new ReactiveVar("domestic");
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
-    this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevelExposureExUS");
+    this.mapType.set(FlowRouter.getQueryParam("mapType") || defaultMapType.get());
   });
   this.locations = new ReactiveVar([]);
   this.autorun(()=>{

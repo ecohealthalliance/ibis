@@ -184,6 +184,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
         return {
           _id: event._id,
           event: event,
+          threatCoefficient: event.threatCoefficient,
           lastIncident: _.chain(event.dailyRateTimeseries || [])
             .map((x) => new Date(x[0]))
             .max()
@@ -203,6 +204,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
         return {
           _id: event._id,
           event: event,
+          threatCoefficient: event.threatCoefficient,
           activeCases: _.last(event.timeseries)[1]
         };
       }), (event) => event.activeCases).slice(-80).reverse()

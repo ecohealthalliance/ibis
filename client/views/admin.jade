@@ -1,0 +1,56 @@
+template(name="admin")
+  .container-fluid.admin
+    .container.content-block
+      h2 Create New Account
+      form#add-account.space-top-2(novalidate)
+        .form-group.admin-email
+          label Email
+            input.form-control(
+              type='email'
+              name='email'
+              required)
+        .form-group.admin-name
+          label Name
+            input.form-control(
+              type='text'
+              name='name'
+              required)
+        .form-group
+          .checkbox
+            label
+              input(type="checkbox", name="admin")
+              | Grant Admin Rights
+        button.btn.btn-primary.space-top-2(type='submit') Add User
+
+    .container.content-block
+      if adminUsers.count
+        h3 Admins
+        ul.list-group.users
+          each adminUsers
+            +userInfo
+      if defaultUsers.count
+        h3 Users
+        ul.list-group.users
+          each defaultUsers
+            +userInfo
+
+template(name="userInfo")
+  li.user.list-group-item.container-flex.no-break
+    .user--info.flex-col
+      p= name
+      p
+        a(href="mailto:#{email}")=email
+    .user--roles.on-right
+      unless isCurrentUser
+        if userInRole "admin"
+          button.btn.btn-primary.remove-admin
+            i.fa.fa-check(aria-hidden="true")
+            span Disable Admin
+        else
+          button.btn.btn-default.make-admin
+            i.fa.fa-plus(aria-hidden="true")
+            span Make Admin
+        | &nbsp;
+        button.btn.btn-primary.remove
+          i.fa.fa-mius(aria-hidden="true")
+          span Remove User

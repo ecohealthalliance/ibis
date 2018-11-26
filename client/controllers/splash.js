@@ -10,20 +10,16 @@ import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
 import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
-import { airportCutoffPercentage } from '/imports/configuration';
+import { airportCutoffPercentage, defaultMapType } from '/imports/configuration';
 import loadingIndicator from '/imports/loadingIndicator';
-
-const mapTypes = [
-  {name:"threatLevelExposureExUS", label:"Inbound Threat Exposure (Excluding US Sources)"},
-  {name:"threatLevelExposure", label:"Inbound Threat Exposure (Including US Sources)"},
-  {name:"passengerFlow", label:"Inbound Passenger Flow"},
-];
+import { HTTPAuthenticatedGet } from '/imports/utils';
+import { mapTypes } from '/imports/constants';
 
 Template.splash.onCreated(function() {
   this.airportType = new ReactiveVar("domestic");
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
-    this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevelExposureExUS");
+    this.mapType.set(FlowRouter.getQueryParam("mapType") || defaultMapType.get());
   });
   this.locations = new ReactiveVar([]);
   this.autorun(()=>{
@@ -31,19 +27,16 @@ Template.splash.onCreated(function() {
     const bioeventId = FlowRouter.getQueryParam('bioeventId') || null;
     const loadingIndicatorSemaphore = loadingIndicator.show();
     Promise.all([
-      new Promise((resolve, reject) =>{
-        HTTP.get('/api/topLocations', {
-          params: {
-            metric: metric,
-            bioeventId: bioeventId
-          }
-        }, (err, resp)=> {
-          if(err) return reject(err);
-          resolve(resp.data);
-        });
+      HTTPAuthenticatedGet('/api/topLocations', {
+        params: {
+          metric: metric,
+          bioeventId: bioeventId
+        }
       }), locationGeoJsonPromise
-    ]).then(([topLocations, locationGeoJson])=>{
-      loadingIndicator.hide(loadingIndicatorSemaphore);
+    ])
+    .finally(()=>loadingIndicator.hide(loadingIndicatorSemaphore))
+    .then(([topLocationsResp, locationGeoJson])=>{
+      const topLocations = topLocationsResp.data;
       const airportValues = topLocations.airportValues;
       this.locations.set(_.map(locationGeoJson, (location, locationId)=>{
         location = Object.create(location);

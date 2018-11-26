@@ -1,4 +1,5 @@
 import { _ } from 'meteor/underscore';
+import { HTTPAuthenticatedGet } from '/imports/utils';
 
 let sum = (arr, iteratee) => {
   return arr.map(iteratee).reduce((sofar, value)=>sofar + value, 0);
@@ -13,9 +14,9 @@ Template.locationPopup.onRendered(function() {
   if(this.data && this.data.showThreatLevelByDisease) {
     let locationId = this.data.location._id;
     this.loading.set(true);
-    HTTP.get(`/api/locations/${locationId}/threatLevelPosedByDisease`, (err, resp) => {
-      this.loading.set(false);
-      if (err) return console.error(err);
+    HTTPAuthenticatedGet(`/api/locations/${locationId}/threatLevelPosedByDisease`)
+    .finally(()=>this.loading.set(false))
+    .then((resp) => {
       let totalThreatLevel = sum(resp.data, x=>x.threatLevel);
       resp.data.forEach((x)=>{
         x.value = 100 * x.threatLevel / totalThreatLevel;

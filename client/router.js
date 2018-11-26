@@ -33,3 +33,9 @@ FlowRouter.route('/configure', {
     BlazeLayout.render('layout', {main: 'configure'});
   }
 });
+
+FlowRouter.route('/admin', {
+  action: function(params, queryParams) {
+    BlazeLayout.render('layout', {main: 'admin'});
+  }
+});

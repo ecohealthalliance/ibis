@@ -12,5 +12,21 @@ module.exports = {
         return result.toString();
       }
     }
+  },
+  HTTPAuthenticatedGet: (url, options) => {
+    if(!options) {
+      options = {};
+    }
+    if(!options.headers) {
+      options.headers = {};
+    }
+    options.headers["X-User-Id"] = Meteor.userId();
+    options.headers["X-Auth-Token"] = window.localStorage.getItem("Meteor.loginToken");
+    return new Promise((resolve, reject) =>{
+      HTTP.get(url, options, (err, resp)=> {
+        if(err) return reject(err);
+        resolve(resp);
+      });
+    });
   }
 };

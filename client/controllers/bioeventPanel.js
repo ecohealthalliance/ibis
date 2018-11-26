@@ -1,10 +1,11 @@
 import { FlowRouter } from 'meteor/kadira:flow-router';
 import { _ } from 'meteor/underscore';
-import { HTTP } from 'meteor/http';
+import { HTTPAuthenticatedGet } from '/imports/utils';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import Constants from '/imports/constants';
 import loadingIndicator from '/imports/loadingIndicator';
+import { defaultRankMetric } from '/imports/configuration';
 
 Template.bioeventPanel.onCreated(function() {
   const minDiseaseSeverity = this.minDiseaseSeverity = new ReactiveVar(0.0);
@@ -12,7 +13,7 @@ Template.bioeventPanel.onCreated(function() {
   const bioevents = this.bioevents = new ReactiveVar([]);
   const rankMetric = this.rankMetric = new ReactiveVar();
   this.autorun(() => {
-    rankMetric.set(FlowRouter.getQueryParam("rankMetric") || "threatLevelExUS");
+    rankMetric.set(FlowRouter.getQueryParam("rankMetric") || defaultRankMetric.get());
   });
   this.autorun(() => {
     const locationId = FlowRouter.getParam('locationId');
@@ -28,9 +29,9 @@ Template.bioeventPanel.onCreated(function() {
       url = `/api/locations/${locationId}/bioevents`;
     }
     const loadingIndicatorSemaphore = loadingIndicator.show();
-    HTTP.get(url, requestParams, (err, resp) => {
-      loadingIndicator.hide(loadingIndicatorSemaphore);
-      if (err) return console.error(err);
+    HTTPAuthenticatedGet(url, requestParams)
+    .finally(() => loadingIndicator.hide(loadingIndicatorSemaphore))
+    .then((resp) => {
       const respResults = EJSON.parse(resp.content).results;
       bioevents.set(respResults);
       let endDate = new Date(respResults[0].event.timeseries.slice(-1)[0][0]);
@@ -64,12 +65,7 @@ Template.bioeventPanel.helpers({
   dateRange: () => Template.instance().dateRange.get(),
   rankMetrics: () => {
     const selectedType = Template.instance().rankMetric.get();
-    return [
-      { name: "threatLevelExUS", label: "Threat Level (Ex. US)" },
-      { name: "threatLevel", label: "Threat Level" },
-      { name: "mostRecent", label: "Latest Incident" },
-      { name: "activeCases", label: "Active Cases" }
-    ].map((type) => {
+    return Constants.rankMetrics.map((type) => {
       type.selected = type.name == selectedType;
       return type;
     });

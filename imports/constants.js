@@ -17,5 +17,19 @@ module.exports = {
     { name:"threatLevelExposureExUS", label:"Inbound Threat Exposure (Excluding US Sources)" },
     { name:"threatLevelExposure", label:"Inbound Threat Exposure (Including US Sources)" },
     { name:"passengerFlow", label:"Inbound Passenger Flow" },
+  ],
+  locationMapTypes: [
+    { name: "directSeats", label: "Direct Seats by Origin" },
+    { name: "passengerFlow", label: "Estimated Inbound Passengers by Origin" },
+    { name: "threatLevel", label: "Threat Level by Origin" }
+    //{ name: "threatLevelExUS", label: "Threat Level by Origin (Excluding US Origins)" }
+  ],
+  bioeventMapTypes: [
+    { name: "originThreatLevel", label: "Threat Level by Origin" },
+    { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected by Origin" },
+    { name: "threatLevelExposure", label: "Threat Exposure by Destination (Including US Sources)" },
+    { name: "threatLevelExposureExUS", label: "Threat Exposure by Destination (Excluding US Sources)" },
+    { name: "topOrigins", label: "Top Origins" },
+    { name: "topDestinations", label: "Top Destinations" }
   ]
 };

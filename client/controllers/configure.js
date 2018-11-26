@@ -1,6 +1,10 @@
 import { _ } from 'meteor/underscore';
 import configuration from '/imports/configuration';
-import { mapTypes, rankMetrics } from '/imports/constants';
+import {
+  mapTypes,
+  bioeventMapTypes,
+  locationMapTypes,
+  rankMetrics } from '/imports/constants';
 
 Template.configure.onCreated(function() {
   _.forEach(configuration, (value, key)=>{
@@ -13,5 +17,7 @@ Template.configure.onCreated(function() {
 Template.configure.helpers({
   states: ()=>configuration,
   rankMetrics: ()=>rankMetrics,
-  mapTypes: ()=>mapTypes
+  mapTypes: ()=>mapTypes,
+  bioeventMapTypes: ()=>bioeventMapTypes,
+  locationMapTypes: ()=>locationMapTypes
 });

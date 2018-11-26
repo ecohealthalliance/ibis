@@ -1,4 +1,10 @@
 template(name="admin")
+  ul.nav.nav-tabs
+    li.nav-item
+      a.nav-link(href="/configure") My Settings
+    if isInRole "admin"
+      li.nav-item
+        a.nav-link(href="/admin").active Manage Accounts
   .container-fluid.admin
     .container.content-block
       h2 Create New Account

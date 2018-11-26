@@ -1,6 +1,11 @@
 template(name="configure")
+  ul.nav.nav-tabs
+    li.nav-item
+      a.nav-link.active(href="/configure") My Settings
+    if isInRole "admin"
+      li.nav-item
+        a.nav-link(href="/admin") Manage Accounts
   .configuration-container
-    h4 Configuration
     .configuration
       label Log-scale timelines:
       .value
@@ -23,6 +28,12 @@ template(name="configure")
       label Splash Page Default Map Type:
       .value
         +selector options=mapTypes state=states.defaultMapType
+      label Bioevent Page Default Map Type:
+      .value
+        +selector options=bioeventMapTypes state=states.defaultBioeventMapType
+      label Location Page Default Map Type:
+      .value
+        +selector options=locationMapTypes state=states.defaultLocationMapType
       label Default Event Ranking Metric:
       .value
         +selector options=rankMetrics state=states.defaultRankMetric

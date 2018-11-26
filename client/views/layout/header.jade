@@ -7,9 +7,8 @@ template(name="header")
       .links
         .btn-group
           a(href="/about").about.btn About
-          if isInRole "admin"
-            a(href="/admin").about.btn Admin
           a(href="/configure").configure.btn
             i.fa.fa-cog
+            | Settings
           a.btn.login-btn
             +loginButtons

@@ -10,6 +10,8 @@ let configuration = _.chain({
     airportCutoffPercentage: 0.5,
     minDiseaseSeverity: 0.0,
     defaultMapType: 'threatLevelExposureExUS',
+    defaultBioeventMapType: 'threatLevelExposureExUS',
+    defaultLocationMapType: 'threatLevel',
     defaultRankMetric: 'threatLevelExposureExUS'
   })
   .map((defaultValue, key)=>{

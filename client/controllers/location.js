@@ -4,27 +4,20 @@ import { HTTPAuthenticatedGet } from '/imports/utils';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
-import Constants from '/imports/constants';
 import { _ } from 'meteor/underscore';
 import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } from '/imports/ramps';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
-import { airportCutoffPercentage } from '/imports/configuration';
+import { airportCutoffPercentage, defaultLocationMapType } from '/imports/configuration';
+import { locationMapTypes, LEAFLET_MAP_CONFIG, INITIAL_MAP_VIEW } from '/imports/constants';
 import loadingIndicator from '/imports/loadingIndicator';
-
-const mapTypes = [
-  { name: "directSeats", label: "Direct Seats by Origin" },
-  { name: "passengerFlow", label: "Estimated Inbound Passengers by Origin" },
-  { name: "threatLevel", label: "Threat Level by Origin" }
-  //{ name: "threatLevelExUS", label: "Threat Level by Origin (Excluding US Origins)" }
-];
 
 Template.location.onCreated(function() {
   this.mapType = new ReactiveVar();
   this.locationData = new ReactiveVar();
   this.airportType = new ReactiveVar("all");
   this.autorun(() => {
-    this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevel");
+    this.mapType.set(FlowRouter.getQueryParam("mapType") || defaultLocationMapType.get());
   });
   this.selectedLocation = new ReactiveVar();
   this.locations = [];
@@ -61,8 +54,8 @@ Template.location.onCreated(function() {
 
 Template.location.onRendered(function() {
   let marker = null;
-  const map = L.map('map', Constants.LEAFLET_MAP_CONFIG);
-  map.setView(Constants.INITIAL_MAP_VIEW, 4);
+  const map = L.map('map', LEAFLET_MAP_CONFIG);
+  map.setView(INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = L.layerGroup([]).addTo(map);
   const renderGeoJSON = (mapData, units = "") => {
     const maxValue = _.max(_.values(_.omit(mapData, "US")));
@@ -195,7 +188,7 @@ Template.location.onRendered(function() {
               location: feature.properties,
               properties: [{
                 value: feature.properties[mapTypeValue],
-                label: _.findWhere(mapTypes, {name: mapTypeValue}).label
+                label: _.findWhere(locationMapTypes, {name: mapTypeValue}).label
               }],
               showThreatLevelByDisease: true
             }, popupElement);
@@ -227,7 +220,7 @@ Template.location.helpers({
   legendRamp: () => OUTBOUND_RAMP,
   mapTypes: () => {
     const selectedType = Template.instance().mapType.get();
-    return mapTypes.map((type) => {
+    return locationMapTypes.map((type) => {
       type.selected = type.name == selectedType;
       return type;
     });

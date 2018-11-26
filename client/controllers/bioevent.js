@@ -3,23 +3,26 @@ import { FlowRouter } from 'meteor/kadira:flow-router';
 import { ReactiveVar } from 'meteor/reactive-var';
 import WorldGeoJSON from '/imports/geoJSON/world.geo.json';
 import locationGeoJsonPromise from '/imports/locationGeoJsonPromise';
-import Constants from '/imports/constants';
-import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } from '/imports/ramps';
+import {
+  INBOUND_RAMP,
+  OUTBOUND_RAMP,
+  INBOUND_LINE,
+  OUTBOUND_LINE,
+  getColor } from '/imports/ramps';
 import { _ } from 'meteor/underscore';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
-import { airportCutoffPercentage } from '/imports/configuration';
+import {
+  airportCutoffPercentage,
+  defaultBioeventMapType } from '/imports/configuration';
+import {
+  bioeventMapTypes,
+  LEAFLET_MAP_CONFIG,
+  DATA_INTERVAL_DAYS,
+  MILLIS_PER_DAY,
+  INITIAL_MAP_VIEW } from '/imports/constants';
 import loadingIndicator from '/imports/loadingIndicator';
 import { HTTPAuthenticatedGet } from '/imports/utils';
-
-const mapTypes = [
-  { name: "originThreatLevel", label: "Threat Level by Origin" },
-  { name: "originProbabilityPassengerInfected", label: "Estimated Probability Passenger Infected by Origin" },
-  { name: "threatLevelExposure", label: "Threat Exposure by Destination (Including US Sources)" },
-  { name: "threatLevelExposureExUS", label: "Threat Exposure by Destination (Excluding US Sources)" },
-  { name: "topOrigins", label: "Top Origins" },
-  { name: "topDestinations", label: "Top Destinations" }
-];
 
 const getRamp = (mapType)=>{
   if(mapType.startsWith('origin') || mapType.endsWith('Origins')) {
@@ -43,7 +46,7 @@ Template.bioevent.onCreated(function() {
   this.line = OUTBOUND_LINE;
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
-    this.mapType.set(FlowRouter.getQueryParam("mapType") || "threatLevelExposure");
+    this.mapType.set(FlowRouter.getQueryParam("mapType") || defaultBioeventMapType.get());
   });
   this.USOnly = new ReactiveVar(true);
   this.locations = new ReactiveVar([]);
@@ -51,7 +54,7 @@ Template.bioevent.onCreated(function() {
   this.countryValues = new ReactiveVar();
   const endDate = new Date();
   this.dateRange = new ReactiveVar({
-    start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
+    start: new Date(endDate - DATA_INTERVAL_DAYS * MILLIS_PER_DAY),
     end: endDate
   });
   this.autorun(()=>{
@@ -72,7 +75,7 @@ Template.bioevent.onCreated(function() {
       this.resolvedBioevent.set(bioeventData.resolvedBioevent);
       let endDate = new Date(bioeventData.resolvedBioevent.timeseries.slice(-1)[0][0]);
       this.dateRange.set({
-        start: new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY),
+        start: new Date(endDate - DATA_INTERVAL_DAYS * MILLIS_PER_DAY),
         end: endDate
       });
       const locations = _.map(locationGeoJson, (location, locationId)=>{
@@ -101,8 +104,8 @@ Template.bioevent.onCreated(function() {
 Template.bioevent.onRendered(function() {
   this.$('.show-origins').css({color: OUTBOUND_LINE});
   this.$('.show-destinations').css({color: INBOUND_LINE});
-  const map = L.map('map', Constants.LEAFLET_MAP_CONFIG);
-  map.setView(Constants.INITIAL_MAP_VIEW, 4);
+  const map = L.map('map', LEAFLET_MAP_CONFIG);
+  map.setView(INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = null;
   let hoverMarker = null;
   const renderGeoJSON = (mapData, units="")=>{
@@ -327,7 +330,7 @@ Template.bioevent.helpers({
   dateRange: ()=>Template.instance().dateRange.get(),
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
-    return mapTypes.map((type)=>{
+    return bioeventMapTypes.map((type)=>{
       type.selected = type.name == selectedType;
       return type;
     });

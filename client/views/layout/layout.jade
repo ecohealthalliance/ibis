@@ -9,7 +9,16 @@ template(name="layout")
   .page-wrapper
     +header
     .content-wrapper
-      +Template.dynamic template=main
+      if currentUser
+        +Template.dynamic template=main
+      else
+        .log-in-help-panel
+          i.fa.fa-arrow-up
+          h3 You must sign in to view IBIS data.
+          p If you do not have an account
+            a(href="mailto:tech@ecohealthalliance.org") contact the system administrator
+            | to request one.
+        +Template.dynamic template="about"
     +footer
   if showLoadingIndicator
     .loading-overlay

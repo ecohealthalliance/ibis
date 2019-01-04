@@ -1,4 +1,4 @@
-import pandas as pd
+import pymongo
 import psycopg2
 import pandas as pd
 import os
@@ -23,9 +23,10 @@ if __name__ == "__main__":
      total_value DESC;
     """,con=conn)
     for item in result.itertuples():
-        db.lemis.insert({
+        db.lemis_import.insert({
             'country_origin_iso2c': item.country_origin_iso2c,
             'records': item.records,
             'total_value': item.total_value,
             'total_quantity': item.total_quantity
         })
+    db.lemis_import.rename('lemis', dropTarget=True)

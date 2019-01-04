@@ -6,7 +6,8 @@ import {
   EventAirportRanks,
   ResolvedEvents,
   PastEventAirportRanks,
-  PastResolvedEvents
+  PastResolvedEvents,
+  Lemis
 } from './FlightDB';
 import locationData from '/server/locationData';
 import { airportToCountryCode, USAirportIds } from '/imports/geoJSON/indecies';
@@ -750,6 +751,22 @@ api.addRoute('bioevents/:bioeventId', {
       countryValues: countryValues,
       resolvedBioevent: resolvedBioevent
     };
+  }
+});
+
+/*
+@api {get} lemis
+*/
+api.addRoute('lemis', {
+  get: function() {
+    return Lemis.find().map((x)=>{
+      return {
+        iso2c: x.country_origin_iso2c,
+        lemisRecords: x.records,
+        lemisValue: x.total_value,
+        lemisQuantity: x.total_quantity
+      };
+    });
   }
 });
 

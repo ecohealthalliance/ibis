@@ -52,5 +52,6 @@ module.exports = {
   ResolvedEvents: ResolvedEvents,
   PastResolvedEvents: PastResolvedEvents,
   PastPassengerFlows: PastPassengerFlows,
-  PastEventAirportRanks: PastEventAirportRanks
+  PastEventAirportRanks: PastEventAirportRanks,
+  Lemis: new Meteor.Collection('lemis')
 };

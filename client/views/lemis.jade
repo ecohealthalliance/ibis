@@ -1,0 +1,17 @@
+template(name='lemis')
+  .map-page-container
+    nav.subheader
+      .map-controls
+        select#map-type
+          each mapTypes
+            option(value=name selected=selected)=label
+        a.tooltip-btn(
+          target="_blank"
+          data-tooltip-direction="w"
+          data-tooltip="Click to show map info.")
+          i.fa.fa-question-circle
+      h5.title All US Locations
+    #map
+      +helpPanel mapType=mapType
+    +legend title=legendTitle ramp=legendRamp
+  +tooltips

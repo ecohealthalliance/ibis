@@ -16,7 +16,8 @@ Template.legend.helpers({
     });
     return ramp;
   },
-  layers: () => Template.instance().data.layers.get(),
+  layers: () => (Template.instance().data.layers || new ReactiveVar()).get(),
+  hasAirportType: () => Template.instance().data.airportType,
   airportTypes: () => {
     const airportTypeRV = Template.instance().data.airportType;
     const airportType = airportTypeRV ? airportTypeRV.get() : "all";

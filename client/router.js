@@ -10,6 +10,12 @@ FlowRouter.route('/', {
   }
 });
 
+FlowRouter.route('/lemis', {
+  action: function(params, queryParams) {
+    BlazeLayout.render('layout', {main: 'lemis'});
+  }
+});
+
 FlowRouter.route('/locations/:locationId', {
   action: function(params, queryParams) {
     BlazeLayout.render('layout', {main: 'location'});

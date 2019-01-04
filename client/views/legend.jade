@@ -9,15 +9,17 @@ template(name="legend")
         span.cancel-filter
           i.fa.fa-times
         p *caused by #{bioeventFilter.name}
-    hr
-    .layers
-      each layers
-        .layer.form-check
-          input.form-check-input(type="checkbox" name=name checked=active)
-          label.form-check-label=label
-    hr
-    .airport-types
-      each airportTypes
-        .form-check
-          input.form-check-input(type="radio" name="airportType" value=name checked=checked)
-          label.form-check-label(for=name)=label
+    if layers
+      hr
+      .layers
+        each layers
+          .layer.form-check
+            input.form-check-input(type="checkbox" name=name checked=active)
+            label.form-check-label=label
+    if hasAirportType
+      hr
+      .airport-types
+        each airportTypes
+          .form-check
+            input.form-check-input(type="radio" name="airportType" value=name checked=checked)
+            label.form-check-label(for=name)=label

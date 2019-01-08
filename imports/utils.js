@@ -1,4 +1,7 @@
 module.exports = {
+  sum: (arr, iteratee) => {
+    return arr.map(iteratee).reduce((sofar, value)=>sofar + value, 0);
+  },
   formatNumber: (x, precisionLevel)=>{
     if(!_.isNumber(x)) {
       return x;

@@ -1,9 +1,6 @@
 import { _ } from 'meteor/underscore';
 import { HTTPAuthenticatedGet } from '/imports/utils';
-
-let sum = (arr, iteratee) => {
-  return arr.map(iteratee).reduce((sofar, value)=>sofar + value, 0);
-};
+import { sum } from '/imports/utils';
 
 Template.locationPopup.onCreated(function () {
   this.threatByDisease = new ReactiveVar([]);

@@ -1,0 +1,11 @@
+template(name="lemisPopup")
+  .lemis-popup
+    h5=location.name
+    if loading
+      p Loading...
+    else if exportsBySpecies
+      h6 Distribution By Species
+      dl.threat-level-by-disease
+        each exportsBySpecies
+          dt=species
+          dd {{formatNumber value}}%

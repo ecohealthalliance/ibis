@@ -10,8 +10,18 @@ template(name='lemis')
           data-tooltip-direction="w"
           data-tooltip="Click to show map info.")
           i.fa.fa-question-circle
-      h5.title All US Locations
+      h5.title Non-Aqueous Live Wild Animal Imports
     #map
       +helpPanel mapType=mapType
     +legend title=legendTitle ramp=legendRamp
+    .side-panel
+      .header
+        h5.bioevent-panel-title Top Locations
+      .bioevent-details.side-panel-body
+        .summary-section
+          ol.airport-list
+            each topLocations
+              li
+                span.location #{name}:
+                .value {{formatNumber value}}
   +tooltips

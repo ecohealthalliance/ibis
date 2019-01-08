@@ -6,27 +6,21 @@ import os
 
 if __name__ == "__main__":
     db = pymongo.MongoClient(os.environ["MONGO_HOST"])["ibis"]
-    conn = psycopg2.connect("postgres://postgres:@localhost")
+    conn = psycopg2.connect(os.environ.get("POSTGRES_HOST", "postgres://postgres:@localhost"))
     result = pd.read_sql_query("""
     SELECT
-     country_origin_iso2c,
+     country_origin_iso2c AS country,
+     min(binomial) AS species,
      COUNT (value) AS records,
-     SUM (parsed_value) AS total_value,
-     SUM (parsed_quantity) AS total_quantity
+     COALESCE(SUM (parsed_value), 0) AS value,
+     COALESCE(SUM (parsed_quantity), 0) AS quantity
     FROM
      lemisdb
     WHERE
       Live=1 AND Wild=1 AND NonAq=1
     GROUP BY
-     country_origin_iso2c
-    ORDER BY
-     total_value DESC;
-    """,con=conn)
-    for item in result.itertuples():
-        db.lemis_import.insert({
-            'country_origin_iso2c': item.country_origin_iso2c,
-            'records': item.records,
-            'total_value': item.total_value,
-            'total_quantity': item.total_quantity
-        })
+     country_origin_iso2c, species_code;
+    """, con=conn)
+    for idx, item in result.iterrows():
+        db.lemis_import.insert(item.to_dict())
     db.lemis_import.rename('lemis', dropTarget=True)

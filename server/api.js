@@ -755,18 +755,39 @@ api.addRoute('bioevents/:bioeventId', {
 });
 
 /*
-@api {get} lemis
+@api {get} lemis Get stats on imports of non-aqueous live wild animals by country.
 */
 api.addRoute('lemis', {
   get: function() {
-    return Lemis.find().map((x)=>{
-      return {
-        iso2c: x.country_origin_iso2c,
-        lemisRecords: x.records,
-        lemisValue: x.total_value,
-        lemisQuantity: x.total_quantity
-      };
-    });
+    const result = aggregate(Lemis, [{
+      $group: {
+        _id: "$country",
+        lemisRecords: { $sum: { $ifNull: ["$records", 0] } },
+        lemisValue: { $sum: { $ifNull: ["$value", 0] } },
+        lemisQuantity: { $sum: { $ifNull: ["$quantity", 0] } }
+      }
+    }]);
+    return result;
+  }
+});
+
+/*
+@api {get} lemis Get stats on the stop specied imported by the given country
+*/
+api.addRoute('lemis/:countryISO2', {
+  get: function() {
+    const result = aggregate(Lemis, [{
+      $match: {
+        country: this.urlParams.countryISO2
+      }
+    }, {
+      $group: {
+        _id: "$species",
+        lemisValue: { $sum: { $ifNull: ["$value", 0] } },
+        lemisQuantity: { $sum: { $ifNull: ["$quantity", 0] } }
+      }
+    }]);
+    return result;
   }
 });
 

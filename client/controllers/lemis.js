@@ -16,6 +16,11 @@ const mapTypes = [
 ].map((x) => {
   return {name: x, label: typeToTitle[x]};
 });
+const mapTypeToUnits = {
+  "lemisValue": "dollars",
+  "lemisRecords": "records",
+  "lemisQuantity": "animals"
+};
 
 Template.lemis.onCreated(function() {
   this.mapType = new ReactiveVar();
@@ -33,15 +38,16 @@ Template.lemis.onCreated(function() {
         bioeventId: bioeventId
       }
     })
-    .finally(()=>loadingIndicator.hide(loadingIndicatorSemaphore))
-    .then((lemisResp)=>{
-      this.locations.set(lemisResp.data);
-    });
+      .finally(()=>loadingIndicator.hide(loadingIndicatorSemaphore))
+      .then((lemisResp)=>{
+        this.locations.set(lemisResp.data);
+      });
   });
 });
  
 Template.lemis.onRendered(function() {
-  const map = L.map('map', Constants.LEAFLET_MAP_CONFIG);
+  const map = this.map = L.map('map', Constants.LEAFLET_MAP_CONFIG);
+  const countryCenters = this.countryCenters = {};
   map.setView(Constants.INITIAL_MAP_VIEW, 4);
   let geoJsonLayer = null;
   let hoverMarker = null;
@@ -61,6 +67,17 @@ Template.lemis.onRendered(function() {
         };
       },
       onEachFeature: (feature, layer)=>{
+        countryCenters[feature.properties.iso_a2] = () => layer.getCenter();
+        layer.on('click', (event)=>{
+          const popupElement = $('<div>').get(0);
+          Blaze.renderWithData(Template.lemisPopup, {
+            location: feature.properties
+          }, popupElement);
+          L.popup()
+            .setLatLng(map.mouseEventToLatLng(event.originalEvent))
+            .setContent(popupElement)
+            .openOn(map);
+        });
         layer.on('mouseover', (event)=>{
           if(hoverMarker) {
             map.removeLayer(hoverMarker);
@@ -80,13 +97,8 @@ Template.lemis.onRendered(function() {
   this.autorun(()=> {
     let locations = this.locations.get();
     let mapType = this.mapType.get();
-    const mapTypeToUnits = {
-      "lemisValue": "dollars",
-      "lemisRecords": "records",
-      "lemisQuantity": "animals"
-    };
     renderGeoJSON(_.object(locations.map((location) =>
-      [location.iso2c, location[mapType]]
+      [location._id, location[mapType]]
     )), mapTypeToUnits[mapType]);
   });
 });
@@ -94,18 +106,48 @@ Template.lemis.onRendered(function() {
 Template.lemis.helpers({
   legendTitle: () => typeToTitle[Template.instance().mapType.get()],
   legendRamp: () => INBOUND_RAMP,
-  mapTypes: ()=>{
+  mapTypes: () => {
     const selectedType = Template.instance().mapType.get();
     return mapTypes.map((type)=>{
       type.selected = type.name == selectedType;
       return type;
     });
   },
-  mapType: ()=> Template.instance().mapType
+  mapType: () => Template.instance().mapType,
+  topLocations: () => {
+    const instance = Template.instance();
+    const locations = instance.locations.get();
+    const mapType = instance.mapType.get();
+    const mapData = _.object(locations.map((location) =>
+      [location._id, location[mapType]]
+    ));
+    return _.sortBy(WorldGeoJSON.features.map((feature) => {
+      return {
+        feature: feature,
+        name: feature.properties.name,
+        value: mapData[feature.properties.iso_a2]
+      };
+    }), 'value').filter(x => x.value).reverse();
+  }
 });
 
 Template.lemis.events({
   'change #map-type': (event, instance)=>{
     FlowRouter.setQueryParams({"mapType": event.target.value});
+  },
+  'click .location': function(event, instance){
+    const feature = this.feature;
+    const iso2 = this.feature.properties.iso_a2;
+    console.log(this);
+    console.log(iso2)
+    console.log(instance.countryCenters[iso2])
+    const popupElement = $('<div>').get(0);
+    Blaze.renderWithData(Template.lemisPopup, {
+      location: feature.properties
+    }, popupElement);
+    L.popup()
+      .setLatLng(instance.countryCenters[iso2]())
+      .setContent(popupElement)
+      .openOn(instance.map);
   }
 });

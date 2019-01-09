@@ -3,9 +3,11 @@ template(name="lemisPopup")
     h5=location.name
     if loading
       p Loading...
-    else if exportsBySpecies
+    else
       h6 Distribution By Species
-      dl.threat-level-by-disease
+      dl.scrolling-list
         each exportsBySpecies
           dt=species
           dd {{formatNumber value}}%
+        else
+          p No Data

@@ -138,16 +138,15 @@ Template.lemis.events({
   'click .location': function(event, instance){
     const feature = this.feature;
     const iso2 = this.feature.properties.iso_a2;
-    console.log(this);
-    console.log(iso2)
-    console.log(instance.countryCenters[iso2])
     const popupElement = $('<div>').get(0);
     Blaze.renderWithData(Template.lemisPopup, {
       location: feature.properties
     }, popupElement);
+    const coords = instance.countryCenters[iso2]();
     L.popup()
-      .setLatLng(instance.countryCenters[iso2]())
+      .setLatLng(coords)
       .setContent(popupElement)
       .openOn(instance.map);
+    instance.map.panTo(coords);
   }
 });

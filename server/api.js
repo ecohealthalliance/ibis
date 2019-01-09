@@ -783,6 +783,7 @@ api.addRoute('lemis/:countryISO2', {
     }, {
       $group: {
         _id: "$species",
+        lemisRecords: { $sum: { $ifNull: ["$records", 0] } },
         lemisValue: { $sum: { $ifNull: ["$value", 0] } },
         lemisQuantity: { $sum: { $ifNull: ["$quantity", 0] } }
       }

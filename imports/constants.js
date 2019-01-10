@@ -31,5 +31,10 @@ module.exports = {
     { name: "threatLevelExposureExUS", label: "Threat Exposure by Destination (Excluding US Sources)" },
     { name: "topOrigins", label: "Top Origins" },
     { name: "topDestinations", label: "Top Destinations" }
-  ]
+  ],
+  mapTypeToUnits: {
+    "lemisValue": "USD",
+    "lemisRecords": "Records",
+    "lemisQuantity": "Animals"
+  }
 };

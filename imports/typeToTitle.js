@@ -7,7 +7,7 @@ export default {
   "originProbabilityPassengerInfected": "Estimated Probability Passenger Infected",
   "threatLevelExposureExUS": "Inbound Threat Exposure",
   "threatLevelExposure": "Inbound Threat Exposure",
-  "lemisValue": "Monitary value of imported wildlife",
-  "lemisRecords": "Records of imported wildlife",
-  "lemisQuantity": "Number of imported live animals"
+  "lemisValue": "Monetary value of animals imported",
+  "lemisRecords": "Number of import records",
+  "lemisQuantity": "Number of individual animals imported"
 };

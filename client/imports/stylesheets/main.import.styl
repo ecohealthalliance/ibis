@@ -12,6 +12,8 @@
 
 .tooltip-btn
   margin-left 8px
+  &.help-showing
+    visibility hidden
 .tooltip-btn:link
 .tooltip-btn:visited
   color white
@@ -336,3 +338,18 @@ footer
   .btn
     margin-bottom 1em
 
+.lemis
+  $lemis-side-panel-width = 375px
+  .side-panel
+    width $lemis-side-panel-width
+  .subheader
+    width "calc(100% - %s)" % $lemis-side-panel-width
+  .help-panel
+    right $lemis-side-panel-width
+  .unit
+    float right
+    margin-right 10px
+  .location
+    cursor pointer
+    &:hover
+      text-decoration underline

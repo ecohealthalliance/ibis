@@ -9,6 +9,7 @@ import { INBOUND_RAMP, OUTBOUND_RAMP, INBOUND_LINE, OUTBOUND_LINE, getColor } fr
 import typeToTitle from '/imports/typeToTitle';
 import loadingIndicator from '/imports/loadingIndicator';
 import { HTTPAuthenticatedGet } from '/imports/utils';
+import { showHelpPanel } from '/imports/configuration';
 const mapTypes = [
   "lemisQuantity",
   "lemisRecords",
@@ -16,16 +17,11 @@ const mapTypes = [
 ].map((x) => {
   return {name: x, label: typeToTitle[x]};
 });
-const mapTypeToUnits = {
-  "lemisValue": "dollars",
-  "lemisRecords": "records",
-  "lemisQuantity": "animals"
-};
 
 Template.lemis.onCreated(function() {
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
-    this.mapType.set(FlowRouter.getQueryParam("mapType") || 'lemisRecords');
+    this.mapType.set(FlowRouter.getQueryParam("mapType") || 'lemisQuantity');
   });
   this.locations = new ReactiveVar([]);
   this.autorun(()=>{
@@ -48,7 +44,7 @@ Template.lemis.onCreated(function() {
 Template.lemis.onRendered(function() {
   const map = this.map = L.map('map', Constants.LEAFLET_MAP_CONFIG);
   const countryCenters = this.countryCenters = {};
-  map.setView(Constants.INITIAL_MAP_VIEW, 4);
+  map.setView([0, 60], 2);
   let geoJsonLayer = null;
   let hoverMarker = null;
   const renderGeoJSON = (mapData, units="")=>{
@@ -99,13 +95,15 @@ Template.lemis.onRendered(function() {
     let mapType = this.mapType.get();
     renderGeoJSON(_.object(locations.map((location) =>
       [location._id, location[mapType]]
-    )), mapTypeToUnits[mapType]);
+    )), Constants.mapTypeToUnits[mapType]);
   });
 });
  
 Template.lemis.helpers({
+  unit: () => Constants.mapTypeToUnits[Template.instance().mapType.get()],
   legendTitle: () => typeToTitle[Template.instance().mapType.get()],
   legendRamp: () => INBOUND_RAMP,
+  helpPanelVisible: () => showHelpPanel.get() ? "help-showing" : "",
   mapTypes: () => {
     const selectedType = Template.instance().mapType.get();
     return mapTypes.map((type)=>{
@@ -114,6 +112,7 @@ Template.lemis.helpers({
     });
   },
   mapType: () => Template.instance().mapType,
+  moneyType: () => Template.instance().mapType.get() == "lemisValue",
   topLocations: () => {
     const instance = Template.instance();
     const locations = instance.locations.get();
@@ -147,6 +146,7 @@ Template.lemis.events({
       .setLatLng(coords)
       .setContent(popupElement)
       .openOn(instance.map);
-    instance.map.panTo(coords);
+    const panCoords = _.extend({}, coords, {lng: coords.lng + 15});
+    instance.map.flyTo(panCoords, 4);
   }
 });

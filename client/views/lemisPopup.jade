@@ -1,6 +1,9 @@
 template(name="lemisPopup")
   .lemis-popup
-    h5=location.name
+    h5
+      | {{location.name}}
+      if totalValue
+        | - {{formatNumber totalValue}} {{unit}}
     if loading
       p Loading...
     else
@@ -8,6 +11,6 @@ template(name="lemisPopup")
       dl.scrolling-list
         each exportsBySpecies
           dt=species
-          dd {{formatNumber value}}%
+          dd {{formatNumber value}} ({{formatNumber portion}}%)
         else
           p No Data

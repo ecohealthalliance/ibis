@@ -1,5 +1,5 @@
 template(name='lemis')
-  .map-page-container
+  .map-page-container.lemis
     nav.subheader
       .map-controls
         select#map-type
@@ -8,20 +8,22 @@ template(name='lemis')
         a.tooltip-btn(
           target="_blank"
           data-tooltip-direction="w"
-          data-tooltip="Click to show map info.")
+          data-tooltip="Click to show map info."
+          class=helpPanelVisible)
           i.fa.fa-question-circle
-      h5.title Non-Aqueous Live Wild Animal Imports
+      h5.title Imports of Live Non-Aquatic Wildlife to the US
     #map
       +helpPanel mapType=mapType
     +legend title=legendTitle ramp=legendRamp
     .side-panel
       .header
-        h5.bioevent-panel-title Top Locations
+        span.country Country
+        .unit=unit
       .side-panel-body
         .summary-section
           ol
             each topLocations
               li
-                span.location #{name}:
-                .value {{formatNumber value}}
+                span.location #{name}
+                .value {{#if moneyType}}${{/if}}{{formatNumber value}}
   +tooltips

@@ -40,7 +40,6 @@ for file_path in file_paths:
                     #print(re.match(r"\s*High Priority Event Updates", section))
                     [disease_name, location, status] = disease_name_match.groups()
                     disease_name = re.sub(r"\*", "", disease_name).strip()
-                    print(disease_name)
                     for possible_status in "Worsening|No Change|Improving|Undetermined".split('|'):
                         if possible_status.lower() in status.lower():
                             status = possible_status

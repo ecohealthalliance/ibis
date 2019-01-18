@@ -1,3 +1,4 @@
+from __future__ import print_function
 import datetime
 import pymongo
 import pandas as pd
@@ -86,8 +87,8 @@ def plot_airport(long_lat, rasterio_handle, out_raster, magnitude):
     a = -11.13
     b = 2.72
     row, col = np.array(rasterio_handle.index(*long_lat)).astype(int)
-    for i in range(row - WINDOW_SIZE[0] / 2, row + WINDOW_SIZE[0] / 2):
-        for j in range(col - WINDOW_SIZE[1] / 2, col + WINDOW_SIZE[1] / 2):
+    for i in range(row - int(WINDOW_SIZE[0] / 2), row + int(WINDOW_SIZE[0] / 2)):
+        for j in range(col - int(WINDOW_SIZE[1] / 2), col + int(WINDOW_SIZE[1] / 2)):
             distance_km = great_circle(
                 long_lat[::-1],
                 rasterio_handle.xy(i, j)[::-1]).kilometers
@@ -122,8 +123,8 @@ def create_location_shapes(resolved_location_tree, parent_shape=None):
         excess_value = child['value'] - sum(child2['value'] for child2 in child['children'])
         # Excess value could be slightly negative due to floating point error.
         if excess_value < -0.01:
-            print child
-            print [child2['value'] for child2 in child['children']]
+            print(child)
+            print([child2['value'] for child2 in child['children']])
             raise Exception('Bad tree')
         excess_value = max(0, excess_value)
         if len(matching_countries):
@@ -171,9 +172,9 @@ def compute_case_raster(resolved_location_tree, population_raster, population_ra
     within it.
     """
     shape_values = create_location_shapes(resolved_location_tree)
-    print "Removed cases:", sum([value
+    print("Removed cases:", sum([value
         for shape, value in shape_values
-        if not(shape and shape.area > 0)])
+        if not(shape and shape.area > 0)]))
     shape_values = [shape_value
         for shape_value in shape_values
         if shape_value[0] and shape_value[0].area > 0]
@@ -227,6 +228,7 @@ def compute_outflows(db, match_query):
 if __name__ == "__main__":
     import os
     import requests
+    import yaml
 
     population_raster = rasterio.open('gpw/gpw_v4_population_count_rev10_2015_15_min.tif')
     population_raster_data = population_raster.read(1)
@@ -245,14 +247,14 @@ if __name__ == "__main__":
     }).json()['events']
 
     import yaml
-    print yaml.safe_dump(results)
+    print(yaml.safe_dump(results))
     db = pymongo.MongoClient(os.environ['MONGO_HOST'])['flirt']
 
     resolved_event_data = results[0]
     case_raster = compute_case_raster(resolved_event_data['fullLocations'], population_raster, population_raster_data)
-    print 'total cases:', case_raster.sum()
+    print('total cases:', case_raster.sum())
     actual_case_total = sum(child2['value'] for child2 in resolved_event_data['fullLocations']['children'])
-    print 'error:', case_raster.sum() / actual_case_total
+    print('error:', case_raster.sum() / actual_case_total)
     save_image(case_raster ** 0.2, "case_raster")
 
     outflows = compute_outflows(db, {
@@ -292,4 +294,4 @@ if __name__ == "__main__":
     df = pd.DataFrame(rows)
     df['prob_infected'] = df.catchment_cases / df.catchment_pop
     df = df.query('catchment_pop > 0')
-    print df.sort_values('prob_infected')[['prob_infected', 'name']]
+    print(df.sort_values('prob_infected')[['prob_infected', 'name']])

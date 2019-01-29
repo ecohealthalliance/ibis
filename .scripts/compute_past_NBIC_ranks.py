@@ -15,8 +15,6 @@ for item in db.nbic.aggregate([
         '$sort': { '_id': 1 }
     }
 ]):
-    if item['_id'] in ["2018-02-05", "nbic-2017-06-12"]:
-        continue
     report_date = datetime.datetime.strptime(item['_id'], '%Y-%m-%d')
     if report_date < datetime.datetime(2017,6,1):
         continue

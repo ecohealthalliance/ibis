@@ -16,7 +16,7 @@ BRACKETED_EXPRESSION_RE = re.compile(
     r"(\[[^\[\]]{,100}\]|<[^<>]{,100}>) ?", re.MULTILINE)
 db = pymongo.MongoClient(os.environ["MONGO_HOST"])["nbic"]
 db.nbic.drop()
-file_paths = glob.glob('articles/*.eml')
+file_paths = glob.glob('NBIC Monitoring Lists - EML/*.eml')
 for file_path in file_paths:
     disease_to_metadata = {}
     with open(file_path, 'r') as f:
@@ -31,6 +31,7 @@ for file_path in file_paths:
             message_date_match = re.search(r"Date: (.*)\n", forwarded_message)
             date = dateparser.parse(message_date_match.groups()[0])
         except Exception as e:
+            print(file_path)
             print("Parse error: " + str(e))
             continue
         for section in re.split("\n\-{5,}\n", plain_text):

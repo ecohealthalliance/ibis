@@ -13,13 +13,22 @@ GRITS_URL = os.environ.get("GRITS_URL", "https://grits.eha.io")
 
 
 def clean(s):
+    s = re.sub(r"\(.*\)", "", s)
+    s = re.sub(r"\[.*\]", "", s)
+    s = s.replace("*", "")
     return re.sub(r"\s+", " ", s).strip()
+
+
+def clean_disease_name(s):
+    s = re.sub(r"^(Highly Pathogenic|Virulent|Suspected)", "", s, re.I)
+    s = re.sub(" Serotype .+$", "", s, re.I)
+    return clean(s)
 
 
 @lru_cache()
 def lookup_geoname(name):
     resp = requests.get(GRITS_URL + "/api/geoname_lookup/api/lookup", params={
-        "q": name
+        "q": clean(name)
     })
     result = json.loads(resp.text)["hits"][0]["_source"]
     del result["alternateNames"]
@@ -38,7 +47,7 @@ def lookup_disease(name):
     if len(name) == 0:
         return None
     resp = requests.get(GRITS_URL + "/api/v1/disease_ontology/lookup", params={
-        "q": name
+        "q": clean_disease_name(name)
     })
     result = resp.json()
     first_result = next(iter(result["result"]), None)

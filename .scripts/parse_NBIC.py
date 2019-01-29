@@ -6,7 +6,7 @@ import re
 import glob
 import dateparser
 import pymongo
-from utils import lookup_disease
+from utils import clean, lookup_disease
 
 
 DISEASE_STATUS_RE = re.compile(
@@ -46,7 +46,7 @@ for file_path in file_paths:
                             status = possible_status
                             break
                     disease_to_metadata[disease_name] = {
-                        'location': location.strip(),
+                        'location': clean(location),
                         'status': status
                     }
         db.nbic.insert({

@@ -82,4 +82,3 @@ for item in db.nbic.aggregate([
     }
 ]):
     print(item)
-

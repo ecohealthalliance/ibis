@@ -427,9 +427,6 @@ def rank_events(
     })
     
     print("Finished at: " + str(datetime.datetime.now()))
-    
-    # Tell IBIS to update its caches since the data has been updated.
-    resp = requests.get("http://ibis.eha.io/api/clearCaches")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -459,4 +456,7 @@ if __name__ == "__main__":
             rank_group_p=args.rank_group,
             event_id_p=args.event_id,
             only_use_sources_before_end_date=args.only_use_sources_before_end_date)
+
+    # Tell IBIS to update its caches since the data has been updated.
+    resp = requests.get("http://ibis.eha.io/api/clearCaches")
     resp.raise_for_status()

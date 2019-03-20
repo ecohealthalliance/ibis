@@ -46,8 +46,12 @@ def lookup_geoname(name):
 def lookup_disease(name):
     if len(name) == 0:
         return None
+    cleaned_name = clean_disease_name(name)
+    if cleaned_name.startswith("foot and mouth disease"):
+        # Prevent matches with "hand, foot and mouth disease"
+        return None
     resp = requests.get(GRITS_URL + "/api/v1/disease_ontology/lookup", params={
-        "q": clean_disease_name(name)
+        "q": cleaned_name
     })
     result = resp.json()
     first_result = next(iter(result["result"]), None)
@@ -55,4 +59,9 @@ def lookup_disease(name):
         return {
             "id": first_result["id"],
             "text": first_result["label"]
+        }
+    elif "avian influenza" in name.lower():
+        return {
+            "id": "http://purl.obolibrary.org/obo/DOID_4492",
+            "text": "Avian Influenza"
         }

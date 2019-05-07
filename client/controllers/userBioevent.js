@@ -9,7 +9,8 @@ import {
   OUTBOUND_LINE,
   getColor,
   getRamp,
-  getLineColor } from '/imports/ramps';
+  getLineColor
+} from '/imports/ramps';
 import { _ } from 'meteor/underscore';
 import typeToTitle from '/imports/typeToTitle';
 import displayLayers from '/imports/displayLayers';
@@ -26,7 +27,7 @@ import loadingIndicator from '/imports/loadingIndicator';
 import { HTTPAuthenticatedGet, formatNumber } from '/imports/utils';
 import { renderAllCountryGeoJSONLayer } from '/imports/leafletUtils';
 
-Template.bioevent.onCreated(function() {
+Template.userBioevent.onCreated(function() {
   this.airportType = new ReactiveVar("all");
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
@@ -34,18 +35,12 @@ Template.bioevent.onCreated(function() {
   });
   this.USOnly = new ReactiveVar(true);
   this.locations = new ReactiveVar([]);
-  this.resolvedBioevent = new ReactiveVar();
   this.countryValues = new ReactiveVar();
-  const endDate = new Date();
-  this.dateRange = new ReactiveVar({
-    start: new Date(endDate - DATA_INTERVAL_DAYS * MILLIS_PER_DAY),
-    end: endDate
-  });
   this.autorun(()=>{
     const bioeventId = FlowRouter.getParam('bioeventId');
     const loadingIndicatorSemaphore = loadingIndicator.show();
     Promise.all([
-      HTTPAuthenticatedGet('/api/bioevents/' + bioeventId, {
+      HTTPAuthenticatedGet('/api/userBioevents/' + bioeventId, {
         params: {
           rankGroup: FlowRouter.getQueryParam('rankGroup') || null
         }
@@ -56,12 +51,6 @@ Template.bioevent.onCreated(function() {
       const bioeventData = bioeventResp.data;
       const airportValues = bioeventData.airportValues;
       this.countryValues.set(bioeventData.countryValues);
-      this.resolvedBioevent.set(bioeventData.resolvedBioevent);
-      let endDate = new Date(bioeventData.resolvedBioevent.timeseries.slice(-1)[0][0]);
-      this.dateRange.set({
-        start: new Date(endDate - DATA_INTERVAL_DAYS * MILLIS_PER_DAY),
-        end: endDate
-      });
       // Create copies of the objects from locationGeoJson annotated with combined
       // values of their associated airports.
       const locations = _.map(locationGeoJson, (location, locationId)=>{
@@ -87,7 +76,7 @@ Template.bioevent.onCreated(function() {
   });
 });
 
-Template.bioevent.onRendered(function() {
+Template.userBioevent.onRendered(function() {
   this.$('.show-origins').css({color: OUTBOUND_LINE});
   this.$('.show-destinations').css({color: INBOUND_LINE});
   const map = L.map('map', LEAFLET_MAP_CONFIG);
@@ -253,7 +242,7 @@ Template.bioevent.onRendered(function() {
   });
 });
 
-Template.bioevent.helpers({
+Template.userBioevent.helpers({
   legendTitle: ()=>typeToTitle[Template.instance().mapType.get()],
   legendRamp: ()=>getRamp(Template.instance().mapType.get()),
   USOnly: ()=>Template.instance().USOnly.get(),
@@ -284,7 +273,6 @@ Template.bioevent.helpers({
         };
       }).sortBy(x=>-x.value).value();
   },
-  dateRange: ()=>Template.instance().dateRange.get(),
   mapTypes: ()=>{
     const selectedType = Template.instance().mapType.get();
     return bioeventMapTypes.map((type)=>{
@@ -295,14 +283,11 @@ Template.bioevent.helpers({
   mapType: ()=> Template.instance().mapType,
   showingTopOrigins: ()=>Template.instance().mapType.get() == 'topOrigins',
   showingTopDestinations: ()=>Template.instance().mapType.get() == 'topDestinations',
-  resolvedBioevent: ()=>{
-    return Template.instance().resolvedBioevent.get();
-  },
   layers: ()=>displayLayers,
   airportType: ()=>Template.instance().airportType
 });
 
-Template.bioevent.events({
+Template.userBioevent.events({
   'change #map-type': (event, instance)=>{
     FlowRouter.setQueryParams({"mapType": event.target.value});
   },

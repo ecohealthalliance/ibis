@@ -28,6 +28,12 @@ FlowRouter.route('/bioevents/:bioeventId', {
   }
 });
 
+FlowRouter.route('/userBioevents/:bioeventId', {
+  action: function(params, queryParams) {
+    BlazeLayout.render('layout', {main: 'userBioevent'});
+  }
+});
+
 FlowRouter.route('/about', {
   action: function(params, queryParams) {
     BlazeLayout.render('layout', {main: 'about'});

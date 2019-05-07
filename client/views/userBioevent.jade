@@ -1,0 +1,54 @@
+template(name='userBioevent')
+  .map-page-container
+    nav.subheader
+      h5.title User Specified Bioevent
+      .map-controls
+        select#map-type
+          each mapTypes
+            option(value=name selected=selected)=label
+        a.tooltip-btn(
+          target="_blank"
+          data-tooltip-direction="w"
+          data-tooltip="Click to show map info.")
+          i.fa.fa-question-circle
+    #map
+      +helpPanel mapType=mapType
+    +legend title=legendTitle ramp=legendRamp layers=layers airportType=airportType
+    .side-panel
+      .header
+        h5.bioevent-panel-title Summary
+      .bioevent-details.side-panel-body
+        .summary-section
+          .section-head
+            span.show-destinations
+              if showingTopDestinations
+                i.fa.fa-circle
+              else
+                i.fa.fa-circle-o
+            | Top Destinations
+            .controls
+              input(type="checkbox" checked=USOnly).us-only-checkbox
+              | US Only
+          ol.airport-list
+            each topDestinations
+              li 
+                if USOnly
+                  span.other-rank (Global rank: {{globalDestRank}})
+                else if USDestRank
+                  span.other-rank (US Airport)
+                a(href=link) #{name}:
+                .value {{formatNumber value}}
+        .summary-section
+          .section-head
+            span.show-origins
+              if showingTopOrigins
+                i.fa.fa-circle
+              else
+                i.fa.fa-circle-o
+            | Top Origins
+          ol.airport-list
+            each topOrigins
+              li
+                a(href=link) #{name}:
+                .value {{formatNumber value}}
+  +tooltips

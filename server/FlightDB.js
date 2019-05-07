@@ -30,6 +30,9 @@ try {
   PastEventAirportRanks = new Meteor.Collection('pastEventAirportRanks', {
     _driver: db
   });
+  UserAirportRanks = new Meteor.Collection('userAirportRanks', {
+    _driver: db
+  });
   Flights.rawCollection().createIndex({
     arrivalAirport: 1,
     arrivalDateTime: 1
@@ -53,5 +56,6 @@ module.exports = {
   PastResolvedEvents: PastResolvedEvents,
   PastPassengerFlows: PastPassengerFlows,
   PastEventAirportRanks: PastEventAirportRanks,
+  UserAirportRanks: UserAirportRanks,
   Lemis: new Meteor.Collection('lemis')
 };

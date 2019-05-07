@@ -4,6 +4,7 @@ import {
   Flights,
   PassengerFlows,
   EventAirportRanks,
+  UserAirportRanks,
   ResolvedEvents,
   PastEventAirportRanks,
   PastResolvedEvents,
@@ -750,6 +751,73 @@ api.addRoute('bioevents/:bioeventId', {
       airportValues: airportValues,
       countryValues: countryValues,
       resolvedBioevent: resolvedBioevent
+    };
+  }
+});
+
+/*
+@api {get} userBioevents/:bioeventId Get airport and country stats for an user specified bioevent
+@apiName bioevents
+*/
+api.addRoute('userBioevents/:bioeventId', {
+  authRequired: true
+}, {
+  get: function() {
+    let result = aggregate(UserAirportRanks, [{
+      $match: {
+        rankGroup: this.urlParams.bioeventId
+      }
+    }, {
+      $facet: {
+        "destination": [{
+          $group: {
+            _id: "$arrivalAirportId",
+            rank: {
+              $sum: "$rank"
+            },
+            rankExUS: {
+              $sum: {
+                $cond: [{
+                  $in: ["$departureAirportId", USAirportIds]
+                }, 0, "$rank"]
+              }
+            }
+          }
+        }],
+        "origin": [{
+          $group: {
+            _id: "$departureAirportId",
+            rank: {
+              $sum: "$rank"
+            },
+            probabilityPassengerInfected: {
+              $first: "$probabilityPassengerInfected"
+            }
+          }
+        }]
+      }
+    }]);
+    const airportValues = {
+      threatLevelExposure: _.object(result[0].destination.map((x)=>[x._id, x.rank])),
+      threatLevelExposureExUS: _.object(result[0].destination.map((x)=>[x._id, x.rankExUS])),
+      originThreatLevel: _.object(result[0].origin.map((x)=>[x._id, x.rank])),
+      originProbabilityPassengerInfected: _.object(result[0].origin.map((x)=>[x._id, x.probabilityPassengerInfected]))
+    };
+    let countryValues = {
+      originThreatLevel: {},
+      threatLevelExposure: {},
+      threatLevelExposureExUS: {}
+    };
+    Object.keys(countryValues).forEach((key)=>{
+      _.map(airportValues[key], (value, id) => {
+        const country = airportToCountryCode[id];
+        countryValues[key][country] = (
+          countryValues[key][country] || 0) + value;
+      });
+    });
+    return {
+      airportValues: airportValues,
+      countryValues: countryValues
     };
   }
 });

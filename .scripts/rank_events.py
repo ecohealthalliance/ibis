@@ -2,7 +2,6 @@ from __future__ import print_function
 import requests
 import pymongo
 import pandas as pd
-import numpy
 import datetime
 import os
 from compute_case_raster import compute_case_raster, plot_airport, compute_outflows, get_airport_to_country_code
@@ -10,7 +9,6 @@ import rasterio
 import numpy as np
 import argparse
 from dateutil import parser as date_parser
-
 
 def batched(iterable, batch_size=10):
     """
@@ -26,9 +24,91 @@ def batched(iterable, batch_size=10):
     if batch:
       yield batch
 
+def compute_airport_flow_matrix(sim_group):
+    passenger_flows = list(db.passengerFlows.find({
+        'simGroup': sim_group
+    }))
+    if len(passenger_flows) == 0:
+        raise Exception("No passenger flows found.")
+    airport_set = set()
+    for flow in passenger_flows:
+        airport_set.add(flow['arrivalAirport'])
+        airport_set.add(flow['departureAirport'])
+    airport_to_idx = {}
+    for idx, airport in enumerate(airport_set):
+        airport_to_idx[airport] = idx
+    flow_matrix = np.zeros(shape=(len(airport_set), len(airport_set)))
+    for flow in passenger_flows:
+        flow_matrix[
+            airport_to_idx[flow['departureAirport']],
+            airport_to_idx[flow['arrivalAirport']]] = flow['estimatedPassengers']
+    return flow_matrix, airport_to_idx
+
+def resolved_event_iter(events, start_date, end_date, only_use_sources_before_end_date):
+    for event_batch in batched(events, 1):
+        params = {
+            'ids': [event['_id'] for event in event_batch],
+            'startDate': start_date.isoformat(),
+            'endDate': end_date.isoformat(),
+            'eventType': 'auto',
+            'fullLocations': True,
+            'activeCases': True
+        }
+        if only_use_sources_before_end_date:
+            params['onlyUseSourcesBeforeEndDate'] = True
+        url = EIDR_C_HOST + '/api/events-with-resolved-data'
+        request_result = requests.get(url, params=params, headers={
+            # For unknown reasons, using the accept encoding header causes proxy errors
+            # when the API takes a long time to respond.
+            'Accept-Encoding': None})
+        request_result.raise_for_status()
+        try:
+            results = request_result.json()['events']
+        except:
+            print("Bad response:")
+            print(request_result.content)
+            raise
+        for result in results:
+            yield result
+
+CLASSIFICATION_COEFFICIENT_MAP = {
+    'low': 0.25,
+    'medium': 0.5,
+    'high': 0.75,
+    'very high': 1.0,
+}
+
+def get_classification_coefficient(classification):
+    classification = classification.lower()
+    partial_coefficients = []
+    for partial_classification in classification.split('to'):
+        for possible_classification in ['very high', 'high', 'medium', 'low']:
+            if possible_classification in partial_classification:
+                partial_coefficients.append(CLASSIFICATION_COEFFICIENT_MAP[possible_classification])
+                break
+    if partial_coefficients:
+        return sum(partial_coefficients) / len(partial_coefficients)
+    else:
+        return 0
+
+def traverse_location_tree(node, resolved_ccs):
+    for child in node.get('children', []):
+        cc = child['location'].get('countryCode')
+        if cc:
+            resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
+        else:
+            traverse_location_tree(child, resolved_ccs)
+    return resolved_ccs
+
 db = pymongo.MongoClient(os.environ['MONGO_HOST'])['flirt']
 
 EIDR_C_HOST = os.environ.get('EIDR_C_HOST', 'https://eidr-connect.eha.io')
+
+print("Loading population data...")
+population_raster = rasterio.open("gpw/gpw_v4_population_count_rev10_2015_15_min.tif")
+population_raster_data = population_raster.read(1)
+population_raster_data[population_raster_data < 0] = 0
+print("\tPopulation raster sum:", population_raster_data.sum())
 
 def rank_events(
     start_date_p=None,
@@ -36,8 +116,7 @@ def rank_events(
     sim_group_p=None,
     rank_group_p=None,
     event_id_p=None,
-    only_use_sources_before_end_date=False
-):
+    only_use_sources_before_end_date=False):
     processing_start_date = datetime.datetime.now()
     print("Evaluation Started: " + str(processing_start_date))
     
@@ -54,71 +133,19 @@ def rank_events(
     print("\t%s events found." % len(events))
     
     print("Downloading passenger flows...")
-    passenger_flows = list(db.passengerFlows.find({
-        'simGroup': sim_group_p
-    }))
-    if len(passenger_flows) == 0:
-        raise Exception("No passenger flows found.")
-    airport_set = set()
-    for flow in passenger_flows:
-        airport_set.add(flow['arrivalAirport'])
-        airport_set.add(flow['departureAirport'])
-    airport_to_idx = {}
-    airports = []
-    for idx, airport in enumerate(airport_set):
-        airport_to_idx[airport] = idx
-        airports.append(airport)
-    flow_matrix = numpy.zeros(shape=(len(airport_set), len(airport_set)))
-    for flow in passenger_flows:
-        flow_matrix[
-            airport_to_idx[flow['departureAirport']],
-            airport_to_idx[flow['arrivalAirport']]] = flow['estimatedPassengers']
-    print("\tFlows for %s airports found." % len(airports))
-    
+    flow_matrix, airport_to_idx = compute_airport_flow_matrix(sim_group_p)
+    print("\tFlows for %s airports found." % len(airport_to_idx))
+
     print("Resolving events...")
-    resolved_events = []
-    
-    def resolved_event_iter(events):
-        for event_batch in batched(events, 1):
-            params = {
-                'ids': [event['_id'] for event in event_batch],
-                'startDate': start_date_p.isoformat(),
-                'endDate': end_date_p.isoformat(),
-                'eventType': 'auto',
-                'fullLocations': True,
-                'activeCases': True
-            }
-            if only_use_sources_before_end_date:
-                params['onlyUseSourcesBeforeEndDate'] = True
-            url = EIDR_C_HOST + '/api/events-with-resolved-data'
-            request_result = requests.get(url, params=params, headers={
-                # For unknown reasons, using the accept encoding header causes proxy errors
-                # when the API takes a long time to respond.
-                'Accept-Encoding': None})
-            request_result.raise_for_status()
-            try:
-                results = request_result.json()['events']
-            except:
-                print("Bad response:")
-                print(request_result.content)
-                raise
-            for result in results:
-                yield result
-    events_with_resolved_data = list(zip(events, resolved_event_iter(events)))
+    events_with_resolved_data = list(zip(events, resolved_event_iter(
+        events, start_date_p, end_date_p, only_use_sources_before_end_date)))
     print("\t%s events with resolved data." % len([
         event for event, resolved_data in events_with_resolved_data
         if len(resolved_data['fullLocations']['children']) > 0]))
     # Verify that resolved event order matches up with the original order.
     for event, resolved_event_data in events_with_resolved_data:
         assert event['_id'] == resolved_event_data['eventId']
-    
-    print("Loading population data...")
-    population_raster = rasterio.open("gpw/gpw_v4_population_count_rev10_2015_15_min.tif")
-    population_raster_data = population_raster.read(1)
-    population_raster_data[population_raster_data < 0] = 0
-    print("\tPopulation raster sum:", population_raster_data.sum())
-    
-    
+
     print("Computing outflows...")
     outflows = compute_outflows(db, {
         'departureDateTime': {
@@ -139,10 +166,10 @@ def rank_events(
                 population_raster, all_airport_raster_data,
                 magnitude)
     print("\tDone.")
-    
+
     print("Computing probabilities of passengers being infected")
-    cases_in_catchment_matrix = numpy.zeros(shape=(len(events), len(airport_set)))
-    catchment_population_matrix = numpy.zeros(shape=(len(events), len(airport_set)))
+    cases_in_catchment_matrix = np.zeros(shape=(len(events), len(airport_to_idx)))
+    catchment_population_matrix = np.zeros(shape=(len(events), len(airport_to_idx)))
     for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
         resolved_location_tree = resolved_event_data['fullLocations']
         if sum(child2['value'] for child2 in resolved_location_tree['children']) == 0:
@@ -176,15 +203,7 @@ def rank_events(
     
     print("Computing cases by country...")
     for idx, (event, resolved_event_data) in enumerate(events_with_resolved_data):
-        resolved_ccs = {}
-        def traverse_location_tree(node):
-            for child in node['children']:
-                cc = child['location'].get('countryCode')
-                if cc:
-                    resolved_ccs[cc] = resolved_ccs.get(cc, 0) + child['value']
-                else:
-                    traverse_location_tree(child)
-        traverse_location_tree(resolved_event_data['fullLocations'])
+        resolved_ccs = traverse_location_tree(resolved_event_data['fullLocations'], {})
         resolved_event_data['locations'] = resolved_ccs
         if len(resolved_ccs) == 0 and len(resolved_event_data['fullLocations']['children']) > 0:
             print("Could not resolve country code.")
@@ -193,24 +212,6 @@ def rank_events(
     print("\tDone.")
     
     print("Computing disease severity coefficients...")
-    CLASSIFICATION_COEFFICIENT_MAP = {
-        'low': 0.25,
-        'medium': 0.5,
-        'high': 0.75,
-        'very high': 1.0,
-    }
-    def get_classification_coefficient(classification):
-        classification = classification.lower()
-        partial_coefficients = []
-        for partial_classification in classification.split('to'):
-            for possible_classification in ['very high', 'high', 'medium', 'low']:
-                if possible_classification in partial_classification:
-                    partial_coefficients.append(CLASSIFICATION_COEFFICIENT_MAP[possible_classification])
-                    break
-        if partial_coefficients:
-            return sum(partial_coefficients) / len(partial_coefficients)
-        else:
-            return 0
     df = pd.read_csv("curated-disease-data.csv")
     disease_uri_to_classification_coefficient = {}
     for idx, row in df.iterrows():
@@ -342,8 +343,7 @@ def rank_events(
                     continue
                 arrival_airport_idx = airport_to_idx[arrival_airport]
                 for departure_airport, departure_country_code in airport_to_country_code.items():
-                    if departure_country_code not in resolved_event['locations'] or\
-                        departure_airport not in airport_to_idx:
+                    if departure_airport not in airport_to_idx:
                         continue
                     dep_airport_idx = airport_to_idx[departure_airport]
                     passenger_flow = flow_matrix[dep_airport_idx, arrival_airport_idx]
@@ -357,7 +357,9 @@ def rank_events(
                     rank_score = probability_passenger_infected * passenger_flow * threat_coefficient
                     if not(rank_score > 0):
                         rank_score = 0
-                    if not(passenger_flow > 0):
+                    # Airports with a low probability of having an infected passenger are skipped
+                    # to reduce the collection size.
+                    if not(passenger_flow > 0) or not(probability_passenger_infected > 1E-9):
                         continue
                     yield {
                         'eventId': event_id,

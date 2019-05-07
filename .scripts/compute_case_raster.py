@@ -114,13 +114,13 @@ def create_location_shapes(resolved_location_tree, parent_shape=None):
     that of their contained shapes.
     """
     shapes = []
-    for child in resolved_location_tree['children']:
+    for child in resolved_location_tree.get('children', []):
         new_shape = None
         shape_value = None
         country_shape = None
         location = child['location']
         matching_countries = world_df[world_df.iso_a2 == location.get('countryCode', 'NoCountry')]
-        excess_value = child['value'] - sum(child2['value'] for child2 in child['children'])
+        excess_value = child['value'] - sum(child2['value'] for child2 in child.get('children', []))
         # Excess value could be slightly negative due to floating point error.
         if excess_value < -0.01:
             print(child)

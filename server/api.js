@@ -451,6 +451,47 @@ api.addRoute('locations/:locationId/passengerFlow', {
 });
 
 /*
+@api {get} locations/:locationId/outboundPassengerFlow Get estimates of the
+  total number of outbound passengers arriving at each country.
+@apiName outboundPassengerFlow
+@apiGroup locations
+*/
+api.addRoute('locations/:locationId/outboundPassengerFlow', {
+  authRequired: true
+}, {
+  get: function() {
+    const location = locationData.locations[this.urlParams.locationId];
+    const results = aggregate(EventAirportRanks, [{
+      $match: {
+        departureAirportId: {
+          $in: location.airportIds
+        }
+      }
+    }, {
+      $group: {
+        _id: "$arrivalAirportId",
+        passengerFlow: {
+          $sum: "$estimatedPassengers"
+        }
+      }
+    }]);
+    let statsByCountry = {};
+    results.forEach((result) => {
+      const country = airportToCountryCode[result._id];
+      const sofar = statsByCountry[country] || {
+        passengerFlow: 0
+      };
+      sofar.passengerFlow += result.passengerFlow;
+      statsByCountry[country] = sofar;
+    });
+    return {
+      countryGroups: statsByCountry,
+      allAirports: results.filter((x)=>x.passengerFlow > 0)
+    };
+  }
+});
+
+/*
 @api {get} locations/:locationId/threatLevel
 @apiName threatLevel
 @apiGroup locations

@@ -22,7 +22,7 @@ def save_image(raster, name):
         dtype=np.uint8))
     img.save(name + ".png", "PNG")
 
-world_df = gpd.read_file("../imports/geoJSON/world.geo.json")
+world_df = gpd.read_file("world.geo.json")
 # Use cylindrical equal-area projection
 # https://gis.stackexchange.com/questions/218450/getting-polygon-areas-using-geopandas
 world_df = world_df.to_crs({'proj': 'cea'})
@@ -136,8 +136,10 @@ def create_location_shapes(resolved_location_tree, parent_shape=None):
             lon_lat = location.get('longitude'), location.get('latitude')
             if lon_lat[0] and lon_lat[1]:
                 # default area 10 square km
-                shape_area = 10e3
+                shape_area = location.get('area', 10e3)
                 if len(matching_countries) and 'population' in location:
+                    # Set the shape area as a proportion of the country area
+                    # equal to the proportion of the country's population it contains.
                     country_portion = float(location['population']) / matching_countries.pop_est.iloc[0]
                     shape_area = max(country_shape.area * country_portion, shape_area)
                 new_shape = create_projected_point(lon_lat).buffer(math.sqrt(shape_area / math.pi))

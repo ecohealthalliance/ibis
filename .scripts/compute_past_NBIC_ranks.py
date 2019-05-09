@@ -1,4 +1,4 @@
-from rank_events import rank_events
+from score_api.rank_events import rank_events
 import pymongo
 import os
 import datetime

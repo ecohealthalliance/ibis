@@ -16,8 +16,24 @@ import rasterio
 import numpy as np
 import argparse
 from dateutil import parser as date_parser
+from celery import Celery
 
-def rank_user_counts(
+
+celery_tasks = Celery('tasks', broker=os.environ.get('BROKER_URL'))
+
+celery_tasks.conf.update(
+    CELERY_TASK_SERIALIZER='pickle',
+    CELERY_ACCEPT_CONTENT=['pickle'],  # Ignore other content
+    CELERY_RESULT_SERIALIZER='pickle',
+    CELERY_RESULT_BACKEND=os.environ.get('BROKER_URL'),
+    CELERYD_TASK_SOFT_TIME_LIMIT=300,
+    CELERYD_TASK_TIME_LIMIT=300,
+)
+
+celery_tasks.conf.broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
+
+@celery_tasks.task(name='')
+def score_airports_for_cases(
     active_case_location_tree,
     start_date_p=None,
     end_date_p=None,
@@ -104,6 +120,7 @@ def rank_user_counts(
             })
 
     db.userAirportRanks.insert_many(ranks)
+    return len(ranks)
 
 if __name__ == "__main__":
     end_date = datetime.datetime.now()

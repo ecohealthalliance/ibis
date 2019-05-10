@@ -935,6 +935,34 @@ api.addRoute('bioeventNames', {
   }
 });
 
+/*
+@api {post} scoreUserBioevent score an user created bioevent
+@apiName bioevents
+*/
+api.addRoute('scoreUserBioevent', {
+  authRequired: true
+}, {
+  post: function() {
+    const resp = HTTP.call('POST', `${process.env.SCORE_API}/score_bioevent`, {
+      // TODO: Generate from this.bodyParams
+      content: JSON.stringify({
+        rank_group: this.user.username + '-' + new Date().toISOString(),
+        start_date: new Date().toISOString(),
+        active_case_location_tree: {
+          'children': [{
+            'location': {
+              'longitude': 30.14452,
+              'latitude': -6.44596
+            },
+            'value': 4.182193023555321
+          }]
+        }
+      })
+    });
+    return resp.content;
+  }
+});
+
 var cacheLastCleared = new Date(0);
 /*
 @api {get} clearCaches Delete all cached data.

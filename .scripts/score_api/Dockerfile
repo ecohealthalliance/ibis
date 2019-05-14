@@ -37,4 +37,4 @@ else\n\
 /venv/bin/python server.py\n\
 fi" > /run.sh && chmod a+x /run.sh
 
-CMD "/run.sh"
+CMD /bin/bash /run.sh

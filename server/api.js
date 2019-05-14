@@ -943,23 +943,14 @@ api.addRoute('scoreUserBioevent', {
   authRequired: true
 }, {
   post: function() {
+    let bodyJSON = JSON.parse(this.bodyParams.json);
+    bodyJSON.rank_group = `${this.user._id}-${new Date().toISOString()}`;
     const resp = HTTP.call('POST', `${process.env.SCORE_API}/score_bioevent`, {
-      // TODO: Generate from this.bodyParams
-      content: JSON.stringify({
-        rank_group: this.user.username + '-' + new Date().toISOString(),
-        start_date: new Date().toISOString(),
-        active_case_location_tree: {
-          'children': [{
-            'location': {
-              'longitude': 30.14452,
-              'latitude': -6.44596
-            },
-            'value': 4.182193023555321
-          }]
-        }
-      })
+      content: JSON.stringify(bodyJSON)
     });
-    return resp.content;
+    let result = resp.data;
+    result.rankGroup = bodyJSON.rank_group;
+    return result;
   }
 });
 

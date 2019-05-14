@@ -27,6 +27,8 @@ import loadingIndicator from '/imports/loadingIndicator';
 import { HTTPAuthenticatedGet, formatNumber } from '/imports/utils';
 import { renderAllCountryGeoJSONLayer } from '/imports/leafletUtils';
 
+let RankedUserEventStatus = new Meteor.Collection('rankedUserEventStatus');
+
 Template.userBioevent.onCreated(function() {
   this.airportType = new ReactiveVar("all");
   this.mapType = new ReactiveVar();
@@ -36,8 +38,22 @@ Template.userBioevent.onCreated(function() {
   this.USOnly = new ReactiveVar(true);
   this.locations = new ReactiveVar([]);
   this.countryValues = new ReactiveVar();
+  let eventStatusLoadingIndicatorSemaphore = null;
   this.autorun(()=>{
+    if(eventStatusLoadingIndicatorSemaphore === null) {
+      eventStatusLoadingIndicatorSemaphore = loadingIndicator.show();
+    }
     const bioeventId = FlowRouter.getParam('bioeventId');
+    this.subscribe('rankedUserEventStatus', bioeventId);
+    let status = RankedUserEventStatus.findOne({rank_group: bioeventId});
+    if(!status || !status.finished) {
+      return;
+    }
+    eventStatusLoadingIndicatorSemaphore.hide();
+    if(status.error) {
+      alert(status.error);
+      return;
+    }
     const loadingIndicatorSemaphore = loadingIndicator.show();
     Promise.all([
       HTTPAuthenticatedGet('/api/userBioevents/' + bioeventId, {

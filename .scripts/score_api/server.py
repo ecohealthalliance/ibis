@@ -83,24 +83,22 @@ class ScoreHandler(tornado.web.RequestHandler):
         param_schema.validate(parsed_args)
             
         def callback(err, resp):
-            print('done')
+            result = {
+                'finished': datetime.datetime.now(),
+            }
             if err:
-                result = {
-                    'rank_group': parsed_args['rank_group'],
-                    'error': repr(err)
-                }
-            else:
-                result = {
-                    'rank_group': parsed_args['rank_group'],
-                    'complete': True
-                }
-            db.rankedUserEventStatus.insert(result)
+                result['error'] = repr(err)
+            db.rankedUserEventStatus.update_one({
+                'rank_group': parsed_args['rank_group'],
+            }, { '$set': result })
 
         start_date = dateutil.parser.parse(parsed_args['start_date'])
         if 'end_date' in parsed_args:
             end_date = dateutil.parser.parse(parsed_args['end_date'])
         else:
             end_date = start_date + datetime.timedelta(14)
+        if db.rankedUserEventStatus.find_one({'rank_group': parsed_args['rank_group']}):
+            raise Exception("Rank group already exists.")
         task = tasks.score_airports_for_cases.apply_async(args=[
             parsed_args['active_case_location_tree'],
         ], kwargs=dict(
@@ -108,6 +106,10 @@ class ScoreHandler(tornado.web.RequestHandler):
             end_date_p=end_date,
             sim_group_p='ibis14day',
             rank_group_p=parsed_args['rank_group']))
+        db.rankedUserEventStatus.insert({
+            'started': datetime.datetime.now(),
+            'rank_group': parsed_args['rank_group'],
+        })
         self.set_header("Content-Type", "application/json")
         self.write({
             'result': 'started'

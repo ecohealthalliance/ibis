@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import datetime
 import os
+import sys
 import numpy as np
 from celery import Celery
 
@@ -26,8 +27,18 @@ def score_airports_for_cases(
     sim_group_p=None,
     rank_group_p=None):
     global initial_run_for_worker
+    global compute_case_raster
+    global plot_airport
+    global compute_outflows
+    global compute_airport_flow_matrix
+    global db
+    global population_raster
+    global population_raster_data
+    global traverse_location_tree
+    global get_airport_to_country_code
     if initial_run_for_worker:
         initial_run_for_worker = False
+        sys.path.append(os.getcwd())
         from rank_events import (
             compute_case_raster,
             plot_airport,

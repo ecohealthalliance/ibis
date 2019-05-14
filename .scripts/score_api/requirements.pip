@@ -11,3 +11,4 @@ rasterio==1.0a12
 celery
 tornado
 schema
+redis

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from __future__ import print_function
 import pymongo
 import datetime
@@ -22,17 +23,10 @@ from celery import Celery
 celery_tasks = Celery('tasks', broker=os.environ.get('BROKER_URL'))
 
 celery_tasks.conf.update(
-    CELERY_TASK_SERIALIZER='pickle',
-    CELERY_ACCEPT_CONTENT=['pickle'],  # Ignore other content
-    CELERY_RESULT_SERIALIZER='pickle',
-    CELERY_RESULT_BACKEND=os.environ.get('BROKER_URL'),
-    CELERYD_TASK_SOFT_TIME_LIMIT=300,
-    CELERYD_TASK_TIME_LIMIT=300,
+    celery_result_backend=os.environ.get('BROKER_URL'),
 )
 
-celery_tasks.conf.broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
-
-@celery_tasks.task(name='')
+@celery_tasks.task
 def score_airports_for_cases(
     active_case_location_tree,
     start_date_p=None,

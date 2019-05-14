@@ -126,5 +126,5 @@ if __name__ == "__main__":
         tasks.celery_tasks.conf.update(
             CELERY_ALWAYS_EAGER = True,
         )
-    application.listen(8888)
+    application.listen(80)
     tornado.ioloop.IOLoop.instance().start()

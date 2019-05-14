@@ -23,7 +23,10 @@ from celery import Celery
 celery_tasks = Celery('tasks', broker=os.environ.get('BROKER_URL'))
 
 celery_tasks.conf.update(
-    celery_result_backend=os.environ.get('BROKER_URL'),
+    task_serializer='yaml',
+    accept_content=['yaml'],
+    result_serializer='yaml',
+    result_backend=os.environ.get('BROKER_URL'),
 )
 
 @celery_tasks.task
@@ -43,6 +46,10 @@ def score_airports_for_cases(
             '$gte': start_date_p
         }
     })
+    if len(outflows) == 0:
+        print(start_date_p)
+        print(end_date_p)
+        raise Exception('No outflows found.')
     max_outflow = max(outflows.values())
     print("Max outflow:", max_outflow)
 

@@ -9,6 +9,6 @@ rasterstats
 pillow
 rasterio==1.0a12
 celery
-tornado
+tornado==5.1.1
 schema
 redis

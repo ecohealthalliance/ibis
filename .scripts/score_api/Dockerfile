@@ -31,8 +31,8 @@ ENV BROKER_URL ""
 
 RUN echo "#!/bin/bash\n\
 cd /app\n\
-if [ "$WORKER_MODE" = "true" ]; then\n\
-/venv/bin/celery worker -A tasks --loglevel=INFO --concurrency=$WORKERS\n\
+if [ \"\$WORKER_MODE\" = \"true\" ]; then\n\
+/venv/bin/celery worker -A tasks --loglevel=INFO --concurrency=\$WORKERS\n\
 else\n\
 /venv/bin/python server.py\n\
 fi" > /run.sh && chmod a+x /run.sh

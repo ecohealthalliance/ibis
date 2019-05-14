@@ -1,23 +1,12 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import pymongo
 import datetime
 import os
-from rank_events import (
-    compute_case_raster,
-    plot_airport,
-    compute_outflows,
-    compute_airport_flow_matrix,
-    db,
-    population_raster,
-    population_raster_data,
-    traverse_location_tree,
-    get_airport_to_country_code)
-import rasterio
 import numpy as np
-import argparse
-from dateutil import parser as date_parser
 from celery import Celery
+
+
+initial_run_for_worker = True
 
 
 celery_tasks = Celery('tasks', broker=os.environ.get('BROKER_URL'))
@@ -36,6 +25,19 @@ def score_airports_for_cases(
     end_date_p=None,
     sim_group_p=None,
     rank_group_p=None):
+    global initial_run_for_worker
+    if initial_run_for_worker:
+        initial_run_for_worker = False
+        from rank_events import (
+            compute_case_raster,
+            plot_airport,
+            compute_outflows,
+            compute_airport_flow_matrix,
+            db,
+            population_raster,
+            population_raster_data,
+            traverse_location_tree,
+            get_airport_to_country_code)
     if sum(child2['value'] for child2 in active_case_location_tree['children']) == 0:
         raise Exception('No cases')
     flow_matrix, airport_to_idx = compute_airport_flow_matrix(sim_group_p)

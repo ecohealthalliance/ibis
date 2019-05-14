@@ -1,3 +1,4 @@
+import os
 import json
 import datetime
 import celery
@@ -8,9 +9,13 @@ import tornado.httpclient
 import dateutil.parser
 import schema
 from schema import Schema, Optional, Or
+import pymongo
 
 
 API_VERSION = "0.0.0"
+
+
+db = pymongo.MongoClient(os.environ['MONGO_HOST'])['ibis']
 
 
 def on_task_complete(task, callback):
@@ -78,28 +83,37 @@ class ScoreHandler(tornado.web.RequestHandler):
         param_schema.validate(parsed_args)
             
         def callback(err, resp):
+            print('done')
             if err:
-                self.set_status(500)
-                resp = {
+                result = {
+                    'rank_group': parsed_args['rank_group'],
                     'error': repr(err)
                 }
-            self.set_header("Content-Type", "application/json")
-            self.write({
-                'result': str(resp)
-            })
-            self.finish()
+            else:
+                result = {
+                    'rank_group': parsed_args['rank_group'],
+                    'complete': True
+                }
+            db.rankedUserEventStatus.insert(result)
+
         start_date = dateutil.parser.parse(parsed_args['start_date'])
         if 'end_date' in parsed_args:
             end_date = dateutil.parser.parse(parsed_args['end_date'])
         else:
             end_date = start_date + datetime.timedelta(14)
-        on_task_complete(tasks.score_airports_for_cases.apply_async(args=[
+        task = tasks.score_airports_for_cases.apply_async(args=[
             parsed_args['active_case_location_tree'],
         ], kwargs=dict(
             start_date_p=start_date,
             end_date_p=end_date,
             sim_group_p='ibis14day',
-            rank_group_p=parsed_args['rank_group'])), callback)
+            rank_group_p=parsed_args['rank_group']))
+        self.set_header("Content-Type", "application/json")
+        self.write({
+            'result': 'started'
+        })
+        self.finish()
+        on_task_complete(task, callback)
 
 
 class VersionHandler(tornado.web.RequestHandler):

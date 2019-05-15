@@ -46,6 +46,12 @@ FlowRouter.route('/configure', {
   }
 });
 
+FlowRouter.route('/submitUserBioevent', {
+  action: function(params, queryParams) {
+    BlazeLayout.render('layout', {main: 'submitUserBioevent'});
+  }
+});
+
 FlowRouter.route('/admin', {
   action: function(params, queryParams) {
     BlazeLayout.render('layout', {main: 'admin'});

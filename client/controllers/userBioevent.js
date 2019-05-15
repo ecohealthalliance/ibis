@@ -49,7 +49,7 @@ Template.userBioevent.onCreated(function() {
     if(!status || !status.finished) {
       return;
     }
-    eventStatusLoadingIndicatorSemaphore.hide();
+    loadingIndicator.hide(eventStatusLoadingIndicatorSemaphore);
     if(status.error) {
       alert(status.error);
       return;
@@ -93,8 +93,6 @@ Template.userBioevent.onCreated(function() {
 });
 
 Template.userBioevent.onRendered(function() {
-  this.$('.show-origins').css({color: OUTBOUND_LINE});
-  this.$('.show-destinations').css({color: INBOUND_LINE});
   const map = L.map('map', LEAFLET_MAP_CONFIG);
   map.setView(INITIAL_MAP_VIEW, 4);
   let locationLayer = null;

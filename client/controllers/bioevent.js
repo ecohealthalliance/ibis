@@ -88,8 +88,6 @@ Template.bioevent.onCreated(function() {
 });
 
 Template.bioevent.onRendered(function() {
-  this.$('.show-origins').css({color: OUTBOUND_LINE});
-  this.$('.show-destinations').css({color: INBOUND_LINE});
   const map = L.map('map', LEAFLET_MAP_CONFIG);
   map.setView(INITIAL_MAP_VIEW, 4);
   let locationLayer = null;

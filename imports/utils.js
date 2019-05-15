@@ -1,3 +1,20 @@
+const HTTPAuthenticatedRequest = (method, url, options) => {
+  if(!options) {
+    options = {};
+  }
+  if(!options.headers) {
+    options.headers = {};
+  }
+  options.headers["X-User-Id"] = Meteor.userId();
+  options.headers["X-Auth-Token"] = window.localStorage.getItem("Meteor.loginToken");
+  return new Promise((resolve, reject) =>{
+    method(url, options, (err, resp)=> {
+      if(err) return reject(err);
+      resolve(resp);
+    });
+  });
+};
+
 module.exports = {
   sum: (arr, iteratee) => {
     return arr.map(iteratee).reduce((sofar, value)=>sofar + value, 0);
@@ -17,20 +34,10 @@ module.exports = {
     }
   },
   HTTPAuthenticatedGet: (url, options) => {
-    if(!options) {
-      options = {};
-    }
-    if(!options.headers) {
-      options.headers = {};
-    }
-    options.headers["X-User-Id"] = Meteor.userId();
-    options.headers["X-Auth-Token"] = window.localStorage.getItem("Meteor.loginToken");
-    return new Promise((resolve, reject) =>{
-      HTTP.get(url, options, (err, resp)=> {
-        if(err) return reject(err);
-        resolve(resp);
-      });
-    });
+    return HTTPAuthenticatedRequest(HTTP.get, url, options);
+  },
+  HTTPAuthenticatedPost: (url, options) => {
+    return HTTPAuthenticatedRequest(HTTP.post, url, options);
   },
   capitalize: (str) => {
     return str[0].toUpperCase() + str.slice(1);

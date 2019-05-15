@@ -20,7 +20,7 @@ template(name='userBioevent')
       .bioevent-details.side-panel-body
         .summary-section
           .section-head
-            span.show-destinations
+            span.show-destinations(style="color:#{ramps.INBOUND_LINE};")
               if showingTopDestinations
                 i.fa.fa-circle
               else
@@ -40,7 +40,7 @@ template(name='userBioevent')
                 .value {{formatNumber value}}
         .summary-section
           .section-head
-            span.show-origins
+            span.show-origins(style="color:#{ramps.OUTBOUND_LINE};")
               if showingTopOrigins
                 i.fa.fa-circle
               else

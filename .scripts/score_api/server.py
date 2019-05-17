@@ -65,6 +65,7 @@ location_tree_child_schema = Schema({
 })
 
 param_schema = Schema({
+    'label': str,
     'rank_group': str,
     'active_case_location_tree': {
         'children': [location_tree_child_schema],
@@ -109,6 +110,8 @@ class ScoreHandler(tornado.web.RequestHandler):
         db.rankedUserEventStatus.insert({
             'started': datetime.datetime.now(),
             'rank_group': parsed_args['rank_group'],
+            'active_case_location_tree': parsed_args['active_case_location_tree'],
+            'label': parsed_args['label'],
         })
         self.set_header("Content-Type", "application/json")
         self.write({

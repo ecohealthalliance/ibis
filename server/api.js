@@ -945,6 +945,7 @@ api.addRoute('scoreUserBioevent', {
   post: function() {
     let bodyJSON = JSON.parse(this.bodyParams.json);
     bodyJSON.rank_group = `${this.user._id}-${new Date().toISOString().replace(/[\:\.]/g, "-")}`;
+    if(!bodyJSON.label) bodyJSON.label = `${this.user.profile.name} ${new Date().toLocaleString()}`;
     const resp = HTTP.call('POST', `${process.env.SCORE_API}/score_bioevent`, {
       content: JSON.stringify(bodyJSON)
     });

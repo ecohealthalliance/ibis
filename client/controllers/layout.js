@@ -2,7 +2,7 @@ import loadingIndicator from '/imports/loadingIndicator';
 import { showHelpPanel } from '/imports/configuration';
 
 Template.layout.helpers({
-  showLoadingIndicator: () => loadingIndicator.showing()
+  loadingIndicatorShowing: () => Array.from(loadingIndicator.showing())
 });
 
 Template.layout.events({

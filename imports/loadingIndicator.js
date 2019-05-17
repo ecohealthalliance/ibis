@@ -1,26 +1,33 @@
+/*
+This defines a loading indicator with a state state that is shared across all views.
+The loading indicator blocks all interaction with the page.
+Calling the show function will cause it to be displayed and return a
+key than can be used to hide it again.
+The loading indicator will only be hidden once all the keys
+returned by show have been passed to the hide function.
+Calling hide with no arguement will hide the loading indicator
+and invalidate all the keys.
+*/
 let showing = new ReactiveVar(new Set());
 export default {
-  show: () => {
-    const semaphore = {};
+  show: (message) => {
+    const key = {
+      message: message
+    };
     let semaphoreSet = showing.curValue;
-    semaphoreSet.add(semaphore);
+    semaphoreSet.add(key);
     showing.set(new Set(semaphoreSet));
-    return semaphore;
+    return key;
   },
-  /*
-  The semaphore returned by the show function can be passed in to the hide
-  function so that the loading indicator will only be hidden if all
-  the semaphores have been passed to the hide function.
-  */
-  hide: function(semaphore) {
-    if(semaphore) {
+  hide: (key) => {
+    if(key) {
       let semaphoreSet = showing.curValue;
-      showing.curValue.delete(semaphore);
+      showing.curValue.delete(key);
       showing.set(new Set(semaphoreSet));
     } else {
       showing.set(new Set());
     }
     return this;
   },
-  showing: () => showing.get().size > 0
+  showing: () => showing.get()
 };

@@ -133,12 +133,12 @@ Template.bioevent.onRendered(function() {
     locations.forEach((location)=>{
       if(mapType === 'topDestinations') {
         if(USOnly) {
-          values[location._id] = location.USDestRank <= 10 ? 11 - location.USDestRank : 0;
+          values[location._id] = location.USDestRank <= 10 ? location.threatLevelExposure : 0;
         } else {
-          values[location._id] = location.globalDestRank <= 10 ? 11 - location.globalDestRank : 0;
+          values[location._id] = location.globalDestRank <= 10 ? location.threatLevelExposure : 0;
         }
       } else if( mapType === 'topOrigins') {
-        values[location._id] = location.globalOriginRank <= 10 ? 11 - location.globalOriginRank : 0;
+        values[location._id] = location.globalOriginRank <= 10 ? location.originThreatLevel : 0;
       } else {
         values[location._id] = location[mapType];
       }
@@ -157,7 +157,7 @@ Template.bioevent.onRendered(function() {
       ramp,
       lineColor
     );
-    const airportCutoffMultiple = 0.01 * airportCutoffPercentage.get();
+    const airportCutoffMultiple = mapType.startsWith('top') ? 0 : 0.01 * airportCutoffPercentage.get();
     _.sortBy(locations, (x)=>x.type == 'airport').forEach((location)=>{
       if(!showBubbles && location.type == 'airport') return;
       if(!location.displayGeoJSON) return;
@@ -258,7 +258,7 @@ Template.bioevent.helpers({
   topDestinations: ()=>{
     const USOnly = Template.instance().USOnly.get();
     return _.chain(Template.instance().locations.get())
-      .filter(x=>(USOnly ? x.USDestRank : x.globalDestRank) <= 10)
+      .filter(x=>(USOnly ? x.USDestRank : x.globalDestRank) <= 10 && x.threatLevelExposure > 0)
       .map((loc)=>{
         const [type, codeName] = loc._id.split(':');
         return {
@@ -272,7 +272,7 @@ Template.bioevent.helpers({
   },
   topOrigins: ()=>{
     return _.chain(Template.instance().locations.get())
-      .filter(x=>x.globalOriginRank <= 10)
+      .filter(x=>x.globalOriginRank <= 10 && x.originThreatLevel > 0)
       .map((loc)=>{
         const [type, codeName] = loc._id.split(':');
         return {

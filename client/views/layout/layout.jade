@@ -20,8 +20,11 @@ template(name="layout")
             | to request one.
         +Template.dynamic template="about"
     +footer
-  if showLoadingIndicator
+  if loadingIndicatorShowing
     .loading-overlay
       .loading-dialog
         .loading-indicator
         .message Loading...
+        each loadingIndicatorShowing
+          if message
+            .detailed-message=message

@@ -1,0 +1,15 @@
+template(name="locationSelect")
+  .location-select
+    .location(data-id=location.id) {{formatLocation location}}
+    .search-bar
+      .input-group
+        .input-group-prepend
+          .input-group-text
+            i.fa.fa-search(id="searchIcon")
+        input.form-control.typeahead(type="search" id="search" autocomplete="off" placeholder="Search locations")
+      if results
+        .search-results
+          each results
+            .result
+              i.fa.fa-map-marker
+              a.geoname {{formatLocation this}}

@@ -35,6 +35,18 @@
 .tooltip.show
   opacity 1
 
+.bioevents-container
+  min-height 500px
+  background lightblue
+  padding 1em
+  .label
+    display inline-block
+    min-width 200px
+  .finished
+    font-style italic
+    font-size 0.8em
+    
+
 .about-content
   background lightblue
   padding 1em
@@ -166,9 +178,11 @@ footer
   z-index 1001
   border 1px solid lightgray
   padding 5px 10px
-  .result i
-    margin 0 10px 0 5px
-    color $primary-color
+  .result
+    cursor pointer
+    i
+      margin 0 10px 0 5px
+      color $primary-color
 
 .links
   text-align right
@@ -360,7 +374,7 @@ footer
       text-decoration underline
 
 .submit-bioevent
-  margin 1em auto
+  margin 1em
   display block
   width 800px
   textarea
@@ -368,5 +382,27 @@ footer
     margin-bottom 1em
     width 100%
     height 400px
-  .btn
+  .analyze
     float right
+    clear both
+  .heading
+    font-size 2em
+  .case-group
+    border 1px solid lightgray
+    padding 1em
+    margin 1em 0
+  .add-case-group
+    float left
+  .delete
+    float right
+  label
+    margin-top 1em
+
+.location-select
+  .location
+    font-weight bold
+    padding 0.5em
+    border 1px solid lightgray
+    border-radius 2px
+    margin-bottom 1em
+    min-height 2.5em

@@ -1,0 +1,14 @@
+template(name='submitUserBioeventForm')
+  .submit-bioevent
+    input(value="New Ad Hoc Event").heading
+    .case-groups
+      each caseGroups
+        .case-group
+          .btn.btn-danger.delete Delete
+          label Location:
+          +locationSelect
+          label Number of Active Cases:
+          input.active-cases.form-control
+    .btn.btn-primary.add-case-group Add Case Group
+    .btn.btn-success.analyze Analyze Bioevent Air Travel Risk
+    .clear(style="clear:both;")

@@ -1,0 +1,13 @@
+template(name='userBioevents')
+  .bioevents-container
+    h3 Ad-Hoc Bioevent Risk Analyses
+    ul
+      each bioevents
+        li
+          a(href="/userBioevents/#{rank_group}").label
+            if label
+              | #{label}
+            else
+              | Unnamed bioevent
+          if finished
+            span.finished Finished: {{datetimeLocaleString finished}}

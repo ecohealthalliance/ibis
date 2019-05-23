@@ -26,10 +26,10 @@ import {
 import loadingIndicator from '/imports/loadingIndicator';
 import { HTTPAuthenticatedGet, formatNumber } from '/imports/utils';
 import { renderAllCountryGeoJSONLayer } from '/imports/leafletUtils';
-
-let RankedUserEventStatus = new Meteor.Collection('rankedUserEventStatus');
+import RankedUserEventStatus from '/imports/rankedUserEventStatus';
 
 Template.userBioevent.onCreated(function() {
+  console.log(2);
   this.airportType = new ReactiveVar("all");
   this.mapType = new ReactiveVar();
   this.autorun(()=>{
@@ -44,8 +44,8 @@ Template.userBioevent.onCreated(function() {
     eventStatusLoadingIndicatorSemaphore = loadingIndicator.show();
     const bioeventId = FlowRouter.getParam('bioeventId');
     this.subscribe('rankedUserEventStatus', bioeventId);
-    let status = RankedUserEventStatus.findOne({rank_group: bioeventId});
-    if(status){
+    let status = RankedUserEventStatus.findOne();
+    if(status && status.started){
       loadingIndicator.hide(eventStatusLoadingIndicatorSemaphore);
       eventStatusLoadingIndicatorSemaphore = loadingIndicator.show(
         Spacebars.SafeString(`<p>Analyzing Flight Risk...</p>
@@ -263,6 +263,10 @@ Template.userBioevent.onRendered(function() {
 });
 
 Template.userBioevent.helpers({
+  title: ()=>{
+    const event = RankedUserEventStatus.findOne({rank_group: FlowRouter.getParam('bioeventId')});
+    return event ? event.label : "";
+  },
   legendTitle: ()=>typeToTitle[Template.instance().mapType.get()],
   legendRamp: ()=>getRamp(Template.instance().mapType.get()),
   USOnly: ()=>Template.instance().USOnly.get(),

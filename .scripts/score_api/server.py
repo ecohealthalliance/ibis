@@ -1,4 +1,5 @@
 import os
+import requests
 import json
 import datetime
 import celery
@@ -11,9 +12,7 @@ import schema
 from schema import Schema, Optional, Or
 import pymongo
 
-
 API_VERSION = "0.0.0"
-
 
 db = pymongo.MongoClient(os.environ['MONGO_HOST'])['ibis']
 
@@ -56,10 +55,12 @@ location_schema = Schema({
     Optional('area'): Or(float, int),
     'longitude': Or(float, int),
     'latitude': Or(float, int),
+    Optional('population'): Or(float, int),
+    Optional('featureCode'): str
 }, ignore_extra_keys=True)
 
 location_tree_child_schema = Schema({
-    'location': location_schema,
+    'location': Or(str, location_schema),
     'value': Or(float, int),
     Optional('children'): [lambda child: location_tree_child_schema.is_valid(child)]
 })
@@ -91,7 +92,9 @@ class ScoreHandler(tornado.web.RequestHandler):
                 result['error'] = repr(err)
             db.rankedUserEventStatus.update_one({
                 'rank_group': parsed_args['rank_group'],
-            }, { '$set': result })
+            }, {
+                '$set': result
+            })
 
         start_date = dateutil.parser.parse(parsed_args['start_date'])
         if 'end_date' in parsed_args:
@@ -100,8 +103,27 @@ class ScoreHandler(tornado.web.RequestHandler):
             end_date = start_date + datetime.timedelta(14)
         if db.rankedUserEventStatus.find_one({'rank_group': parsed_args['rank_group']}):
             raise Exception("Rank group already exists.")
+        geonames_to_lookup = []
+        for item in parsed_args['active_case_location_tree']:
+            if isinstance(item['location'], str):
+                geonames_to_lookup.append(item['location'])
+        resp = requests.get("https://grits.eha.io/api/geoname_lookup/api/geonames", params={
+            "ids": ",".join(geonames_to_lookup)
+        })
+        resp.raise_for_status()
+        geonames_by_id = {}
+        for geonameid, doc in zip(geonames_to_lookup, resp.json()['docs']):
+            if doc is None:
+                raise Exception('Invalid geoname id: ' + geonameid)
+            geonames_by_id[geonameid] = doc
+        active_case_location_tree = []
+        for item in parsed_args['active_case_location_tree']:
+            item = dict(item)
+            if isinstance(item['location'], str):
+                item['location'] = geonames_by_id[item['location']]
+            active_case_location_tree.append(item)
         task = tasks.score_airports_for_cases.apply_async(args=[
-            parsed_args['active_case_location_tree'],
+            active_case_location_tree,
         ], kwargs=dict(
             start_date_p=start_date,
             end_date_p=end_date,
@@ -125,6 +147,7 @@ class VersionHandler(tornado.web.RequestHandler):
     def get(self):
         self.write(API_VERSION)
         self.finish()
+
     def post(self):
         return self.get()
 
@@ -143,7 +166,7 @@ if __name__ == "__main__":
         # Run tasks in the current process so we don't have to run a worker
         # when debugging.
         tasks.celery_tasks.conf.update(
-            CELERY_ALWAYS_EAGER = True,
+            CELERY_ALWAYS_EAGER=True,
         )
     application.listen(80)
     tornado.ioloop.IOLoop.instance().start()

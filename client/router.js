@@ -34,6 +34,12 @@ FlowRouter.route('/userBioevents/:bioeventId', {
   }
 });
 
+FlowRouter.route('/userBioevents/', {
+  action: function(params, queryParams) {
+    BlazeLayout.render('layout', {main: 'userBioevents'});
+  }
+});
+
 FlowRouter.route('/about', {
   action: function(params, queryParams) {
     BlazeLayout.render('layout', {main: 'about'});
@@ -49,6 +55,12 @@ FlowRouter.route('/configure', {
 FlowRouter.route('/submitUserBioevent', {
   action: function(params, queryParams) {
     BlazeLayout.render('layout', {main: 'submitUserBioevent'});
+  }
+});
+
+FlowRouter.route('/submitUserBioeventForm', {
+  action: function(params, queryParams) {
+    BlazeLayout.render('layout', {main: 'submitUserBioeventForm'});
   }
 });
 

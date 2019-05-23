@@ -123,7 +123,7 @@ class ScoreHandler(tornado.web.RequestHandler):
                 item['location'] = geonames_by_id[item['location']]
             active_case_location_tree_children.append(item)
         task = tasks.score_airports_for_cases.apply_async(args=[
-            dict(active_case_location_tree, children=active_case_location_tree_children)
+            dict(parsed_args['active_case_location_tree'], children=active_case_location_tree_children)
         ], kwargs=dict(
             start_date_p=start_date,
             end_date_p=end_date,

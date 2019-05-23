@@ -23,7 +23,7 @@ Template.submitUserBioeventForm.events({
       let $caseGroupEl = $(caseGroupEl);
       return {
         value: parseFloat($caseGroupEl.find('.active-cases').val(), 10),
-        location: $caseGroupEl.find('.location').data('id')
+        location: "" + $caseGroupEl.find('.location').data('id')
       };
     });
     for(var i=0; i<locationValues.length; i++){

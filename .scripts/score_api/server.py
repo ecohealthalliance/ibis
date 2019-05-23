@@ -104,7 +104,7 @@ class ScoreHandler(tornado.web.RequestHandler):
         if db.rankedUserEventStatus.find_one({'rank_group': parsed_args['rank_group']}):
             raise Exception("Rank group already exists.")
         geonames_to_lookup = []
-        for item in parsed_args['active_case_location_tree']:
+        for item in parsed_args['active_case_location_tree']['children']:
             if isinstance(item['location'], str):
                 geonames_to_lookup.append(item['location'])
         resp = requests.get("https://grits.eha.io/api/geoname_lookup/api/geonames", params={
@@ -116,14 +116,14 @@ class ScoreHandler(tornado.web.RequestHandler):
             if doc is None:
                 raise Exception('Invalid geoname id: ' + geonameid)
             geonames_by_id[geonameid] = doc
-        active_case_location_tree = []
-        for item in parsed_args['active_case_location_tree']:
+        active_case_location_tree_children = []
+        for item in parsed_args['active_case_location_tree']['children']:
             item = dict(item)
             if isinstance(item['location'], str):
                 item['location'] = geonames_by_id[item['location']]
-            active_case_location_tree.append(item)
+            active_case_location_tree_children.append(item)
         task = tasks.score_airports_for_cases.apply_async(args=[
-            active_case_location_tree,
+            dict(active_case_location_tree, children=active_case_location_tree_children)
         ], kwargs=dict(
             start_date_p=start_date,
             end_date_p=end_date,

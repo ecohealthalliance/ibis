@@ -107,6 +107,19 @@ var cached = function(func) {
   };
 };
 
+var availableFlightSimMonths = cached(()=>{
+  return aggregate(PassengerFlows, [{
+    '$group': {
+        '_id': "$simGroup"
+    }
+  }])
+    .filter(x=>x._id.startsWith("gtq-"))
+    .map(x=>x._id.replace("gtq-", ""))
+    .sort();
+});
+
+Meteor.setTimeout(availableFlightSimMonths, 1);
+
 var topLocations = cached((metric, bioeventId)=>{
   if(metric.startsWith("threatLevelExposure")) {
     const exUS = metric.endsWith("ExUS");
@@ -953,6 +966,12 @@ api.addRoute('scoreUserBioevent', {
     result.rankGroup = bodyJSON.rank_group;
     return result;
   }
+});
+
+api.addRoute('availableFlightSimMonths', {
+  authRequired: true
+}, {
+  get: availableFlightSimMonths
 });
 
 var cacheLastCleared = new Date(0);

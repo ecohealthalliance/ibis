@@ -72,7 +72,8 @@ param_schema = Schema({
         'children': [location_tree_child_schema],
     },
     'start_date': str,
-    Optional('end_date'): str
+    Optional('end_date'): str,
+    Optional('sim_group'): str
 })
 
 
@@ -127,7 +128,7 @@ class ScoreHandler(tornado.web.RequestHandler):
         ], kwargs=dict(
             start_date_p=start_date,
             end_date_p=end_date,
-            sim_group_p='ibis14day',
+            sim_group_p=parsed_args['sim_group'],
             rank_group_p=parsed_args['rank_group']))
         db.rankedUserEventStatus.insert({
             'started': datetime.datetime.now(),

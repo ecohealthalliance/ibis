@@ -29,7 +29,6 @@ import { renderAllCountryGeoJSONLayer } from '/imports/leafletUtils';
 import RankedUserEventStatus from '/imports/rankedUserEventStatus';
 
 Template.userBioevent.onCreated(function() {
-  console.log(2);
   this.airportType = new ReactiveVar("all");
   this.mapType = new ReactiveVar();
   this.autorun(()=>{

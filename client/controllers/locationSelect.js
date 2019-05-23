@@ -33,7 +33,6 @@ Template.locationSelect.events({
     });
   }, 500),
   'click .geoname': function(event, instance){
-    console.log(this);
     instance.location.set(this);
   }
 });

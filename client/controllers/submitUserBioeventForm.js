@@ -1,14 +1,19 @@
-import { HTTPAuthenticatedPost } from '/imports/utils';
+import { HTTPAuthenticatedGet, HTTPAuthenticatedPost } from '/imports/utils';
 import { FlowRouter } from 'meteor/kadira:flow-router';
 import { ReactiveVar } from 'meteor/reactive-var';
 
 Template.submitUserBioeventForm.onCreated(function() {
+  this.availableFlightSimMonths = new ReactiveVar([]);
   this.caseGroups = new Meteor.Collection(null);
   this.caseGroups.insert({});
+  HTTPAuthenticatedGet('/api/availableFlightSimMonths').then((resp)=>{
+    this.availableFlightSimMonths.set(resp.data);
+  });
 });
 
 Template.submitUserBioeventForm.helpers({
-  caseGroups: ()=> Template.instance().caseGroups.find()
+  caseGroups: ()=> Template.instance().caseGroups.find(),
+  availableFlightSimMonths: ()=> Template.instance().availableFlightSimMonths.get()
 });
 
 Template.submitUserBioeventForm.events({
@@ -36,11 +41,24 @@ Template.submitUserBioeventForm.events({
         return;
       }
     }
+    let timePeriod = instance.$('.time-period').val();
+    let simGroup = 'ibis14day';
+    let startDate = new Date();
+    let endDate = new Date();
+    endDate.setDate(endDate.getDate() + 14);
+    if(timePeriod != 'now') {
+      startDate = new Date(timePeriod);
+      endDate = new Date(timePeriod);
+      endDate.setMonth(endDate.getMonth() + 1);
+      simGroup = 'gtq-' + timePeriod;
+    }
     HTTPAuthenticatedPost('/api/scoreUserBioevent', {
       data: {
         json: JSON.stringify({
           label: instance.$('.heading').val(),
-          start_date: new Date().toISOString(),
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          sim_group: simGroup,
           active_case_location_tree: {
             "children": locationValues
           }

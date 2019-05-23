@@ -1,6 +1,11 @@
 template(name='submitUserBioeventForm')
   .submit-bioevent
-    input(value="New Ad Hoc Event").heading
+    input(value="{{currentUser.profile.name}}'s Ad Hoc Event").heading
+    label Time Period:
+    select.time-period
+      option(value="now" selected) Next two weeks
+      each availableFlightSimMonths
+        option(value=this)=this
     .case-groups
       each caseGroups
         .case-group

@@ -9,12 +9,73 @@ import tornado.web
 import tornado.httpclient
 import dateutil.parser
 import schema
-from schema import Schema, Optional, Or
+from schema import Schema, Optional, Or, SchemaError
 import pymongo
+from location_tree import LocationTree
 
 API_VERSION = "0.0.0"
 
 db = pymongo.MongoClient(os.environ['MONGO_HOST'])['ibis']
+
+
+def flatten_tree(tree_node):
+    """
+    Create a list of all the tree's nodes excluding ROOT.
+    """
+    if not tree_node.get('location') or tree_node['location'] == 'ROOT':
+        result = []
+    else:
+        result = [tree_node]
+    for node in tree_node.get('children', []):
+        result += flatten_tree(node)
+    return result
+
+
+def clean_tree(location_tree):
+    """
+    Convert an user specified location tree to a well formed one.
+    In a well formed location tree, locations with a containment
+    relationship are nested and geoname ids are replaced with full geonames.
+    Errors will be raised for inconsistent values, duplicate locations,
+    and invalid ids.
+    """
+    tree_nodes = flatten_tree(location_tree)
+    geonames_to_lookup = []
+    for item in tree_nodes:
+        if isinstance(item['location'], str):
+            geonames_to_lookup.append(item['location'])
+    resp = requests.get("https://grits.eha.io/api/geoname_lookup/api/geonames", params={
+        "ids": ",".join(geonames_to_lookup)
+    })
+    resp.raise_for_status()
+    geonames_by_id = {}
+    for geonameid, doc in zip(geonames_to_lookup, resp.json()['docs']):
+        if doc is None:
+            raise Exception('Invalid geoname id: ' + geonameid)
+        geonames_by_id[geonameid] = doc
+
+    for idx, item in enumerate(tree_nodes):
+        item = dict(item)
+        if isinstance(item['location'], str) and item['location'] != 'ROOT':
+            item['location'] = geonames_by_id[item['location']]
+        tree_nodes[idx] = item
+
+    def traverse_tree(node):
+        if node.value == 'ROOT':
+            return {
+                'location': 'ROOT',
+                'children': [traverse_tree(child) for child in node.children]
+            }
+        children = [traverse_tree(child) for child in node.children]
+        assert sum(child['value'] for child in children) <= node.metadata
+        return {
+            'value': node.metadata,
+            'location': node.value,
+            'children': children
+        }
+
+    return traverse_tree(LocationTree.from_locations([
+        (node['location'], node['value'],) for node in tree_nodes]))
 
 
 def on_task_complete(task, callback):
@@ -83,8 +144,14 @@ class ScoreHandler(tornado.web.RequestHandler):
     def post(self):
         self.set_header("Access-Control-Allow-Origin", "*")
         parsed_args = tornado.escape.json_decode(self.request.body)
-        param_schema.validate(parsed_args)
-            
+        try:
+            param_schema.validate(parsed_args)
+        except SchemaError as e:
+            self.write({
+                'error': repr(e)
+            })
+            return self.finish()
+
         def callback(err, resp):
             result = {
                 'finished': datetime.datetime.now(),
@@ -103,28 +170,21 @@ class ScoreHandler(tornado.web.RequestHandler):
         else:
             end_date = start_date + datetime.timedelta(14)
         if db.rankedUserEventStatus.find_one({'rank_group': parsed_args['rank_group']}):
-            raise Exception("Rank group already exists.")
-        geonames_to_lookup = []
-        for item in parsed_args['active_case_location_tree']['children']:
-            if isinstance(item['location'], str):
-                geonames_to_lookup.append(item['location'])
-        resp = requests.get("https://grits.eha.io/api/geoname_lookup/api/geonames", params={
-            "ids": ",".join(geonames_to_lookup)
-        })
-        resp.raise_for_status()
-        geonames_by_id = {}
-        for geonameid, doc in zip(geonames_to_lookup, resp.json()['docs']):
-            if doc is None:
-                raise Exception('Invalid geoname id: ' + geonameid)
-            geonames_by_id[geonameid] = doc
-        active_case_location_tree_children = []
-        for item in parsed_args['active_case_location_tree']['children']:
-            item = dict(item)
-            if isinstance(item['location'], str):
-                item['location'] = geonames_by_id[item['location']]
-            active_case_location_tree_children.append(item)
+            self.write({
+                'error': "Rank group already exists."
+            })
+            return self.finish()
+
+        cleaned_tree = None
+        try:
+            cleaned_tree = clean_tree(parsed_args['active_case_location_tree'])
+        except Exception as e:
+            self.write({
+                'error': repr(e)
+            })
+            return self.finish()
         task = tasks.score_airports_for_cases.apply_async(args=[
-            dict(parsed_args['active_case_location_tree'], children=active_case_location_tree_children)
+            cleaned_tree
         ], kwargs=dict(
             start_date_p=start_date,
             end_date_p=end_date,

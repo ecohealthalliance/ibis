@@ -66,6 +66,6 @@ Template.submitUserBioeventForm.events({
       }
     }).then((resp) => {
       FlowRouter.go(`/userBioevents/${resp.data.rankGroup}`);
-    });
+    }).catch(error => alert(error));
   }
 });

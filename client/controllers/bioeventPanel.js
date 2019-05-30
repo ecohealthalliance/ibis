@@ -34,6 +34,7 @@ Template.bioeventPanel.onCreated(function() {
     .then((resp) => {
       const respResults = EJSON.parse(resp.content).results;
       bioevents.set(respResults);
+      if(respResults.length === 0) return;
       let endDate = new Date(respResults[0].event.timeseries.slice(-1)[0][0]);
       let startDate = new Date(endDate - Constants.DATA_INTERVAL_DAYS * Constants.MILLIS_PER_DAY);
       dateRange.set({

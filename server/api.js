@@ -963,6 +963,12 @@ api.addRoute('scoreUserBioevent', {
       content: JSON.stringify(bodyJSON)
     });
     let result = resp.data;
+    if(result.error){
+      return {
+        statusCode: 500,
+        body: result.error
+      };
+    }
     result.rankGroup = bodyJSON.rank_group;
     return result;
   }

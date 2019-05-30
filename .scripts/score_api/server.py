@@ -44,15 +44,16 @@ def clean_tree(location_tree):
     for item in tree_nodes:
         if isinstance(item['location'], str):
             geonames_to_lookup.append(item['location'])
-    resp = requests.get("https://grits.eha.io/api/geoname_lookup/api/geonames", params={
-        "ids": ",".join(geonames_to_lookup)
-    })
-    resp.raise_for_status()
     geonames_by_id = {}
-    for geonameid, doc in zip(geonames_to_lookup, resp.json()['docs']):
-        if doc is None:
-            raise Exception('Invalid geoname id: ' + geonameid)
-        geonames_by_id[geonameid] = doc
+    if len(geonames_to_lookup) > 0:
+        resp = requests.get("https://grits.eha.io/api/geoname_lookup/api/geonames", params={
+            "ids": ",".join(geonames_to_lookup)
+        })
+        resp.raise_for_status()
+        for geonameid, doc in zip(geonames_to_lookup, resp.json()['docs']):
+            if doc is None:
+                raise Exception('Invalid geoname id: ' + geonameid)
+            geonames_by_id[geonameid] = doc
 
     for idx, item in enumerate(tree_nodes):
         item = dict(item)
@@ -188,7 +189,7 @@ class ScoreHandler(tornado.web.RequestHandler):
         ], kwargs=dict(
             start_date_p=start_date,
             end_date_p=end_date,
-            sim_group_p=parsed_args['sim_group'],
+            sim_group_p=parsed_args.get('sim_group', 'ibis14day'),
             rank_group_p=parsed_args['rank_group']))
         db.rankedUserEventStatus.insert({
             'started': datetime.datetime.now(),

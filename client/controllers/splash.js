@@ -142,6 +142,7 @@ Template.splash.onRendered(function() {
               const popupElement = $('<div>').get(0);
               Blaze.renderWithData(Template.locationPopup, {
                 location: location,
+                showThreatLevelByDisease: true,
                 properties: [{
                   value: location[this.mapType.curValue],
                   label: _.findWhere(mapTypes, {name: this.mapType.curValue}).label

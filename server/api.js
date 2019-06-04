@@ -474,15 +474,15 @@ api.addRoute('locations/:locationId/outboundPassengerFlow', {
 }, {
   get: function() {
     const location = locationData.locations[this.urlParams.locationId];
-    const results = aggregate(EventAirportRanks, [{
+    const results = aggregate(PassengerFlows, [{
       $match: {
-        departureAirportId: {
+        departureAirport: {
           $in: location.airportIds
         }
       }
     }, {
       $group: {
-        _id: "$arrivalAirportId",
+        _id: "$arrivalAirport",
         passengerFlow: {
           $sum: "$estimatedPassengers"
         }
@@ -957,7 +957,7 @@ api.addRoute('scoreUserBioevent', {
 }, {
   post: function() {
     let bodyJSON = JSON.parse(this.bodyParams.json);
-    bodyJSON.rank_group = `${this.user._id}-${new Date().toISOString().replace(/[\:\.]/g, "-")}`;
+    if(!bodyJSON.rank_group) bodyJSON.rank_group = `${this.user._id}-${new Date().toISOString().replace(/[\:\.]/g, "-")}`;
     if(!bodyJSON.label) bodyJSON.label = `${this.user.profile.name} ${new Date().toLocaleString()}`;
     const resp = HTTP.call('POST', `${process.env.SCORE_API}/score_bioevent`, {
       content: JSON.stringify(bodyJSON)

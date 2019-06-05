@@ -63,7 +63,21 @@ Template.lemis.onRendered(function() {
         };
       },
       onEachFeature: (feature, layer)=>{
-        countryCenters[feature.properties.iso_a2] = () => layer.getCenter();
+        countryCenters[feature.properties.iso_a2] = () => {
+          let maxArea = 0;
+          let maxCenter = layer.getCenter();
+          if(layer.feature.geometry.type == "MultiPolygon") {
+            layer.feature.geometry.coordinates.forEach(([coords])=>{
+              const bounds = new L.Polygon(coords.map(([x, y])=>[y, x])).getBounds();
+              const area = Math.abs(bounds.getNorth() - bounds.getSouth()) * Math.abs(bounds.getEast() - bounds.getWest());
+              if(area > maxArea) {
+                maxCenter = bounds.getCenter();
+                maxArea = area;
+              }
+            });
+          }
+          return maxCenter;
+        };
         layer.on('click', (event)=>{
           const popupElement = $('<div>').get(0);
           Blaze.renderWithData(Template.lemisPopup, {

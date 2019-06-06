@@ -26,6 +26,17 @@ import loadingIndicator from '/imports/loadingIndicator';
 import { HTTPAuthenticatedGet, formatNumber } from '/imports/utils';
 import { renderAllCountryGeoJSONLayer } from '/imports/leafletUtils';
 
+const foresightBioevents = {
+  //Chikungunya
+  "qg8ZYWwrqNGrm3ZCn": {
+    modelId: 1
+  },
+  //Zika
+  "MeQecSXhFFerkdgw2": {
+    modelId: 2
+  }
+};
+
 Template.bioevent.onCreated(function() {
   this.airportType = new ReactiveVar("all");
   this.mapType = new ReactiveVar();
@@ -71,7 +82,8 @@ Template.bioevent.onCreated(function() {
           "threatLevelExposure",
           "threatLevelExposureExUS",
           "originThreatLevel",
-          "originProbabilityPassengerInfected"
+          "originProbabilityPassengerInfected",
+          "infectionsInOriginCatchment"
         ].forEach((metric)=>{
           location[metric] = 0;
           location.airportIds.forEach((airportId)=>{
@@ -213,9 +225,27 @@ Template.bioevent.onRendered(function() {
                   });
                 }
               }
+              const now = new Date();
+              let foresightJSON = null;
+              let foresightModelId = null;
+              let foresightBioeventInfo = foresightBioevents[FlowRouter.getParam('bioeventId')];
+              if(foresightBioeventInfo){
+                foresightModelId = foresightBioeventInfo.modelId;
+                let [type, airportId] = location._id.split(':');
+                // TODO: check airport is available on Foresight
+                if(type == "airport") {
+                  foresightJSON = JSON.stringify([{
+                    airport: airportId,
+                    infection: location['infectionsInOriginCatchment'],
+                    day: Math.floor((now - new Date(now.toISOString().slice(0, 4))) / MILLIS_PER_DAY)
+                  }]);
+                }
+              }
               Blaze.renderWithData(Template.locationPopup, {
                 location: location,
-                properties: properties
+                properties: properties,
+                foresightJSON: foresightJSON,
+                modelId: foresightModelId
               }, popupElement);
               layer.bindPopup(popupElement)
                 .openPopup()

@@ -17,3 +17,5 @@ template(name="locationPopup")
           else
             | Other Diseases
         dd {{formatNumber value}}%
+  if foresightJSON
+    a(href='http://foresight.csi.miamioh.edu/analyses/setup/model/#{modelId}?initInf=#{foresightJSON}') Run Foresight simulation with the estimated cases in this airport's catchment

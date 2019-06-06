@@ -776,6 +776,9 @@ api.addRoute('bioevents/:bioeventId', {
             },
             probabilityPassengerInfected: {
               $first: "$probabilityPassengerInfected"
+            },
+            catchmentPopulation: {
+              $first: "$catchmentPopulation"
             }
           }
         }]
@@ -785,7 +788,8 @@ api.addRoute('bioevents/:bioeventId', {
       threatLevelExposure: _.object(result[0].destination.map((x)=>[x._id, x.rank])),
       threatLevelExposureExUS: _.object(result[0].destination.map((x)=>[x._id, x.rankExUS])),
       originThreatLevel: _.object(result[0].origin.map((x)=>[x._id, x.rank])),
-      originProbabilityPassengerInfected: _.object(result[0].origin.map((x)=>[x._id, x.probabilityPassengerInfected]))
+      originProbabilityPassengerInfected: _.object(result[0].origin.map((x)=>[x._id, x.probabilityPassengerInfected])),
+      infectionsInOriginCatchment: _.object(result[0].origin.map((x)=>[x._id, x.probabilityPassengerInfected * x.catchmentPopulation])),
     };
     let countryValues = {
       originThreatLevel: {},

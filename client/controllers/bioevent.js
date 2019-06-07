@@ -25,6 +25,7 @@ import {
 import loadingIndicator from '/imports/loadingIndicator';
 import { HTTPAuthenticatedGet, formatNumber } from '/imports/utils';
 import { renderAllCountryGeoJSONLayer } from '/imports/leafletUtils';
+import foresightAirports from '/imports/foresightAirports';
 
 const foresightBioevents = {
   //Chikungunya
@@ -232,8 +233,7 @@ Template.bioevent.onRendered(function() {
               if(foresightBioeventInfo){
                 foresightModelId = foresightBioeventInfo.modelId;
                 let [type, airportId] = location._id.split(':');
-                // TODO: check airport is available on Foresight
-                if(type == "airport") {
+                if(type == "airport" && foresightAirports.includes(airportId)) {
                   foresightJSON = JSON.stringify([{
                     airport: airportId,
                     infection: location['infectionsInOriginCatchment'],

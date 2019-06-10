@@ -74,12 +74,13 @@ def score_airports_for_cases(
                 airport['loc']['coordinates'],
                 population_raster, all_airport_raster_data,
                 magnitude)
+    print("Airports plotted")
 
     case_raster = compute_case_raster(
         active_case_location_tree,
         population_raster,
         population_raster_data)
-    print('total cases:', case_raster.sum())
+    print('Total cases:', case_raster.sum())
 
     cases_in_catchment_by_airport = np.zeros(len(airport_to_idx))
     catchment_population_by_airport = np.zeros(len(airport_to_idx))

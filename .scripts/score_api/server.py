@@ -62,25 +62,30 @@ def clean_tree(json_case_location_tree):
         if isinstance(item['location'], str) and item['location'] != 'ROOT':
             item['location'] = geonames_by_id[item['location']]
         tree_nodes[idx] = item
-    logging.info('creating location tree')
+    logging.info('Creating python location tree at ' + str(datetime.datetime.now()))
     py_location_tree = LocationTree.from_locations([
         (node['location'], node.get('value', 0),) for node in tree_nodes])
     
-    def to_json_case_location_tree(node):
-        if node.value == 'ROOT':
+    def to_json_case_location_tree(loc_node):
+        location = loc_node.value
+        if location == 'ROOT':
             return {
                 'location': 'ROOT',
-                'children': [to_json_case_location_tree(child) for child in node.children]
+                'children': [to_json_case_location_tree(child) for child in loc_node.children]
             }
-        children = [to_json_case_location_tree(child) for child in node.children]
-        assert sum(child['value'] for child in children) <= node.metadata
+        value = loc_node.metadata
+        children = [to_json_case_location_tree(child) for child in loc_node.children]
+        assert sum(child['value'] for child in children) <= value
         return {
-            'value': node.metadata,
-            'location': node.value,
+            'value': value,
+            'location': location,
             'children': children
         }
-    logging.info('converting location tree')
-    return to_json_case_location_tree(py_location_tree)
+
+    logging.info('Converting location tree to JSON at ' + str(datetime.datetime.now()))
+    result = to_json_case_location_tree(py_location_tree)
+    logging.info('Finished at ' + str(datetime.datetime.now()))
+    return result
 
 
 def on_task_complete(task, callback):
@@ -184,17 +189,16 @@ class ScoreHandler(tornado.web.RequestHandler):
             return self.finish()
 
         cleaned_tree = None
-        logging.info("cleaning tree")
         try:
-            logging.info("Children: %s" % len(parsed_args['active_case_location_tree']['children']))
-            logging.info(parsed_args['active_case_location_tree']['children'][0])
+            logging.info("Processing location tree with %s children..." % len(parsed_args['active_case_location_tree']['children']))
+            # logging.info(parsed_args['active_case_location_tree']['children'][0])
             cleaned_tree = clean_tree(parsed_args['active_case_location_tree'])
         except Exception as e:
             self.write({
                 'error': repr(e)
             })
             return self.finish()
-        logging.info("queueing task")
+        logging.info("Queueing task at %s..." % str(datetime.datetime.now()))
         task = tasks.score_airports_for_cases.apply_async(args=[
             cleaned_tree
         ], kwargs=dict(
@@ -202,22 +206,18 @@ class ScoreHandler(tornado.web.RequestHandler):
             end_date_p=end_date,
             sim_group_p=parsed_args.get('sim_group', 'ibis14day'),
             rank_group_p=parsed_args['rank_group']))
-        logging.info("recording status")
-        
-        
         db.rankedUserEventStatus.insert({
             'started': datetime.datetime.now(),
             'rank_group': parsed_args['rank_group'],
             'active_case_location_tree': parsed_args['active_case_location_tree'],
             'label': parsed_args['label'],
         })
-        logging.info("sending resp")
         self.set_header("Content-Type", "application/json")
         self.write({
             'result': 'started'
         })
         self.finish()
-        logging.info("finished")
+        logging.info("Response sent")
         on_task_complete(task, callback)
 
 

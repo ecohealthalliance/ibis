@@ -58,6 +58,9 @@ class LocationTree:
             node = location_tree.search(location)
             if node.value != 'ROOT' and node.value.get('id', object()) == location.get('id', object()):
                 raise Exception("Duplicate location: " + node.value.get('id'))
+            if 'id' not in location:
+                node.children.append(LocationTree(location, [], metadata))
+                continue
             contained = []
             uncontained = []
             for idx, child in enumerate(node.children):

@@ -33,7 +33,7 @@ def flatten_tree(tree_node):
     return result
 
 
-def clean_tree(location_tree):
+def clean_tree(json_case_location_tree):
     """
     Convert an user specified location tree to a well formed one.
     In a well formed location tree, locations with a containment
@@ -41,7 +41,7 @@ def clean_tree(location_tree):
     Errors will be raised for inconsistent values, duplicate locations,
     and invalid ids.
     """
-    tree_nodes = flatten_tree(location_tree)
+    tree_nodes = flatten_tree(json_case_location_tree)
     geonames_to_lookup = []
     for item in tree_nodes:
         if isinstance(item['location'], str):
@@ -63,22 +63,24 @@ def clean_tree(location_tree):
             item['location'] = geonames_by_id[item['location']]
         tree_nodes[idx] = item
     logging.info('creating location tree')
-    def traverse_tree(node):
+    py_location_tree = LocationTree.from_locations([
+        (node['location'], node.get('value', 0),) for node in tree_nodes])
+    
+    def to_json_case_location_tree(node):
         if node.value == 'ROOT':
             return {
                 'location': 'ROOT',
-                'children': [traverse_tree(child) for child in node.children]
+                'children': [to_json_case_location_tree(child) for child in node.children]
             }
-        children = [traverse_tree(child) for child in node.children]
+        children = [to_json_case_location_tree(child) for child in node.children]
         assert sum(child['value'] for child in children) <= node.metadata
         return {
             'value': node.metadata,
             'location': node.value,
             'children': children
         }
-
-    return traverse_tree(LocationTree.from_locations([
-        (node['location'], node['value'],) for node in tree_nodes]))
+    logging.info('converting location tree')
+    return to_json_case_location_tree(py_location_tree)
 
 
 def on_task_complete(task, callback):
@@ -125,7 +127,9 @@ location_schema = Schema({
 
 location_tree_child_schema = Schema({
     'location': Or(str, location_schema),
-    'value': Or(float, int),
+    Optional('value'): Or(float, int),
+    Optional('exposed'): Or(float, int),
+    Optional('infective'): Or(float, int),
     Optional('children'): [lambda child: location_tree_child_schema.is_valid(child)]
 })
 
@@ -137,7 +141,8 @@ param_schema = Schema({
     },
     'start_date': str,
     Optional('end_date'): str,
-    Optional('sim_group'): str
+    Optional('sim_group'): str,
+    Optional('source_url'): str,
 })
 
 
@@ -198,6 +203,8 @@ class ScoreHandler(tornado.web.RequestHandler):
             sim_group_p=parsed_args.get('sim_group', 'ibis14day'),
             rank_group_p=parsed_args['rank_group']))
         logging.info("recording status")
+        
+        
         db.rankedUserEventStatus.insert({
             'started': datetime.datetime.now(),
             'rank_group': parsed_args['rank_group'],

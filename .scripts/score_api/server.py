@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import requests
 import json
@@ -7,6 +8,7 @@ import tasks
 import tornado.ioloop
 import tornado.web
 import tornado.httpclient
+import tornado.options
 import dateutil.parser
 import schema
 from schema import Schema, Optional, Or, SchemaError
@@ -154,6 +156,7 @@ class ScoreHandler(tornado.web.RequestHandler):
             return self.finish()
 
         def callback(err, resp):
+            print('callback')
             result = {
                 'finished': datetime.datetime.now(),
             }
@@ -177,6 +180,7 @@ class ScoreHandler(tornado.web.RequestHandler):
             return self.finish()
 
         cleaned_tree = None
+        print("cleaning tree")
         try:
             cleaned_tree = clean_tree(parsed_args['active_case_location_tree'])
         except Exception as e:
@@ -184,6 +188,7 @@ class ScoreHandler(tornado.web.RequestHandler):
                 'error': repr(e)
             })
             return self.finish()
+        print("queueing task")
         task = tasks.score_airports_for_cases.apply_async(args=[
             cleaned_tree
         ], kwargs=dict(
@@ -191,17 +196,20 @@ class ScoreHandler(tornado.web.RequestHandler):
             end_date_p=end_date,
             sim_group_p=parsed_args.get('sim_group', 'ibis14day'),
             rank_group_p=parsed_args['rank_group']))
+        print("recording status")
         db.rankedUserEventStatus.insert({
             'started': datetime.datetime.now(),
             'rank_group': parsed_args['rank_group'],
             'active_case_location_tree': parsed_args['active_case_location_tree'],
             'label': parsed_args['label'],
         })
+        print("sending resp")
         self.set_header("Content-Type", "application/json")
         self.write({
             'result': 'started'
         })
         self.finish()
+        print("finished")
         on_task_complete(task, callback)
 
 
@@ -230,5 +238,6 @@ if __name__ == "__main__":
         tasks.celery_tasks.conf.update(
             CELERY_ALWAYS_EAGER=True,
         )
+    tornado.options.parse_command_line()
     application.listen(80)
     tornado.ioloop.IOLoop.instance().start()

@@ -1,9 +1,10 @@
+CONTAINMENT_PROPS = [
+    'countryName',
+    'admin1Name',
+    'admin2Name',
+]
+
 def location_contains(locationA, locationB):
-    props = [
-        'countryName',
-        'admin1Name',
-        'admin2Name',
-    ]
     if 'id' not in locationA or 'id' not in locationB:
         return False
     if locationA['id'] == locationB['id']:
@@ -19,7 +20,7 @@ def location_contains(locationA, locationB):
         containment_level = 3
     else:
         return False
-    for prop in props[0:containment_level]:
+    for prop in CONTAINMENT_PROPS[0:containment_level]:
         if prop not in locationB or locationB[prop] == '':
             return False
         if locationA[prop] != locationB[prop]:
@@ -37,6 +38,8 @@ class LocationTree:
     # Return the location's node or the node that should be its parent.
     def search(self, location):
         if self.value is "ROOT" or location_contains(self.value, location):
+            if 'id' not in location:
+                return self
             for subtree in self.children:
                 containing_node = subtree.search(location)
                 if containing_node:

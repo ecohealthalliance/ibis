@@ -968,8 +968,6 @@ api.addRoute('scoreUserBioevent', {
     });
     let result = resp.data;
     if(result.error){
-      console.log(result.error);
-      console.log(Object.keys(bodyJSON));
       return {
         statusCode: 500,
         body: result.error

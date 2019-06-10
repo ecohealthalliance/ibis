@@ -1,4 +1,4 @@
-from __future__ import print_function
+import logging
 import os
 import requests
 import json
@@ -62,7 +62,7 @@ def clean_tree(location_tree):
         if isinstance(item['location'], str) and item['location'] != 'ROOT':
             item['location'] = geonames_by_id[item['location']]
         tree_nodes[idx] = item
-
+    logging.info('creating location tree')
     def traverse_tree(node):
         if node.value == 'ROOT':
             return {
@@ -156,7 +156,6 @@ class ScoreHandler(tornado.web.RequestHandler):
             return self.finish()
 
         def callback(err, resp):
-            print('callback')
             result = {
                 'finished': datetime.datetime.now(),
             }
@@ -180,15 +179,17 @@ class ScoreHandler(tornado.web.RequestHandler):
             return self.finish()
 
         cleaned_tree = None
-        print("cleaning tree")
+        logging.info("cleaning tree")
         try:
+            logging.info("Children: %s" % len(parsed_args['active_case_location_tree']['children']))
+            logging.info(parsed_args['active_case_location_tree']['children'][0])
             cleaned_tree = clean_tree(parsed_args['active_case_location_tree'])
         except Exception as e:
             self.write({
                 'error': repr(e)
             })
             return self.finish()
-        print("queueing task")
+        logging.info("queueing task")
         task = tasks.score_airports_for_cases.apply_async(args=[
             cleaned_tree
         ], kwargs=dict(
@@ -196,20 +197,20 @@ class ScoreHandler(tornado.web.RequestHandler):
             end_date_p=end_date,
             sim_group_p=parsed_args.get('sim_group', 'ibis14day'),
             rank_group_p=parsed_args['rank_group']))
-        print("recording status")
+        logging.info("recording status")
         db.rankedUserEventStatus.insert({
             'started': datetime.datetime.now(),
             'rank_group': parsed_args['rank_group'],
             'active_case_location_tree': parsed_args['active_case_location_tree'],
             'label': parsed_args['label'],
         })
-        print("sending resp")
+        logging.info("sending resp")
         self.set_header("Content-Type", "application/json")
         self.write({
             'result': 'started'
         })
         self.finish()
-        print("finished")
+        logging.info("finished")
         on_task_complete(task, callback)
 
 

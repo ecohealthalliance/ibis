@@ -33,6 +33,23 @@ def flatten_tree(tree_node):
     return result
 
 
+def to_json_case_location_tree(loc_node):
+    location = loc_node.value
+    if location == 'ROOT':
+        return {
+            'location': 'ROOT',
+            'children': [to_json_case_location_tree(child) for child in loc_node.children]
+        }
+    value = loc_node.metadata
+    children = [to_json_case_location_tree(child) for child in loc_node.children]
+    assert sum(child['value'] for child in children) <= value
+    return {
+        'value': value,
+        'location': location,
+        'children': children
+    }
+
+
 def clean_tree(json_case_location_tree):
     """
     Convert an user specified location tree to a well formed one.
@@ -57,31 +74,16 @@ def clean_tree(json_case_location_tree):
                 raise Exception('Invalid geoname id: ' + geonameid)
             geonames_by_id[geonameid] = doc
 
+    location_value_pairs = []
     for idx, item in enumerate(tree_nodes):
-        item = dict(item)
-        if isinstance(item['location'], str) and item['location'] != 'ROOT':
-            item['location'] = geonames_by_id[item['location']]
-        tree_nodes[idx] = item
-    logging.info('Creating python location tree at ' + str(datetime.datetime.now()))
-    py_location_tree = LocationTree.from_locations([
-        (node['location'], node.get('value', 0),) for node in tree_nodes])
-    
-    def to_json_case_location_tree(loc_node):
-        location = loc_node.value
-        if location == 'ROOT':
-            return {
-                'location': 'ROOT',
-                'children': [to_json_case_location_tree(child) for child in loc_node.children]
-            }
-        value = loc_node.metadata
-        children = [to_json_case_location_tree(child) for child in loc_node.children]
-        assert sum(child['value'] for child in children) <= value
-        return {
-            'value': value,
-            'location': location,
-            'children': children
-        }
+        location = item['location']
+        if isinstance(location, str) and location != 'ROOT':
+            location = geonames_by_id[location]
+        value = item.get('infective', item.get('value', 0))
+        location_value_pairs.append((location, value,))
 
+    logging.info('Creating python location tree at ' + str(datetime.datetime.now()))
+    py_location_tree = LocationTree.from_locations(location_value_pairs)
     logging.info('Converting location tree to JSON at ' + str(datetime.datetime.now()))
     result = to_json_case_location_tree(py_location_tree)
     logging.info('Finished at ' + str(datetime.datetime.now()))
@@ -191,7 +193,7 @@ class ScoreHandler(tornado.web.RequestHandler):
         cleaned_tree = None
         try:
             logging.info("Processing location tree with %s children..." % len(parsed_args['active_case_location_tree']['children']))
-            # logging.info(parsed_args['active_case_location_tree']['children'][0])
+            logging.info(parsed_args['active_case_location_tree']['children'][0])
             cleaned_tree = clean_tree(parsed_args['active_case_location_tree'])
         except Exception as e:
             self.write({
@@ -217,7 +219,6 @@ class ScoreHandler(tornado.web.RequestHandler):
             'result': 'started'
         })
         self.finish()
-        logging.info("Response sent")
         on_task_complete(task, callback)
 
 

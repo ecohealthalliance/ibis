@@ -5,9 +5,10 @@ Meteor.publish("rankedUserEventStatus", function(rankGroup) {
     return RankedUserEventStatus.find({rank_group: rankGroup});
 });
 
-Meteor.publish("rankedUserEventStatuses", function() {
-  if(this.userId)
-    return RankedUserEventStatus.find({
-      error: {$exists: false}
-    });
+ReactiveTable.publish("rankedUserEventStatuses", function () {
+  if (this.userId) {
+    return RankedUserEventStatus;
+  } else {
+    return [];
+  }
 });

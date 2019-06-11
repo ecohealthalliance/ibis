@@ -2,13 +2,4 @@ template(name='userBioevents')
   .bioevents-container
     a.btn.btn-success.create-event(href="/submitUserBioeventForm") Create Ad Hoc Event
     h3 Ad-Hoc Bioevent Risk Analyses
-    ul
-      each bioevents
-        li
-          a(href="/userBioevents/#{rank_group}").label
-            if label
-              | #{label}
-            else
-              | Unnamed bioevent
-          if finished
-            span.finished Finished: {{datetimeLocaleString finished}}
+    +reactiveTable(collection="rankedUserEventStatuses" settings=tableSettings)

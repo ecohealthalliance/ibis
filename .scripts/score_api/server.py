@@ -82,11 +82,8 @@ def clean_tree(json_case_location_tree):
         value = item.get('infective', item.get('value', 0))
         location_value_pairs.append((location, value,))
 
-    logging.info('Creating python location tree at ' + str(datetime.datetime.now()))
     py_location_tree = LocationTree.from_locations(location_value_pairs)
-    logging.info('Converting location tree to JSON at ' + str(datetime.datetime.now()))
     result = to_json_case_location_tree(py_location_tree)
-    logging.info('Finished at ' + str(datetime.datetime.now()))
     return result
 
 
@@ -193,7 +190,7 @@ class ScoreHandler(tornado.web.RequestHandler):
         cleaned_tree = None
         try:
             logging.info("Processing location tree with %s children..." % len(parsed_args['active_case_location_tree']['children']))
-            logging.info(parsed_args['active_case_location_tree']['children'][0])
+            # logging.info(parsed_args['active_case_location_tree']['children'][0])
             cleaned_tree = clean_tree(parsed_args['active_case_location_tree'])
         except Exception as e:
             self.write({
@@ -208,10 +205,12 @@ class ScoreHandler(tornado.web.RequestHandler):
             end_date_p=end_date,
             sim_group_p=parsed_args.get('sim_group', 'ibis14day'),
             rank_group_p=parsed_args['rank_group']))
+        logging.info("Recording status at %s..." % str(datetime.datetime.now()))
         db.rankedUserEventStatus.insert({
             'started': datetime.datetime.now(),
             'rank_group': parsed_args['rank_group'],
             'active_case_location_tree': parsed_args['active_case_location_tree'],
+            'source_url': parsed_args.get('source_url'),
             'label': parsed_args['label'],
         })
         self.set_header("Content-Type", "application/json")
@@ -219,6 +218,7 @@ class ScoreHandler(tornado.web.RequestHandler):
             'result': 'started'
         })
         self.finish()
+        logging.info("Request finished at %s..." % str(datetime.datetime.now()))
         on_task_complete(task, callback)
 
 

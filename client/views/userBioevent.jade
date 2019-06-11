@@ -51,4 +51,7 @@ template(name='userBioevent')
               li
                 a(href=link) #{name}:
                 .value {{formatNumber value}}
+          if bioevent.source_url
+            .section-head
+              a(href="#{bioevent.source_url}") BioEvent Data Source
   +tooltips

@@ -262,6 +262,7 @@ Template.userBioevent.onRendered(function() {
 });
 
 Template.userBioevent.helpers({
+  bioevent: ()=> RankedUserEventStatus.findOne({rank_group: FlowRouter.getParam('bioeventId')}),
   title: ()=>{
     const event = RankedUserEventStatus.findOne({rank_group: FlowRouter.getParam('bioeventId')});
     return event ? event.label : "";

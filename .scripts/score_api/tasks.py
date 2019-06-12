@@ -13,9 +13,9 @@ initial_run_for_worker = True
 celery_tasks = Celery('tasks', broker=os.environ.get('BROKER_URL'))
 
 celery_tasks.conf.update(
-    task_serializer='yaml',
-    accept_content=['yaml'],
-    result_serializer='yaml',
+    task_serializer='json',
+    accept_content=['json'],
+    result_serializer='json',
     result_backend=os.environ.get('BROKER_URL'),
 )
 
@@ -26,6 +26,10 @@ def score_airports_for_cases(
     end_date_p=None,
     sim_group_p=None,
     rank_group_p=None):
+    if start_date_p:
+        start_date_p = datetime.datetime.strptime(start_date_p, "%Y-%m-%dT%H:%M:%S.%f")
+    if end_date_p:
+        end_date_p = datetime.datetime.strptime(end_date_p, "%Y-%m-%dT%H:%M:%S.%f")
     global initial_run_for_worker
     global compute_case_raster
     global plot_airport
@@ -151,7 +155,7 @@ if __name__ == "__main__":
             'value': 4.182193023555321}]}
     rank_user_counts(
         active_case_location_tree,
-        start_date_p=start_date,
-        end_date_p=end_date,
+        start_date_p=start_date.isoformat(),
+        end_date_p=end_date.isoformat(),
         sim_group_p="ibis14day",
         rank_group_p="test")

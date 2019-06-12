@@ -27,9 +27,9 @@ def score_airports_for_cases(
     sim_group_p=None,
     rank_group_p=None):
     if start_date_p:
-        start_date_p = datetime.datetime.strptime(start_date_p, "%Y-%m-%dT%H:%M:%S.%f")
+        start_date_p = datetime.datetime.strptime(start_date_p, "%Y-%m-%dT%H:%M:%S")
     if end_date_p:
-        end_date_p = datetime.datetime.strptime(end_date_p, "%Y-%m-%dT%H:%M:%S.%f")
+        end_date_p = datetime.datetime.strptime(end_date_p, "%Y-%m-%dT%H:%M:%S")
     global initial_run_for_worker
     global compute_case_raster
     global plot_airport

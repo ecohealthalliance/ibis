@@ -201,8 +201,8 @@ class ScoreHandler(tornado.web.RequestHandler):
         task = tasks.score_airports_for_cases.apply_async(args=[
             cleaned_tree
         ], kwargs=dict(
-            start_date_p=start_date.isoformat(),
-            end_date_p=end_date.isoformat(),
+            start_date_p=start_date.strftime("%Y-%m-%dT%H:%M:%S"),
+            end_date_p=end_date.strftime("%Y-%m-%dT%H:%M:%S"),
             sim_group_p=parsed_args.get('sim_group', 'ibis14day'),
             rank_group_p=parsed_args['rank_group']))
         logging.info("Recording status at %s..." % str(datetime.datetime.now()))

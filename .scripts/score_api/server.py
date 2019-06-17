@@ -10,15 +10,29 @@ import tornado.web
 import tornado.httpclient
 import tornado.options
 import dateutil.parser
-import schema
-from schema import Schema, Optional, Or, SchemaError
+import dateutil.relativedelta
 import pymongo
+from schema import Schema, Optional, Or, SchemaError
 from location_tree import LocationTree
 
-API_VERSION = "0.0.0"
+API_VERSION = "0.0.1"
 
 db = pymongo.MongoClient(os.environ['MONGO_HOST'])['ibis']
+flirt_db = pymongo.MongoClient(os.environ['MONGO_HOST'])['flirt']
 
+sim_groups = flirt_db.passengerFlows.aggregate([{
+    '$group': {
+        '_id': "$simGroup"
+    }
+}])
+available_sim_months = []
+for item in sim_groups:
+    if item['_id'].startswith("gtq-"):
+            available_sim_months.append(
+                datetime.datetime.strptime(
+                    item['_id'].replace("gtq-", ""),
+                    "%Y-%m"))
+available_sim_months = sorted(available_sim_months)
 
 def flatten_tree(tree_node):
     """
@@ -176,9 +190,9 @@ class ScoreHandler(tornado.web.RequestHandler):
                 '$set': result
             })
 
-        start_date = dateutil.parser.parse(parsed_args['start_date'])
+        start_date = dateutil.parser.parse(parsed_args['start_date']).replace(tzinfo=None)
         if 'end_date' in parsed_args:
-            end_date = dateutil.parser.parse(parsed_args['end_date'])
+            end_date = dateutil.parser.parse(parsed_args['end_date']).replace(tzinfo=None)
         else:
             end_date = start_date + datetime.timedelta(14)
         if db.rankedUserEventStatus.find_one({'rank_group': parsed_args['rank_group']}):
@@ -198,12 +212,19 @@ class ScoreHandler(tornado.web.RequestHandler):
             })
             return self.finish()
         logging.info("Queueing task at %s..." % str(datetime.datetime.now()))
+        sim_group = parsed_args.get('sim_group')
+        if not sim_group:
+            sim_group = 'ibis14day'
+            for month in available_sim_months:
+                month_end = month + dateutil.relativedelta.relativedelta(months=1)
+                if start_date >= month and start_date < month_end:
+                    sim_group = month.strftime("gtq-%Y-%m")
         task = tasks.score_airports_for_cases.apply_async(args=[
             cleaned_tree
         ], kwargs=dict(
             start_date_p=start_date.strftime("%Y-%m-%dT%H:%M:%S"),
             end_date_p=end_date.strftime("%Y-%m-%dT%H:%M:%S"),
-            sim_group_p=parsed_args.get('sim_group', 'ibis14day'),
+            sim_group_p=sim_group,
             rank_group_p=parsed_args['rank_group']))
         logging.info("Recording status at %s..." % str(datetime.datetime.now()))
         db.rankedUserEventStatus.insert({
@@ -237,16 +258,13 @@ application = tornado.web.Application([
 ])
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-debug', action='store_true')
-    args = parser.parse_args()
-    if args.debug:
+    tornado.options.define("debug", default=False)
+    tornado.options.parse_command_line()
+    if tornado.options.options.debug:
         # Run tasks in the current process so we don't have to run a worker
         # when debugging.
         tasks.celery_tasks.conf.update(
             CELERY_ALWAYS_EAGER=True,
         )
-    tornado.options.parse_command_line()
     application.listen(80)
     tornado.ioloop.IOLoop.instance().start()

@@ -93,7 +93,10 @@ def clean_tree(json_case_location_tree):
         location = item['location']
         if isinstance(location, str) and location != 'ROOT':
             location = geonames_by_id[location]
-        value = item.get('infective', item.get('value', 0))
+        if 'infective' in item or 'exposed' in item:
+            value = item.get('infective', 0) + item.get('exposed', 0)
+        else:
+            value = item.get('value', 0)
         location_value_pairs.append((location, value,))
 
     py_location_tree = LocationTree.from_locations(location_value_pairs)

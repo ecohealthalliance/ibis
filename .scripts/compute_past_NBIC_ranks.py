@@ -16,8 +16,9 @@ for item in db.nbic.aggregate([
     }
 ]):
     report_date = datetime.datetime.strptime(item['_id'], '%Y-%m-%d')
-    if report_date <= datetime.datetime(2019,1,1):
+    if report_date < datetime.datetime(2019,1,1) and not(report_date < datetime.datetime(2017, 12, 5) and report_date > datetime.datetime(2017, 12, 1)):
         continue
+    print("Report Date: %s" % report_date)
     rank_events(
         start_date_p=report_date - datetime.timedelta(7),
         end_date_p=report_date,

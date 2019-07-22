@@ -25,15 +25,22 @@ for file_path in file_paths:
         try:
             message_text = f.read()
             message_text = message_text.replace('=\n', '').replace('=E2=80=93', '-')
+            message_text_array = list(message_text)
+            for i in reversed(list(re.finditer(r'(=[0-9A-F]{2}){1,3}', message_text))):
+                message_text_array[i.start():i.end()] = bytes.fromhex(
+                    message_text[i.start():i.end()].replace('=', '')).decode('utf-8', errors='ignore')
+            message_text = ''.join(message_text_array)
             message_text = BRACKETED_EXPRESSION_RE.sub("", message_text)
-            forwarded_message = re.split("\n\-{5,} Forwarded message \-{5,}\n", message_text)[1]
-            [plain_text, html_content] = forwarded_message.split("Content-Transfer-Encoding: quoted-printable")
+            forwarded_message = re.split(r"\n(?:\-{5,} Forwarded message \-{5,}|Begin forwarded message:)\n", message_text)[1]
+            [plain_text, html_content] = forwarded_message.split("Content-Transfer-Encoding: quoted-printable")[:2]
             message_date_match = re.search(r"Date: (.*)\n", forwarded_message)
             date = dateparser.parse(message_date_match.groups()[0])
         except Exception as e:
             print(file_path)
+            print(forwarded_message)
             print("Parse error: " + str(e))
-            continue
+            raise
+            #continue
         for section in re.split("\n\-{5,}\n", plain_text):
             section = "\n" + section
             for disease_name_match in DISEASE_STATUS_RE.finditer(section):
@@ -59,10 +66,15 @@ for file_path in file_paths:
             } for disease, metadata in disease_to_metadata.items()],
         })
 
+total_disease_topics = 0
+total_resolved_disease_topics = 0
+
 print('Diseases by article:')
 for item in db.nbic.find():
     print(item['file'])
     print([d['nameUsed'] for d in item['diseases']])
+    total_disease_topics += len(item['diseases'])
+    total_resolved_disease_topics += len([d for d in item['diseases'] if d['resolved']])
 
 print('Mentions by disease:')
 for item in db.nbic.aggregate([
@@ -82,3 +94,10 @@ for item in db.nbic.aggregate([
     }
 ]):
     print(item)
+
+print("Total Articles:")
+print(db.nbic.count())
+print("Total Disease Topics:")
+print(total_disease_topics)
+print("Total Resolved Disease Topics:")
+print(total_resolved_disease_topics)

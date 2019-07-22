@@ -1,5 +1,6 @@
 from __future__ import print_function
 import datetime
+import os
 import pymongo
 import pandas as pd
 import math
@@ -22,7 +23,7 @@ def save_image(raster, name):
         dtype=np.uint8))
     img.save(name + ".png", "PNG")
 
-world_df = gpd.read_file("world.geo.json")
+world_df = gpd.read_file(os.path.join(os.path.dirname(os.path.realpath(__file__)), "world.geo.json"))
 # Use cylindrical equal-area projection
 # https://gis.stackexchange.com/questions/218450/getting-polygon-areas-using-geopandas
 world_df = world_df.to_crs({'proj': 'cea'})

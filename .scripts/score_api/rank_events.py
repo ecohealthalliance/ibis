@@ -4,7 +4,7 @@ import pymongo
 import pandas as pd
 import datetime
 import os
-from compute_case_raster import compute_case_raster, plot_airport, compute_outflows, get_airport_to_country_code
+from .compute_case_raster import compute_case_raster, plot_airport, compute_outflows, get_airport_to_country_code
 import rasterio
 import numpy as np
 import argparse
@@ -212,7 +212,7 @@ def rank_events(
     print("\tDone.")
     
     print("Computing disease severity coefficients...")
-    df = pd.read_csv("curated-disease-data.csv")
+    df = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), "curated-disease-data.csv"))
     disease_uri_to_classification_coefficient = {}
     for idx, row in df.iterrows():
         if not pd.isnull(row['uri']) and not pd.isnull(row['Classification']):

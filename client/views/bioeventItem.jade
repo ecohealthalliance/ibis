@@ -15,4 +15,6 @@ template(name='bioeventItem')
         .rank-data Last Incident: #{bioevent.lastIncident}
       else if bioevent.activeCases
         .rank-data Estimated Active Cases: {{formatNumber bioevent.activeCases}}
+      else if bioevent.newCases
+        .rank-data New Cases: {{formatNumber bioevent.newCases}}
     #[+timeline dateRange=dateRange max=timelineMax resolvedBioevent=bioevent.event]#[.minimap]

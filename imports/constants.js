@@ -11,7 +11,8 @@ module.exports = {
     { name: "threatLevelExUS", label: "Threat Level (Ex. US)" },
     { name: "threatLevel", label: "Threat Level" },
     { name: "mostRecent", label: "Latest Incident" },
-    { name: "activeCases", label: "Active Cases" }
+    { name: "activeCases", label: "Active Cases" },
+    { name: "newCases", label: "Recently Reported Cases" }
   ],
   mapTypes: [
     { name:"threatLevelExposureExUS", label:"Inbound Threat Exposure (Excluding US Sources)" },

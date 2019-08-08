@@ -31,6 +31,7 @@ template(name='bioevent')
             .controls
               input(type="checkbox" checked=USOnly).us-only-checkbox
               | US Only
+          p Values are percentages of the global threat exposure
           ol.airport-list
             each topDestinations
               li 
@@ -39,7 +40,9 @@ template(name='bioevent')
                 else if USDestRank
                   span.other-rank (US Airport)
                 a(href=link) #{name}:
-                .value {{formatNumber value}}
+                .value {{formatNumber value}}%
+          if hasForesightModel
+            a.create-foresight-sim.destinations(href="#") Create foresight simulation with these values
         .summary-section
           .section-head
             span.show-origins(style="color:#{ramps.OUTBOUND_LINE};")
@@ -48,13 +51,26 @@ template(name='bioevent')
               else
                 i.fa.fa-circle-o
             | Top Origins
+          p Values are percentages of the global threat level
           ol.airport-list
             each topOrigins
               li
                 a(href=link) #{name}:
-                .value {{formatNumber value}}
+                .value {{formatNumber value}}%
+          if hasForesightModel
+            a.create-foresight-sim.origins(href="#") Create foresight simulation with these values
         .summary-section
           .section-head
             | View and edit detailed bioevent info in 
             | <a href="https://eidr-connect.eha.io/events/auto-events/#{resolvedBioevent.eventId}">EIDR Connect</a>.
   +tooltips
+  .modal(tabindex='-1', role='dialog')#foresight-sim-modal
+    .modal-dialog(role='document')
+      .modal-content
+        .modal-header
+          h5.modal-title Create Foresight Simulation
+          button.close(type='button', data-dismiss='modal', aria-label='Close')
+            span(aria-hidden='true') ×
+        .modal-body.content
+        .modal-footer
+          button.btn.btn-secondary(type='button', data-dismiss='modal') Close

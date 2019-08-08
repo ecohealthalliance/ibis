@@ -35,6 +35,14 @@ const foresightBioevents = {
   //Zika
   "MeQecSXhFFerkdgw2": {
     modelId: 2
+  },
+  //Dengue
+  "TRybDhcEFfQHnBLBY": {
+    modelId: 5
+  },
+  //DHF
+  "b94hEgeXH3vSuF6r3": {
+    modelId: 5
   }
 };
 
@@ -94,6 +102,14 @@ Template.bioevent.onCreated(function() {
         location._id = locationId;
         [location.type, locationName] = locationId.split(':');
         return location;
+      });
+      const totalOriginThreatLevel = locations.reduce((sofar, cur)=> sofar + cur.originThreatLevel, 0);
+      locations.forEach((location)=> {
+        location.originThreatLevelPercent = 100 * location.originThreatLevel / totalOriginThreatLevel;
+      });
+      const totalThreatLevelExposure = locations.reduce((sofar, cur)=> sofar + cur.threatLevelExposure, 0);
+      locations.forEach((location)=> {
+        location.threatLevelExposurePercent = 100 * location.threatLevelExposure / totalThreatLevelExposure;
       });
       this.locations.set(locations);
     });
@@ -282,6 +298,7 @@ Template.bioevent.onRendered(function() {
 });
 
 Template.bioevent.helpers({
+  hasForesightModel: ()=>foresightBioevents[FlowRouter.getParam('bioeventId')] != null,
   legendTitle: ()=>typeToTitle[Template.instance().mapType.get()],
   legendRamp: ()=>getRamp(Template.instance().mapType.get()),
   USOnly: ()=>Template.instance().USOnly.get(),
@@ -293,7 +310,7 @@ Template.bioevent.helpers({
         const [type, codeName] = loc._id.split(':');
         return {
           name: `${loc.displayName} (${codeName})`,
-          value: loc.threatLevelExposure,
+          value: loc.threatLevelExposurePercent,
           USDestRank: loc.USDestRank,
           globalDestRank: loc.globalDestRank,
           link: `/locations/${loc._id}`
@@ -307,7 +324,7 @@ Template.bioevent.helpers({
         const [type, codeName] = loc._id.split(':');
         return {
           name: `${loc.displayName} (${codeName})`,
-          value: loc.originThreatLevel,
+          value: loc.originThreatLevelPercent,
           link: `/locations/${loc._id}`
         };
       }).sortBy(x=>-x.value).value();
@@ -342,5 +359,37 @@ Template.bioevent.events({
   },
   'click .show-destinations': (event, instance)=>{
     FlowRouter.setQueryParams({"mapType": 'topDestinations'});
-  }
+  },
+  'click .create-foresight-sim.origins': (event, instance)=>{
+    $('#foresight-sim-modal').modal('show');
+    $('#foresight-sim-modal .content').replaceWith('<div class="content modal-body">');
+    Blaze.renderWithData(Template.createForesightSimulation, {
+      locations: instance.locations.get().map((location)=>{
+        const airport = location._id.split(':')[1];
+        if(foresightAirports.includes(airport)){
+          return {
+            airport: airport,
+            value: location.originThreatLevel
+          };
+        }
+      }).filter(x=>x && x.value > 0),
+      disease: instance.resolvedBioevent.get().name
+    }, $('#foresight-sim-modal .content')[0]);
+  },
+  'click .create-foresight-sim.destinations': (event, instance)=>{
+    $('#foresight-sim-modal').modal('show');
+    $('#foresight-sim-modal .content').replaceWith('<div class="content modal-body">');
+    Blaze.renderWithData(Template.createForesightSimulation, {
+      locations: instance.locations.get().map((location)=>{
+        const airport = location._id.split(':')[1];
+        if(foresightAirports.includes(airport)){
+          return {
+            airport: airport,
+            value: location.threatLevelExposure
+          };
+        }
+      }).filter(x=>x && x.value > 0),
+      modelId: foresightBioevents[FlowRouter.getParam('bioeventId')].modelId
+    }, $('#foresight-sim-modal .content')[0]);
+  },
 });

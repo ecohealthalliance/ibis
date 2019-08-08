@@ -1,0 +1,9 @@
+template(name="createForesightSimulation")
+  label Value Mulitplier
+  input#multiplier(value=multiplier)
+  table
+    each locations
+      tr
+        td=airport
+        td=value
+  a(href='http://foresight.csi.miamioh.edu/analyses/setup/model/#{modelId}?initInf=#{foresightJSON}') Create Simulation

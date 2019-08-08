@@ -181,6 +181,7 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
   const exUS = metric.endsWith("ExUS");
   const mostRecent = metric == "mostRecent";
   const activeCases = metric == "activeCases";
+  const newCases = metric == "newCases";
   let resolvedEventsCollection = ResolvedEvents;
   let eventAirportRanksCollection = EventAirportRanks;
   let query = {};
@@ -223,6 +224,21 @@ var rankedBioevents = cached((metric, locationId=null, rankGroup=null)=>{
           activeCases: _.last(event.timeseries)[1]
         };
       }), (event) => event.activeCases).slice(-80).reverse()
+    };
+  } else if(newCases) {
+    query._id = {
+      $in: topLevelBioEvents
+    };
+    return {
+      results: _.sortBy(resolvedEventsCollection.find(query, {fullLocations: -1}).map((event)=>{
+        event.name = event.name.replace("Human ", "");
+        return {
+          _id: event._id,
+          event: event,
+          threatCoefficient: event.threatCoefficient,
+          newCases: event.dailyRateTimeseries.reduce((sofar, cur)=>sofar + cur[1], 0)
+        };
+      }), (event) => event.newCases).slice(-80).reverse()
     };
   } else {
     query.departureAirportId = {

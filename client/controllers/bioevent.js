@@ -38,11 +38,11 @@ const foresightBioevents = {
   },
   //Dengue
   "TRybDhcEFfQHnBLBY": {
-    modelId: 5
+    modelId: 6
   },
   //DHF
   "b94hEgeXH3vSuF6r3": {
-    modelId: 5
+    modelId: 6
   }
 };
 
@@ -369,11 +369,13 @@ Template.bioevent.events({
         if(foresightAirports.includes(airport)){
           return {
             airport: airport,
-            value: location.originThreatLevel
+            fullAirportName: `${location.displayName} (${airport})`,
+            value: location.originThreatLevel,
+            globalPercent: location.originThreatLevelPercent
           };
         }
       }).filter(x=>x && x.value > 0),
-      disease: instance.resolvedBioevent.get().name
+      modelId: foresightBioevents[FlowRouter.getParam('bioeventId')].modelId
     }, $('#foresight-sim-modal .content')[0]);
   },
   'click .create-foresight-sim.destinations': (event, instance)=>{
@@ -385,7 +387,9 @@ Template.bioevent.events({
         if(foresightAirports.includes(airport)){
           return {
             airport: airport,
-            value: location.threatLevelExposure
+            fullAirportName: `${location.displayName} (${airport})`,
+            value: location.threatLevelExposure,
+            globalPercent: location.threatLevelExposurePercent
           };
         }
       }).filter(x=>x && x.value > 0),

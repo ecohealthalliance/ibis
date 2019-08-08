@@ -1,9 +1,20 @@
 template(name="createForesightSimulation")
-  label Value Mulitplier
+  label Total infections to simulate:
   input#multiplier(value=multiplier)
-  table
-    each locations
+  .simulation-table-container
+    table
       tr
-        td=airport
-        td=value
+        th
+        th Airport
+        th Percentage of Total Risk
+        th Percentage Among Simulated Airports
+        th Infections to Simulate
+      each locations
+        tr
+          td
+            input.airport-checkbox(type="checkbox" name=airport checked="{{airportIsChecked airport}}")
+          td=fullAirportName
+          td {{formatNumber globalPercent}}%
+          td {{formatNumber simulationPercent}}%
+          td=value
   a(href='http://foresight.csi.miamioh.edu/analyses/setup/model/#{modelId}?initInf=#{foresightJSON}') Create Simulation

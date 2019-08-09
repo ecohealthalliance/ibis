@@ -269,7 +269,7 @@ def rank_events(
     import epitator
     from epitator.database_interface import DatabaseInterface
     epitator_db = DatabaseInterface()
-    df = pd.read_csv("IHME-GBD_2016_DATA.csv")
+    df = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), "IHME-GBD_2016_DATA.csv"))
     formatted_df = df[df.year > 2000]\
         .groupby(['cause', 'measure']).mean().reset_index()\
         .pivot(index='cause', columns='measure', values='val').reset_index()

@@ -1,25 +1,29 @@
 template(name="createForesightSimulation")
-  label Total infections to simulate:
-  input#multiplier(value=multiplier)
-  .simulation-table-container
-    table
-      tr
-        th
-        th Airport
-        th Percentage of Total Risk
-        th Percentage Among Simulated Airports
-        th Infections to Simulate
-      each locations
+  if locations
+    label Total infections to simulate:
+    input#multiplier(value=multiplier)
+    .simulation-table-container
+      table
         tr
-          td
-            input.airport-checkbox(type="checkbox" name=airport checked="{{airportIsChecked airport}}")
-          td=fullAirportName
-          td {{formatNumber globalPercent}}%
-          td {{formatNumber simulationPercent}}%
-          td=value
-  .btn-group
-    a.btn.select-all Select All
-    a.btn.select-none Select None
-  .btn-group(style="float:right;")
+          th
+          th Airport
+          th Percentage of Total Risk
+          th Percentage Among Simulated Airports
+          th Infections to Simulate
+        each locations
+          tr
+            td
+              input.airport-checkbox(type="checkbox" name=airport checked="{{airportIsChecked airport}}")
+            td=fullAirportName
+            td {{formatNumber globalPercent}}%
+            td {{formatNumber simulationPercent}}%
+            td=value
+    .btn-group
+      a.btn.select-all Select All
+      a.btn.select-none Select None
+    .btn-group(style="float:right;")
+      button.btn.btn-danger(type='button', data-dismiss='modal') Close
+      a.btn.btn-success(href='http://foresight.csi.miamioh.edu/analyses/setup/model/#{modelId}?initInf=#{foresightJSON}') Create Simulation
+  else
+    p The airports that foresight can simulate all have zero values.
     button.btn.btn-danger(type='button', data-dismiss='modal') Close
-    a.btn.btn-success(href='http://foresight.csi.miamioh.edu/analyses/setup/model/#{modelId}?initInf=#{foresightJSON}') Create Simulation

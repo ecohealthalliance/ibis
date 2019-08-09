@@ -17,4 +17,9 @@ template(name="createForesightSimulation")
           td {{formatNumber globalPercent}}%
           td {{formatNumber simulationPercent}}%
           td=value
-  a(href='http://foresight.csi.miamioh.edu/analyses/setup/model/#{modelId}?initInf=#{foresightJSON}') Create Simulation
+  .btn-group
+    a.btn.select-all Select All
+    a.btn.select-none Select None
+  .btn-group(style="float:right;")
+    button.btn.btn-danger(type='button', data-dismiss='modal') Close
+    a.btn.btn-success(href='http://foresight.csi.miamioh.edu/analyses/setup/model/#{modelId}?initInf=#{foresightJSON}') Create Simulation

@@ -19,8 +19,8 @@ Template.createForesightSimulation.helpers({
     });
     const totalValue = locations.reduce((sofar, cur)=>sofar + cur.value, 0);
     return _.sortBy(locations.map((x)=>{
-      x.simulationPercent = 100 * x.value / totalValue;
-      x.value = Math.round(multiplier * x.value / totalValue);
+      x.simulationPercent = (100 * x.value / totalValue) || 0;
+      x.value = Math.round(multiplier * x.value / totalValue) || 0;
       return x;
     }), x=>-x.globalPercent);
   },
@@ -51,11 +51,17 @@ Template.createForesightSimulation.helpers({
 
 Template.createForesightSimulation.events({
   'keyup #multiplier': (event, instance)=>{
-    instance.multiplier.set(parseFloat($(event.target).val()))
+    instance.multiplier.set(parseFloat($(event.target).val()) || 0)
   },
   'change .airport-checkbox': (event, instance)=>{
     let uncheckedAirports = _.clone(instance.uncheckedAirports.get());
     uncheckedAirports[$(event.target).prop('name')] = !$(event.target).prop('checked');
     instance.uncheckedAirports.set(uncheckedAirports);
+  },
+  'click .select-none': (event, instance)=>{
+    instance.uncheckedAirports.set(_.object(instance.data.locations.map(l=>[l.airport, true])));
+  },
+  'click .select-all': (event, instance)=>{
+    instance.uncheckedAirports.set({});
   }
 });

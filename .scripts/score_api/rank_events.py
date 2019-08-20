@@ -4,7 +4,7 @@ import pymongo
 import pandas as pd
 import datetime
 import os
-from .compute_case_raster import compute_case_raster, plot_airport, compute_outflows, get_airport_to_country_code
+from compute_case_raster import compute_case_raster, plot_airport, compute_outflows, get_airport_to_country_code
 import rasterio
 import numpy as np
 import argparse

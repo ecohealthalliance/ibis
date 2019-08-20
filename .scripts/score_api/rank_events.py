@@ -72,9 +72,9 @@ def resolved_event_iter(events, start_date, end_date, only_use_sources_before_en
             yield result
 
 CLASSIFICATION_COEFFICIENT_MAP = {
-    'low': 0.25,
-    'medium': 0.5,
-    'high': 0.75,
+    'low': 0.125,
+    'medium': 0.25,
+    'high': 0.5,
     'very high': 1.0,
 }
 
@@ -337,7 +337,7 @@ def rank_events(
                 average_DALYs_per_case)
             threat_coefficient = disease_uri_to_classification_coefficient.get(
                 event['diseases'][0]['id'],
-                0.5)
+                0.0625)
             for arrival_airport, arrival_country_code in airport_to_country_code.items():
                 if arrival_airport not in airport_to_idx:
                     continue

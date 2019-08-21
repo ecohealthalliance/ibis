@@ -9,6 +9,7 @@ import rasterio
 import numpy as np
 import argparse
 from dateutil import parser as date_parser
+from re import split
 
 def batched(iterable, batch_size=10):
     """
@@ -72,6 +73,8 @@ def resolved_event_iter(events, start_date, end_date, only_use_sources_before_en
             yield result
 
 CLASSIFICATION_COEFFICIENT_MAP = {
+    'exclusion': 0,
+    'excluded': 0,
     'low': 0.125,
     'medium': 0.25,
     'high': 0.5,
@@ -81,8 +84,8 @@ CLASSIFICATION_COEFFICIENT_MAP = {
 def get_classification_coefficient(classification):
     classification = classification.lower()
     partial_coefficients = []
-    for partial_classification in classification.split('to'):
-        for possible_classification in ['very high', 'high', 'medium', 'low']:
+    for partial_classification in split('or|to', classification):
+        for possible_classification in CLASSIFICATION_COEFFICIENT_MAP.keys():
             if possible_classification in partial_classification:
                 partial_coefficients.append(CLASSIFICATION_COEFFICIENT_MAP[possible_classification])
                 break
@@ -229,7 +232,7 @@ def rank_events(
                 resolved_event,
                 threatCoefficient=disease_uri_to_classification_coefficient.get(
                     event['diseases'][0]['id'],
-                    0.5),
+                    0.0625),
                 rankGroup=rank_group_p,
                 eventId=event['_id'],
                 name=event['eventName'],
@@ -242,7 +245,7 @@ def rank_events(
                 resolved_event,
                 threatCoefficient=disease_uri_to_classification_coefficient.get(
                     event['diseases'][0]['id'],
-                    0.5),
+                    0.0625),
                 _id=event['_id'],
                 name=event['eventName'],
                 timestamp=datetime.datetime.now()))
@@ -254,7 +257,7 @@ def rank_events(
                 resolved_event,
                 threatCoefficient=disease_uri_to_classification_coefficient.get(
                     event['diseases'][0]['id'],
-                    0.5),
+                    0.0625),
                 _id=event['_id'],
                 name=event['eventName'],
                 timestamp=datetime.datetime.now()))

@@ -11,4 +11,10 @@ ReactiveTable.publish("rankedUserEventStatuses", function () {
   } else {
     return [];
   }
+}, {}, {
+  disablePageCountReactivity: true,
+  fields: {
+    finished: 1,
+    label: 1
+  }
 });

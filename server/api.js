@@ -314,11 +314,11 @@ precacheFrequentValues();
 // Periodically run this to prevent the caches from holding expired values.
 setInterval(precacheFrequentValues, 1000 * 60 * 60);
 
-/*
-@api {get} topLocations
-@apiName topLocations
-@apiGroup locations
-*/
+/**
+ * @api {get} topLocations
+ * @apiName topLocations
+ * @apiGroup locations
+ */
 api.addRoute('topLocations', {
   authRequired: true
 }, {
@@ -340,13 +340,13 @@ api.addRoute('locationGeoJson', {
   }
 });
 
-/*
-@api {get} locations/:locationId/inboundFlights Get inbound flights for the given location
-@apiName inboundFlights
-@apiGroup locations
-@apiParam {ISODateString} arrivesAfter
-@apiParam {ISODateString} arrivesBefore
-*/
+/**
+ * @api {get} locations/:locationId/inboundFlights Get inbound flights for the given location
+ * @apiName inboundFlights
+ * @apiGroup locations
+ * @apiParam {ISODateString} arrivesAfter
+ * @apiParam {ISODateString} arrivesBefore
+ */
 api.addRoute('locations/:locationId/inboundFlights', {
   authRequired: true
 }, {
@@ -372,13 +372,13 @@ api.addRoute('locations/:locationId/inboundFlights', {
   }
 });
 
-/*
-@api {get} locations/:locationId/directSeats Get inbound traffic stats
-@apiName directSeats
-@apiGroup locations
-@apiParam {ISODateString} arrivesAfter
-@apiParam {ISODateString} arrivesBefore
-*/
+/**
+ * @api {get} locations/:locationId/directSeats Get inbound traffic stats
+ * @apiName directSeats
+ * @apiGroup locations
+ * @apiParam {ISODateString} arrivesAfter
+ * @apiParam {ISODateString} arrivesBefore
+ */
 api.addRoute('locations/:locationId/directSeats', {
   authRequired: true
 }, {
@@ -436,12 +436,12 @@ api.addRoute('locations/:locationId/directSeats', {
   }
 });
 
-/*
-@api {get} locations/:locationId/passengerFlow Get estimates of the
-  total number of passengers arriving from each country.
-@apiName passengerFlow
-@apiGroup locations
-*/
+/**
+ * @api {get} locations/:locationId/passengerFlow
+ * Get estimates of the total number of passengers arriving from each country.
+ * @apiName passengerFlow
+ * @apiGroup locations
+ */
 api.addRoute('locations/:locationId/passengerFlow', {
   authRequired: true
 }, {
@@ -479,12 +479,12 @@ api.addRoute('locations/:locationId/passengerFlow', {
   }
 });
 
-/*
-@api {get} locations/:locationId/outboundPassengerFlow Get estimates of the
-  total number of outbound passengers arriving at each country.
-@apiName outboundPassengerFlow
-@apiGroup locations
-*/
+/**
+ * @api {get} locations/:locationId/outboundPassengerFlow
+ * Get estimates of the total number of outbound passengers arriving at each country.
+ * @apiName outboundPassengerFlow
+ * @apiGroup locations
+ */
 api.addRoute('locations/:locationId/outboundPassengerFlow', {
   authRequired: true
 }, {
@@ -520,11 +520,11 @@ api.addRoute('locations/:locationId/outboundPassengerFlow', {
   }
 });
 
-/*
-@api {get} locations/:locationId/threatLevel
-@apiName threatLevel
-@apiGroup locations
-*/
+/**
+ * @api {get} locations/:locationId/threatLevel
+ * @apiName threatLevel
+ * @apiGroup locations
+ */
 api.addRoute('locations/:locationId/threatLevel', {
   authRequired: true
 }, {
@@ -569,10 +569,11 @@ api.addRoute('locations/:locationId/threatLevel', {
   }
 });
 
-/*
-@api {get} locations/:locationId/threatLevelPosedByDisease
-@apiName threatLevelPosedByDisease
-*/
+/**
+ * @api {get} locations/:locationId/threatLevelPosedByDisease
+ * @apiName threatLevelPosedByDisease
+ * @apiGroup locations
+ */
 api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
   authRequired: true
 }, {
@@ -612,9 +613,10 @@ api.addRoute('locations/:locationId/threatLevelPosedByDisease', {
   }
 });
 
-/*
-@api {get} locations/:locationId/bioevents Get a list of bioevents ranked by their relevance to the given location.
-*/
+/**
+ * @api {get} locations/:locationId/bioevents Get a list of bioevents ranked by their relevance to the given location.
+ * @apiGroup locations
+ */
 api.addRoute('locations/:locationId/bioevents', {
   authRequired: true
 }, {
@@ -632,9 +634,10 @@ api.addRoute('locations/:locationId/bioevents', {
   }
 });
 
-/*
-@api {get} rankData Get all the rank data for the bioevent and optional location.
-*/
+/**
+ * @api {get} rankData Get all the rank data for the bioevent and optional location.
+ * @apiGroup bioevents
+ */
 api.addRoute('rankData', {
   authRequired: true
 }, {
@@ -725,10 +728,11 @@ api.addRoute('rankData', {
   }
 });
 
-/*
-@api {get} bioevents Get a ranked list of bioevents
-@apiParam {ISODateString} metric threatLevel/threatLevelExUS/mostRecent
-*/
+/**
+ * @api {get} bioevents Get a ranked list of bioevents
+ * @apiParam {ISODateString} metric threatLevel/threatLevelExUS/mostRecent
+ * @apiGroup bioevents
+ */
 api.addRoute('bioevents', {
   authRequired: true
 }, {
@@ -746,10 +750,11 @@ api.addRoute('bioevents', {
   }
 });
 
-/*
-@api {get} bioevents/:bioeventId Get top locations for the given bioevent
-@apiName bioevents
-*/
+/**
+ * @api {get} bioevents/:bioeventId Get top locations for the given bioevent
+ * @apiName bioevents
+ * @apiGroup bioevents
+ */
 api.addRoute('bioevents/:bioeventId', {
   authRequired: true
 }, {
@@ -829,10 +834,11 @@ api.addRoute('bioevents/:bioeventId', {
   }
 });
 
-/*
-@api {get} userBioevents/:bioeventId Get airport and country stats for an user specified bioevent
-@apiName bioevents
-*/
+/**
+ * @api {get} userBioevents/:bioeventId Get airport and country stats for an user specified bioevent
+ * @apiName bioevents
+ * @apiGroup bioevents
+ */
 api.addRoute('userBioevents/:bioeventId', {
   authRequired: true
 }, {
@@ -896,9 +902,10 @@ api.addRoute('userBioevents/:bioeventId', {
   }
 });
 
-/*
-@api {get} lemis Get stats on imports of non-aqueous live wild animals by country.
-*/
+/**
+ * @api {get} lemis Get stats on imports of non-aqueous live wild animals by country.
+ * @apiGroup lemis
+ */
 api.addRoute('lemis', {
   get: function() {
     const result = aggregate(Lemis, [{
@@ -913,9 +920,10 @@ api.addRoute('lemis', {
   }
 });
 
-/*
-@api {get} lemis Get stats on the stop specied imported by the given country
-*/
+/**
+ * @api {get} lemis/:countryISO2 Get stats on the species imported by the given country
+ * @apiGroup lemis
+ */
 api.addRoute('lemis/:countryISO2', {
   get: function() {
     const result = aggregate(Lemis, [{
@@ -934,9 +942,11 @@ api.addRoute('lemis/:countryISO2', {
   }
 });
 
-/*
-@api {get} bioeventLastUpdate
-*/
+/**
+ * @api {get} bioeventLastUpdate
+ * Get the last date for which resolved bioevent timeseries data is available.
+ * @apiGroup misc
+ */
 api.addRoute('bioeventLastUpdate', {
   get: function() {
     return aggregate(ResolvedEvents, [{
@@ -959,19 +969,21 @@ const diseaseNames = ResolvedEvents.find({}, {
     name: x.name.replace("Human ", "")
   };
 });
-/*
-@api {get} bioeventNames Return the names of all bioevents for the search type-ahead.
-*/
+/**
+ * @api {get} bioeventNames Return the names of all bioevents for the search type-ahead.
+ * @apiGroup bioevents
+ */
 api.addRoute('bioeventNames', {
   get: function() {
     return diseaseNames;
   }
 });
 
-/*
-@api {post} scoreUserBioevent score an user created bioevent
-@apiName bioevents
-*/
+/**
+ * @api {post} scoreUserBioevent score an user created bioevent
+ * @apiName bioevents
+ * @apiGroup bioevents
+ */
 api.addRoute('scoreUserBioevent', {
   authRequired: true
 }, {
@@ -994,6 +1006,11 @@ api.addRoute('scoreUserBioevent', {
   }
 });
 
+/**
+ * @api {post} availableFlightSimMonths get the months for which flight simulations have been created.
+ * @apiName availableFlightSimMonths
+ * @apiGroup misc
+ */
 api.addRoute('availableFlightSimMonths', {
   authRequired: true
 }, {
@@ -1001,9 +1018,10 @@ api.addRoute('availableFlightSimMonths', {
 });
 
 var cacheLastCleared = new Date(0);
-/*
-@api {get} clearCaches Delete all cached data.
-*/
+/**
+ * @api {get} clearCaches Delete all cached data.
+ * @apiGroup misc
+ */
 api.addRoute('clearCaches', {
   get: function() {
     let cacheClearableDate = new Date(cacheLastCleared);
